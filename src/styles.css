@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "eduabsen";
+  default: true;
+  color-scheme: light;
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(98.5% 0.002 247);
+  --color-base-300: oklch(93% 0.006 250);
+  --color-base-content: oklch(27% 0.03 257);
+  --color-primary: oklch(54% 0.21 262);
+  --color-primary-content: oklch(98% 0.01 262);
+  --color-secondary: oklch(55% 0.03 257);
+  --color-secondary-content: oklch(98% 0.005 257);
+  --color-accent: oklch(62% 0.17 255);
+  --color-accent-content: oklch(98% 0.01 255);
+  --color-neutral: oklch(37% 0.03 257);
+  --color-neutral-content: oklch(98% 0.005 257);
+  --color-info: oklch(62% 0.19 245);
+  --color-info-content: oklch(98% 0.01 245);
+  --color-success: oklch(64% 0.17 155);
+  --color-success-content: oklch(98% 0.02 155);
+  --color-warning: oklch(80% 0.16 80);
+  --color-warning-content: oklch(28% 0.07 80);
+  --color-error: oklch(60% 0.22 25);
+  --color-error-content: oklch(98% 0.01 25);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; background: white; overflow: visible !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
