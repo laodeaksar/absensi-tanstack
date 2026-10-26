@@ -4,11 +4,8 @@ import {
   createSortedRowModel,
   rowPaginationFeature,
   rowSortingFeature,
-  // sortFn_alphanumeric,
-  // sortFn_text,
-  // sortFn_basic,
-  sortFns,
   tableFeatures,
+  sortFns
 } from '@tanstack/react-table'
 
 // Fitur dideklarasikan sekali (TanStack Table v9). Pencarian dilakukan di luar tabel.
@@ -17,12 +14,7 @@ export const features = tableFeatures({
   rowPaginationFeature,
   sortedRowModel: createSortedRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
-  sortFns,
-/*   : { 
-    alphanumeric: sortFn_alphanumeric, 
-    basic: sortFn_basic,
-    text: sortFn_text 
-  }, */
+  sortFns
 })
 export type AppFeatures = typeof features
 

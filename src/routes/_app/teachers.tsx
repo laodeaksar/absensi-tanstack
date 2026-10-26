@@ -159,7 +159,15 @@ function TeachersPage() {
   )
 }
 
-function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; onDone: () => void; onCancel: () => void }) {
+function TeacherForm({ 
+  teacher, 
+  onDone, 
+  onCancel 
+}: { 
+  teacher: Teacher | null; 
+  onDone: () => void; 
+  onCancel: () => void 
+}) {
   const { data: classes } = useSuspenseQuery(classesQuery)
   const isNew = !teacher
   const assigned = teacher ? parseClassIds(teacher.assigned_classes) : []

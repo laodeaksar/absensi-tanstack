@@ -1,3 +1,5 @@
 {
-  "run": "cd \"/home/work/absensi_react\" && quarks run"
+  "run": "cd \"/home/work/absensi_react\" && quarks run",
+  "build": "cd \"/home/work/absensi_react\" && quarks build",
+  "build_release": "cd \"/home/work/absensi_react\" && quarks build --release"
 }

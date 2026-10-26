@@ -119,90 +119,6 @@ export function useConfirm() {
   return { confirm, dialog }
 }
 
-/* ---------- field TanStack Form ---------- 
-
-const errorText = (field: AnyFieldApi): string => {
-  if (!field.state.meta.isTouched) return ''
-  const first = field.state.meta.errors.find(Boolean) as unknown
-  if (!first) return ''
-  return typeof first === 'string' ? first : ((first as { message?: string }).message ?? '')
-}
-
-export const hasError = (field: AnyFieldApi) => !!errorText(field)
-
-** Validator yang sama dipakai saat mengetik dan saat submit. *
-export const vString = (fn: (a: { value: string }) => string | undefined) => ({ onChange: fn, onSubmit: fn })
-
-export function FieldShell({ label, field, hint, children }: { label: string; field: AnyFieldApi; hint?: string; children: ReactNode }) {
-  const msg = errorText(field)
-  return (
-    <fieldset className="fieldset">
-      <legend className="fieldset-legend">{label}</legend>
-      {children}
-      {hint && !msg ? <p className="label">{hint}</p> : null}
-      {msg ? (
-        <p role="alert" className="mt-1 flex items-center gap-1 text-xs text-error">
-          <CircleAlert className="size-3.5 shrink-0" />
-          <span>{msg}</span>
-        </p>
-      ) : null}
-    </fieldset>
-  )
-}
-
-type InputExtra = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur' | 'name' | 'id'>
-
-export function TextField({
-  label, field, hint, icon, trailing, ...rest
-}: { label: string; field: AnyFieldApi; hint?: string; icon?: ReactNode; trailing?: ReactNode } & InputExtra) {
-  const err = hasError(field)
-  const input = (
-    <input
-      {...rest}
-      id={field.name}
-      name={field.name}
-      value={field.state.value ?? ''}
-      onBlur={field.handleBlur}
-      onChange={(e) => field.handleChange(e.target.value)}
-      aria-invalid={err}
-      className={icon || trailing ? 'grow' : `input w-full ${err ? 'input-error' : ''}`}
-    />
-  )
-  return (
-    <FieldShell label={label} field={field} hint={hint}>
-      {icon || trailing ? (
-        <label className={`input w-full ${err ? 'input-error' : ''}`}>
-          {icon}
-          {input}
-          {trailing}
-        </label>
-      ) : (
-        input
-      )}
-    </FieldShell>
-  )
-}
-
-export function SelectField({ label, field, hint, children }: { label: string; field: AnyFieldApi; hint?: string; children: ReactNode }) {
-  const err = hasError(field)
-  return (
-    <FieldShell label={label} field={field} hint={hint}>
-      <select
-        id={field.name}
-        name={field.name}
-        value={field.state.value ?? ''}
-        onBlur={field.handleBlur}
-        onChange={(e) => field.handleChange(e.target.value)}
-        aria-invalid={err}
-        className={`select w-full ${err ? 'select-error' : ''}`}
-      >
-        {children}
-      </select>
-    </FieldShell>
-  )
-}
-*/
-
 /* ---------- field TanStack Form + validator daisyUI ---------- */
 
 const errorText = (field: AnyFieldApi): string => {
@@ -315,7 +231,7 @@ export function DataTable<TData extends Record<string, any>>({ table, emptyText 
   const rows = table.getRowModel().rows
   const headerGroups = table.getHeaderGroups()
   const colCount = table.getAllLeafColumns().length
-
+  
   return (
     <div className="overflow-x-auto">
       <table className="table table-zebra">
@@ -366,7 +282,7 @@ export function DataTable<TData extends Record<string, any>>({ table, emptyText 
 export function Pager<TData extends Record<string, any>>({ table }: { table: Table<AppFeatures, TData> }) {
   const pageCount = table.getPageCount()
   if (pageCount <= 1) return null
-  const { pageIndex } = table.state.pagination
+  const { pageIndex } = table.atoms.pagination.get()
   return (
     <div className="no-print flex items-center justify-between border-t border-base-300 p-3 text-sm">
       <span className="text-base-content/60">Halaman {pageIndex + 1} dari {pageCount}</span>

@@ -31,11 +31,14 @@ export function getRouter() {
     defaultPreloadStaleTime: 0,
     defaultPendingComponent: PageSpinner,
     defaultPendingMs: 150,
-    defaultErrorComponent: ({ error }) => (
-      <div className="p-6">
-        <div role="alert" className="alert alert-error alert-soft">{error.message}</div>
-      </div>
-    ),
+    defaultErrorComponent: ({ error }) => {
+      const message = error instanceof Error ? error.message : "Terjadi kesalahan";
+      return (
+        <div className="p-6">
+          <div role="alert" className="alert alert-error alert-soft">{message}</div>
+        </div>
+      )
+    }
   })
 
   setupRouterSsrQueryIntegration({ router, queryClient })

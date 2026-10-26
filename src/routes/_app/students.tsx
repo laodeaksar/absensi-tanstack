@@ -85,7 +85,17 @@ function StudentsPage() {
     return students.filter((s) => `${s.full_name} ${s.nis} ${s.nisn}`.toLowerCase().includes(q))
   }, [students, search])
 
-  const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 10 } } })
+  const table = useTable({ 
+    features, 
+    columns, 
+    data, 
+    initialState: { 
+      pagination: { 
+        pageIndex: 0, 
+        pageSize: 10 
+      } 
+    } 
+  })
 
   return (
     <div className="space-y-4">
