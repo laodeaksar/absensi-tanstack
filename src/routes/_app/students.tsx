@@ -7,11 +7,12 @@ import { KeyRound, Plus } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { api } from '~/lib/api'
 import { classesQuery, qk, studentsQuery } from '~/lib/queries'
+import { makeStudentSchema } from '~/lib/student-schema'
 import { columnHelperFor, features } from '~/lib/table'
 import { toast } from '~/lib/toast'
 import { isActive } from '~/lib/types'
 import type { Student, StudentInput } from '~/lib/types'
-import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, SelectField, TextField, useConfirm, vString } from '~/components/ui'
+import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, SelectField, TextField, useConfirm } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/students')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
@@ -85,17 +86,7 @@ function StudentsPage() {
     return students.filter((s) => `${s.full_name} ${s.nis} ${s.nisn}`.toLowerCase().includes(q))
   }, [students, search])
 
-  const table = useTable({ 
-    features, 
-    columns, 
-    data, 
-    initialState: { 
-      pagination: { 
-        pageIndex: 0, 
-        pageSize: 10 
-      } 
-    } 
-  })
+  const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 10 } } })
 
   return (
     <div className="space-y-4">
@@ -155,8 +146,20 @@ function StudentsPage() {
 
 function StudentForm({ student, onDone, onCancel }: { student: Student | null; onDone: () => void; onCancel: () => void }) {
   const { data: classes } = useSuspenseQuery(classesQuery)
-  const activeClasses = classes.filter((c) => isActive(c.is_active))
+  const { data: students } = useSuspenseQuery(studentsQuery)
+  const activeClasses = useMemo(() => classes.filter((c) => isActive(c.is_active)), [classes])
   const isNew = !student
+
+  // Aturan dibuat dari data terbaru: NIS/NISN ganda, kelas yang tersedia, mode tambah/edit
+  const schema = useMemo(
+    () =>
+      makeStudentSchema({
+        students,
+        editingId: student?.student_id,
+        classIds: activeClasses.map((c) => c.class_id),
+      }),
+    [students, student?.student_id, activeClasses],
+  )
 
   const save = useMutation({
     mutationFn: (v: StudentInput) => api.saveStudent(v),
@@ -174,6 +177,8 @@ function StudentForm({ student, onDone, onCancel }: { student: Student | null; o
       gender: student?.gender || 'L',
       class_id: '',
     },
+    validators: { onChange: schema, onSubmit: schema },
+    onSubmitInvalid: () => toast.error('Periksa kembali isian yang ditandai merah.'),
     onSubmit: async ({ value }) => {
       const payload: StudentInput = {
         student_id: student?.student_id ?? '',
@@ -198,26 +203,11 @@ function StudentForm({ student, onDone, onCancel }: { student: Student | null; o
       }}
     >
       <div className="grid grid-cols-2 gap-4">
-        <form.Field
-          name="nis"
-          validators={vString(({ value }) => (!value.trim() ? 'NIS wajib diisi' : value.trim().length > 20 ? 'NIS maksimal 20 karakter' : undefined))}
-        >
-          {(f) => <TextField label="NIS" field={f} />}
-        </form.Field>
-        <form.Field
-          name="nisn"
-          validators={vString(({ value }) => (!value.trim() ? 'NISN wajib diisi' : !/^\d{10}$/.test(value.trim()) ? 'NISN harus 10 digit angka' : undefined))}
-        >
-          {(f) => <TextField label="NISN" field={f} inputMode="numeric" />}
-        </form.Field>
+        <form.Field name="nis">{(f) => <TextField label="NIS" field={f} />}</form.Field>
+        <form.Field name="nisn">{(f) => <TextField label="NISN" field={f} inputMode="numeric" maxLength={10} />}</form.Field>
       </div>
 
-      <form.Field
-        name="full_name"
-        validators={vString(({ value }) => (!value.trim() ? 'Nama lengkap wajib diisi' : value.trim().length < 3 ? 'Nama minimal 3 karakter' : undefined))}
-      >
-        {(f) => <TextField label="Nama Lengkap" field={f} />}
-      </form.Field>
+      <form.Field name="full_name">{(f) => <TextField label="Nama Lengkap" field={f} />}</form.Field>
 
       <div className="grid grid-cols-2 gap-4">
         <form.Field name="gender">
@@ -230,10 +220,10 @@ function StudentForm({ student, onDone, onCancel }: { student: Student | null; o
         </form.Field>
 
         {isNew ? (
-          <form.Field name="class_id" validators={vString(({ value }) => (!value ? 'Pilih kelas terlebih dahulu' : undefined))}>
+          <form.Field name="class_id">
             {(f) => (
               <SelectField label="Kelas" field={f}>
-                <option disabled selected value="">-- Pilih Kdisabled-</option>
+                <option disabled selected value="">-- Pilih Kelas --</option>
                 {activeClasses.map((c) => (
                   <option key={c.class_id} value={c.class_id}>{c.class_name} ({c.academic_year || '-'})</option>
                 ))}

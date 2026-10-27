@@ -1,0 +1,99 @@
+{
+  "id": "1793106425720483-5",
+  "title": "Find and fix a bug in this project",
+  "updatedAt": "2026-10-27T21:20:07.081536",
+  "messages": [
+    {
+      "id": "1793106432678792-6",
+      "role": "user",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Find and fix a bug in this project"
+        }
+      ]
+    },
+    {
+      "id": "1793106432678866-7",
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "tool",
+          "call": {
+            "id": "call_3071334",
+            "title": "run_command",
+            "kind": "execute",
+            "status": "completed",
+            "content": [
+              {
+                "type": "text",
+                "text": "npm error Missing script: \"test\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: /home/.npm/_logs/2026-10-27T13_07_35_671Z-debug-0.log\n\n(exit code 1)"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "1793106456741515-9",
+      "role": "assistant",
+      "blocks": []
+    },
+    {
+      "id": "1793106458220263-10",
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "⚠ API error 400: [{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Function call is missing a thought_signature in functionCall parts. This is required for tools to work correctly, and missing thought_signature may lead to degraded model performance. Additional data, function call `default_api:run_command` , position 2. Please refer to https://ai.google.dev/gemini-api/docs/thought-signatures for more details.\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n]"
+        }
+      ]
+    },
+    {
+      "id": "1793107200225280-11",
+      "role": "user",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "analisa"
+        }
+      ]
+    },
+    {
+      "id": "1793107200225354-12",
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "tool",
+          "call": {
+            "id": "call_2654409",
+            "title": "read_file",
+            "kind": "read",
+            "status": "completed",
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"name\": \"absensi_react\",\n  \"private\": true,\n  \"version\": \"0.0.0\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"tsc -b && vite build\",\n    \"lint\": \"oxlint\",\n    \"preview\": \"vite preview\"\n  },\n  \"dependencies\": {\n    \"@tailwindcss/vite\": \"^4.3.3\",\n    \"@tanstack/charts\": \"^1.1.0\",\n    \"@tanstack/react-form\": \"^1.33.5\",\n    \"@tanstack/react-query\": \"^5.104.5\",\n    \"@tanstack/react-router\": \"^1.170.46\",\n    \"@tanstack/react-router-ssr-query\": \"^1.167.3\",\n    \"@tanstack/react-start\": \"^1.169.4\",\n    \"@tanstack/react-table\": \"^9.3.1\",\n    \"daisyui\": \"^5.7.50\",\n    \"lucide-react\": \"^1.61.0\",\n    \"nitro\": \"^3.0.260903-beta\",\n    \"react\": \"^19.3.1\",\n    \"react-dom\": \"^19.3.1\",\n    \"tailwindcss\": \"^4.3.3\",\n    \"zod\": \"^4.6.7\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"^24.19.2\",\n    \"@types/react\": \"^19.3.0\",\n    \"@types/react-dom\": \"^19.3.0\",\n    \"@vitejs/plugin-react\": \"^6.1.2\",\n    \"oxc-transform-react\": \"^0.152.0\",\n    \"oxlint\": \"^1.88.0\",\n    \"typescript\": \"~6.0.3\",\n    \"vite\": \"^8.3.4\"\n  }\n}\n"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "1793107204563358-13",
+      "role": "assistant",
+      "blocks": []
+    },
+    {
+      "id": "1793107207081220-14",
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "⚠ API error 400: [{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Function call is missing a thought_signature in functionCall parts. This is required for tools to work correctly, and missing thought_signature may lead to degraded model performance. Additional data, function call `default_api:read_file` , position 5. Please refer to https://ai.google.dev/gemini-api/docs/thought-signatures for more details.\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n]"
+        }
+      ]
+    }
+  ]
+}

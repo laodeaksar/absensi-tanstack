@@ -1,0 +1,8 @@
+{
+  "model": "gemini-3.6-flash",
+  "generationConfig": {
+    "thinkingConfig": {
+      "thinkingBudget": 0
+    }
+  }
+}

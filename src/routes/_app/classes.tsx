@@ -6,12 +6,13 @@ import { useTable } from '@tanstack/react-table'
 import { Plus } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { api } from '~/lib/api'
+import { makeClassSchema } from '~/lib/class-schema'
 import { classesQuery, qk, settingsQuery, teachersQuery } from '~/lib/queries'
 import { columnHelperFor, features } from '~/lib/table'
 import { toast } from '~/lib/toast'
 import { isActive } from '~/lib/types'
 import type { ClassInput, ClassRow } from '~/lib/types'
-import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, SelectField, TextField, vString } from '~/components/ui'
+import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, SelectField, TextField } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/classes')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
@@ -103,9 +104,32 @@ function ClassesPage() {
 }
 
 function ClassForm({ cls, onDone, onCancel }: { cls: ClassRow | null; onDone: () => void; onCancel: () => void }) {
+  const { data: classes } = useSuspenseQuery(classesQuery)
   const { data: teachers } = useSuspenseQuery(teachersQuery)
   const { data: settings } = useSuspenseQuery(settingsQuery)
-  const activeTeachers = teachers.filter((t) => isActive(t.is_active))
+
+  // Wali kelas: guru aktif, ditambah wali saat ini (walau sudah nonaktif) saat mengedit
+  const teacherOptions = useMemo(
+    () => teachers.filter((t) => isActive(t.is_active) || t.user_id === cls?.homeroom_teacher),
+    [teachers, cls?.homeroom_teacher],
+  )
+
+  // Aturan dibuat dari data terbaru, jadi cek duplikat selalu sesuai isi daftar kelas
+  const schema = useMemo(
+    () =>
+      makeClassSchema({
+        classes,
+        editingId: cls?.class_id,
+        teacherIds: teacherOptions.map((t) => t.user_id),
+      }),
+    [classes, cls?.class_id, teacherOptions],
+  )
+
+  // Saran tingkat dari kelas yang sudah ada
+  const gradeSuggestions = useMemo(
+    () => [...new Set(classes.map((c) => c.grade_level).filter(Boolean))].sort(),
+    [classes],
+  )
 
   const save = useMutation({
     mutationFn: (v: ClassInput) => api.saveClass(v),
@@ -122,6 +146,8 @@ function ClassForm({ cls, onDone, onCancel }: { cls: ClassRow | null; onDone: ()
       grade_level: cls?.grade_level ?? '',
       academic_year: cls?.academic_year ?? settings.active_academic_year ?? '',
     },
+    validators: { onChange: schema, onSubmit: schema },
+    onSubmitInvalid: () => toast.error('Periksa kembali isian yang ditandai merah.'),
     onSubmit: async ({ value }) => {
       await save
         .mutateAsync({
@@ -145,10 +171,7 @@ function ClassForm({ cls, onDone, onCancel }: { cls: ClassRow | null; onDone: ()
         form.handleSubmit()
       }}
     >
-      <form.Field
-        name="class_name"
-        validators={vString(({ value }) => (!value.trim() ? 'Nama kelas wajib diisi' : value.trim().length > 50 ? 'Maksimal 50 karakter' : undefined))}
-      >
+      <form.Field name="class_name">
         {(f) => <TextField label="Nama Kelas" field={f} placeholder="Misal: X MIPA 1" />}
       </form.Field>
 
@@ -156,29 +179,37 @@ function ClassForm({ cls, onDone, onCancel }: { cls: ClassRow | null; onDone: ()
         {(f) => (
           <SelectField label="Wali Kelas" field={f}>
             <option disabled selected value="">-- Tanpa Wali Kelas --</option>
-            {activeTeachers.map((t) => (
-              <option key={t.user_id} value={t.user_id}>{t.full_name}</option>
+            {teacherOptions.map((t) => (
+              <option key={t.user_id} value={t.user_id}>
+                {t.full_name}
+                {isActive(t.is_active) ? '' : ' (nonaktif)'}
+              </option>
             ))}
           </SelectField>
         )}
       </form.Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <form.Field name="grade_level" validators={vString(({ value }) => (!value.trim() ? 'Tingkat wajib diisi' : undefined))}>
-          {(f) => <TextField label="Tingkat" field={f} />}
+        <form.Field name="grade_level">
+          {(f) => <TextField label="Tingkat" field={f} list="grade-levels" autoComplete="off" />}
         </form.Field>
-        <form.Field
-          name="academic_year"
-          validators={vString(({ value }) => {
-            const v = value.trim()
-            if (!v) return 'Tahun ajaran wajib diisi'
-            const m = /^(\d{4})\/(\d{4})$/.exec(v)
-            return !m || Number(m[2]) !== Number(m[1]) + 1 ? 'Format harus 2025/2026' : undefined
-          })}
-        >
-          {(f) => <TextField label="Tahun Ajaran" field={f} placeholder="2025/2026" />}
+        <form.Field name="academic_year">
+          {(f) => (
+            <TextField
+              label="Tahun Ajaran"
+              field={f}
+              placeholder="2025/2026"
+              inputMode="numeric"
+              hint={settings.active_academic_year ? `Tahun ajaran aktif: ${settings.active_academic_year}` : undefined}
+            />
+          )}
         </form.Field>
       </div>
+      <datalist id="grade-levels">
+        {gradeSuggestions.map((g) => (
+          <option key={g} value={g} />
+        ))}
+      </datalist>
 
       <ErrorAlert message={save.error?.message} />
 

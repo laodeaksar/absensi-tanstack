@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useForm } from '@tanstack/react-form'
+import { useForm, revalidateLogic } from '@tanstack/react-form'
 import { Eye, EyeOff, Lock, School, User } from 'lucide-react'
 import { homeFor } from '~/lib/auth'
+import { LOCK_MINUTES, isLockMessage, loginSchema } from '~/lib/login-schema'
 import { meQuery, publicSettingsQuery, qk } from '~/lib/queries'
 import { toast } from '~/lib/toast'
 import { loginFn } from '~/server/functions'
-import { ErrorAlert, TextField, vString } from '~/components/ui'
+import { ErrorAlert, TextField } from '~/components/ui'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async ({ context }) => {
@@ -18,8 +19,22 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 })
 
-const minLen = (label: string, min: number) => (a: { value: string }) =>
-  !a.value ? `${label} wajib diisi` : a.value.length < min ? `${label} minimal ${min} karakter` : undefined
+/** Sisa detik sampai `until` (epoch ms); berhenti sendiri saat selesai. */
+function useCountdown(until: number) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (until <= Date.now()) return
+    setNow(Date.now())
+    const id = setInterval(() => {
+      setNow(Date.now())
+      if (Date.now() >= until) clearInterval(id)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [until])
+  return Math.max(0, Math.ceil((until - now) / 1000))
+}
+
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -27,6 +42,10 @@ function LoginPage() {
   const { data: pub } = useSuspenseQuery(publicSettingsQuery)
   const [showPw, setShowPw] = useState(false)
   const [serverError, setServerError] = useState('')
+  // Perkiraan waktu buka kunci dari server (dihitung sejak pesan kunci diterima)
+  const [lockedUntil, setLockedUntil] = useState(0)
+  const lockLeft = useCountdown(lockedUntil)
+  const locked = lockLeft > 0
 
   const login = useMutation({
     mutationFn: (v: { username: string; password: string }) => loginFn({ data: v }),
@@ -35,11 +54,17 @@ function LoginPage() {
       toast.success('Login berhasil')
       navigate({ to: user.must_change_password ? '/settings' : homeFor(user) })
     },
-    onError: (e) => setServerError(e.message),
+    onError: (e) => {
+      setServerError(e.message)
+      if (isLockMessage(e.message)) setLockedUntil(Date.now() + LOCK_MINUTES * 60_000)
+    },
   })
 
   const form = useForm({
     defaultValues: { username: '', password: '' },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: loginSchema },
+      //onChange: loginSchema, onSubmit: loginSchema },
     onSubmit: async ({ value }) => {
       setServerError('')
       await login.mutateAsync({ username: value.username.trim(), password: value.password }).catch(() => {})
@@ -67,7 +92,7 @@ function LoginPage() {
               form.handleSubmit()
             }}
           >
-            <form.Field name="username" validators={vString(minLen('Username', 3))}>
+            <form.Field name="username">
               {(field) => (
                 <TextField
                   label="Username"
@@ -79,7 +104,7 @@ function LoginPage() {
               )}
             </form.Field>
 
-            <form.Field name="password" validators={vString(minLen('Password', 6))}>
+            <form.Field name="password">
               {(field) => (
                 <TextField
                   label="Password"
@@ -102,13 +127,13 @@ function LoginPage() {
               )}
             </form.Field>
 
-            <ErrorAlert message={serverError} />
+            <ErrorAlert message={locked ? `${serverError} Coba lagi sekitar ${mmss(lockLeft)}.` : serverError} />
 
             <form.Subscribe selector={(s) => s.isSubmitting}>
               {(isSubmitting) => (
-                <button type="submit" className="btn btn-primary w-full" disabled={isSubmitting}>
+                <button type="submit" className="btn btn-primary w-full" disabled={isSubmitting || locked}>
                   {isSubmitting ? <span className="loading loading-spinner loading-sm" /> : null}
-                  Masuk
+                  {locked ? `Terkunci (${mmss(lockLeft)})` : 'Masuk'}
                 </button>
               )}
             </form.Subscribe>

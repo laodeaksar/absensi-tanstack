@@ -1,0 +1,32 @@
+{
+  "id": "1793106392806293-1",
+  "title": "halo?",
+  "updatedAt": "2026-10-27T21:06:41.630978",
+  "messages": [
+    {
+      "id": "1793106400778865-2",
+      "role": "user",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "halo?"
+        }
+      ]
+    },
+    {
+      "id": "1793106400778967-3",
+      "role": "assistant",
+      "blocks": []
+    },
+    {
+      "id": "1793106401630733-4",
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "⚠ API error 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"models/gemini-3.6-flash-thinking-off is not found for API version v1main, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.\",\n    \"status\": \"NOT_FOUND\"\n  }\n}\n]"
+        }
+      ]
+    }
+  ]
+}

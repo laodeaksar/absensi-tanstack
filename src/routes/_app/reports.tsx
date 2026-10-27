@@ -6,6 +6,7 @@ import { useTable } from '@tanstack/react-table'
 import { Printer } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { classesQuery, reportQuery, settingsQuery } from '~/lib/queries'
+import { makeReportFilterSchema } from '~/lib/report-schema'
 import { columnHelperFor, features } from '~/lib/table'
 import { isActive, parseClassIds } from '~/lib/types'
 import type { ReportRow } from '~/lib/types'
@@ -42,15 +43,30 @@ function ReportsPage() {
   const { data: classes } = useSuspenseQuery(classesQuery)
   const { data: settings } = useSuspenseQuery(settingsQuery)
 
-  const mine = me.role === 'guru' ? parseClassIds(me.assigned_classes) : null
-  const options = classes.filter((c) => isActive(c.is_active) && (!mine || mine.includes(c.class_id)))
+  // Aturan dinamis: kelas yang tersedia bergantung peran (guru hanya kelasnya)
+  const options = useMemo(() => {
+    const mine = me.role === 'guru' ? parseClassIds(me.assigned_classes) : null
+    return classes.filter((c) => isActive(c.is_active) && (!mine || mine.includes(c.class_id)))
+  }, [classes, me.role, me.assigned_classes])
+
+  const schema = useMemo(() => makeReportFilterSchema({ classIds: options.map((c) => c.class_id) }), [options])
+
+  // Parameter URL divalidasi dengan aturan yang sama sebelum data diminta
+  const urlCheck = useMemo(
+    () =>
+      search.go
+        ? schema.safeParse({ startDate: search.startDate ?? '', endDate: search.endDate ?? '', classId: search.classId ?? '' })
+        : null,
+    [schema, search.go, search.startDate, search.endDate, search.classId],
+  )
 
   const filters = { startDate: search.startDate, endDate: search.endDate, classId: search.classId }
-  const report = useQuery({ ...reportQuery(filters), enabled: !!search.go })
+  const report = useQuery({ ...reportQuery(filters), enabled: !!urlCheck?.success })
   const data = report.data ?? []
 
   const form = useForm({
     defaultValues: { startDate: search.startDate ?? '', endDate: search.endDate ?? '', classId: search.classId ?? '' },
+    validators: { onChange: schema, onSubmit: schema },
     onSubmit: ({ value }) => {
       navigate({
         to: '/reports',
@@ -102,7 +118,7 @@ function ReportsPage() {
       <div className="card no-print border border-base-300 bg-base-100">
         <form
           noValidate
-          className="card-body grid grid-cols-1 items-end gap-4 p-5 md:grid-cols-4"
+          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-4"
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -114,14 +130,14 @@ function ReportsPage() {
           <form.Field name="classId">
             {(f) => (
               <SelectField label="Kelas" field={f}>
-                <option disabled selected value="">Semua Kelas --</option>
+                <option disabled selected value="">Semua Kelas</option>
                 {options.map((c) => (
                   <option key={c.class_id} value={c.class_id}>{c.class_name}</option>
                 ))}
               </SelectField>
             )}
           </form.Field>
-          <button type="submit" className="btn btn-primary w-full">Terapkan Filter</button>
+          <button type="submit" className="btn btn-primary mt-6 w-full">Terapkan Filter</button>
         </form>
       </div>
 
@@ -133,7 +149,8 @@ function ReportsPage() {
         <p className="text-base-content/70">Periode: {search.startDate || '-'} s.d {search.endDate || '-'}</p>
       </div>
 
-      {report.isFetching && search.go ? <PageSpinner /> : null}
+      {urlCheck && !urlCheck.success ? <ErrorAlert message={urlCheck.error.issues[0]?.message} /> : null}
+      {report.isFetching && urlCheck?.success ? <PageSpinner /> : null}
       <ErrorAlert message={report.error?.message} />
 
       {data.length > 0 ? (

@@ -8,10 +8,13 @@ import { allowRoles } from '~/lib/auth'
 import { api } from '~/lib/api'
 import { classesQuery, qk, teachersQuery } from '~/lib/queries'
 import { columnHelperFor, features } from '~/lib/table'
+import { makeTeacherSchema } from '~/lib/teacher-schema'
 import { toast } from '~/lib/toast'
 import { isActive, parseClassIds } from '~/lib/types'
 import type { Teacher, TeacherInput } from '~/lib/types'
-import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, TextField, vString } from '~/components/ui'
+import { firstMessage } from '~/lib/validation'
+import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, TextField } from '~/components/ui'
+import { PasswordStrength } from '~/components/PasswordStrength'
 
 export const Route = createFileRoute('/_app/teachers')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
@@ -159,19 +162,28 @@ function TeachersPage() {
   )
 }
 
-function TeacherForm({ 
-  teacher, 
-  onDone, 
-  onCancel 
-}: { 
-  teacher: Teacher | null; 
-  onDone: () => void; 
-  onCancel: () => void 
-}) {
+function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; onDone: () => void; onCancel: () => void }) {
   const { data: classes } = useSuspenseQuery(classesQuery)
+  const { data: teachers } = useSuspenseQuery(teachersQuery)
   const isNew = !teacher
-  const assigned = teacher ? parseClassIds(teacher.assigned_classes) : []
-  const visibleClasses = classes.filter((c) => isActive(c.is_active) || assigned.includes(c.class_id))
+  const assigned = useMemo(() => (teacher ? parseClassIds(teacher.assigned_classes) : []), [teacher])
+
+  // Kelas yang bisa dipilih: kelas aktif + kelas yang sudah diampu guru ini
+  const visibleClasses = useMemo(
+    () => classes.filter((c) => isActive(c.is_active) || assigned.includes(c.class_id)),
+    [classes, assigned],
+  )
+
+  // Aturan dibuat dari data terbaru: username/NIP ganda, kelas valid, password wajib hanya untuk guru baru
+  const schema = useMemo(
+    () =>
+      makeTeacherSchema({
+        teachers,
+        editingId: teacher?.user_id,
+        classIds: visibleClasses.map((c) => c.class_id),
+      }),
+    [teachers, teacher?.user_id, visibleClasses],
+  )
 
   const save = useMutation({
     mutationFn: (v: TeacherInput) => api.saveTeacher(v),
@@ -192,6 +204,8 @@ function TeacherForm({
       assigned_classes: assigned,
       is_active: teacher ? isActive(teacher.is_active) : true,
     },
+    validators: { onChange: schema, onSubmit: schema },
+    onSubmitInvalid: () => toast.error('Periksa kembali isian yang ditandai merah.'),
     onSubmit: async ({ value }) => {
       const payload: TeacherInput = {
         user_id: teacher?.user_id ?? '',
@@ -218,82 +232,67 @@ function TeacherForm({
         form.handleSubmit()
       }}
     >
-      <form.Field name="full_name" validators={vString(({ value }) => (!value.trim() ? 'Nama lengkap wajib diisi' : undefined))}>
-        {(f) => <TextField label="Nama Lengkap" field={f} />}
-      </form.Field>
+      <form.Field name="full_name">{(f) => <TextField label="Nama Lengkap" field={f} />}</form.Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <form.Field name="nip" validators={vString(({ value }) => (value.trim() && !/^[0-9]{5,30}$/.test(value.trim()) ? 'NIP hanya angka (5-30 digit)' : undefined))}>
-          {(f) => <TextField label="NIP" field={f} inputMode="numeric" />}
-        </form.Field>
-        <form.Field name="phone" validators={vString(({ value }) => (value.trim() && !/^[0-9+][0-9\s-]{5,19}$/.test(value.trim()) ? 'Nomor HP tidak valid' : undefined))}>
-          {(f) => <TextField label="No. HP" field={f} inputMode="tel" />}
-        </form.Field>
+        <form.Field name="nip">{(f) => <TextField label="NIP" field={f} inputMode="numeric" />}</form.Field>
+        <form.Field name="phone">{(f) => <TextField label="No. HP" field={f} inputMode="tel" />}</form.Field>
       </div>
 
-      <form.Field name="email" validators={vString(({ value }) => (value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) ? 'Format email tidak valid' : undefined))}>
-        {(f) => <TextField label="Email" field={f} type="email" />}
-      </form.Field>
+      <form.Field name="email">{(f) => <TextField label="Email" field={f} type="email" />}</form.Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <form.Field
-          name="username"
-          validators={vString(({ value }) =>
-            !value.trim() ? 'Username wajib diisi'
-            : !/^[A-Za-z0-9._-]{3,30}$/.test(value.trim()) ? '3-30 karakter: huruf, angka, titik, garis bawah, atau strip'
-            : undefined)}
-        >
-          {(f) => <TextField label="Username" field={f} autoComplete="off" />}
-        </form.Field>
-        <form.Field
-          name="password"
-          validators={vString(({ value }) =>
-            isNew && !value ? 'Password wajib diisi untuk guru baru'
-            : value && value.length < 6 ? 'Password minimal 6 karakter'
-            : undefined)}
-        >
+        <form.Field name="username">{(f) => <TextField label="Username" field={f} autoComplete="off" />}</form.Field>
+        <form.Field name="password">
           {(f) => (
             <TextField
               label="Password"
               field={f}
               type="password"
               autoComplete="new-password"
-              placeholder={isNew ? 'Minimal 6 karakter' : 'Kosongkan jika tidak diubah'}
+              placeholder={isNew ? 'Minimal 8 karakter' : 'Kosongkan jika tidak diubah'}
             />
           )}
         </form.Field>
       </div>
+      <form.Subscribe selector={(s) => s.values}>
+        {(v) => <PasswordStrength value={v.password} forbidden={[v.username, v.full_name, v.nip, v.phone]} />}
+      </form.Subscribe>
 
       <form.Field name="assigned_classes">
-        {(f) => (
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Kelas yang Diampu</legend>
-            <div className="max-h-40 space-y-2 overflow-y-auto rounded-box border border-base-300 p-3">
-              {visibleClasses.length === 0 ? (
-                <p className="text-sm text-base-content/60">Belum ada kelas aktif.</p>
-              ) : (
-                visibleClasses.map((c) => {
-                  const checked = f.state.value.includes(c.class_id)
-                  return (
-                    <label key={c.class_id} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="checkbox checkbox-sm checkbox-primary"
-                        checked={checked}
-                        onChange={() =>
-                          f.handleChange(checked ? f.state.value.filter((id) => id !== c.class_id) : [...f.state.value, c.class_id])
-                        }
-                      />
-                      <span>
-                        {c.class_name} <span className="text-base-content/40">({c.academic_year || '-'})</span>
-                      </span>
-                    </label>
-                  )
-                })
-              )}
-            </div>
-          </fieldset>
-        )}
+        {(f) => {
+          const msg = f.state.meta.isTouched ? firstMessage(f.state.meta.errors) : ''
+          return (
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">Kelas yang Diampu</legend>
+              <div className={`max-h-40 space-y-2 overflow-y-auto rounded-box border p-3 ${msg ? 'border-error' : 'border-base-300'}`}>
+                {visibleClasses.length === 0 ? (
+                  <p className="text-sm text-base-content/60">Belum ada kelas aktif.</p>
+                ) : (
+                  visibleClasses.map((c) => {
+                    const checked = f.state.value.includes(c.class_id)
+                    return (
+                      <label key={c.class_id} className="flex cursor-pointer items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm checkbox-primary"
+                          checked={checked}
+                          onChange={() =>
+                            f.handleChange(checked ? f.state.value.filter((id) => id !== c.class_id) : [...f.state.value, c.class_id])
+                          }
+                        />
+                        <span>
+                          {c.class_name} <span className="text-base-content/40">({c.academic_year || '-'})</span>
+                        </span>
+                      </label>
+                    )
+                  })
+                )}
+              </div>
+              {msg ? <p role="alert" className="mt-1 text-xs text-error">{msg}</p> : null}
+            </fieldset>
+          )
+        }}
       </form.Field>
 
       <form.Field name="is_active">

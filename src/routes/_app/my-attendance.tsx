@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
@@ -6,9 +6,10 @@ import { useTable } from '@tanstack/react-table'
 import { allowRoles } from '~/lib/auth'
 import { monthStart, todayStr } from '~/lib/date'
 import { myAttendanceQuery } from '~/lib/queries'
+import { makeMyRangeSchema } from '~/lib/report-schema'
 import { columnHelperFor, features } from '~/lib/table'
 import type { MyAttendance } from '~/lib/types'
-import { DataTable, ErrorAlert, PageSpinner, Pager, StatusBadge, TextField, vString } from '~/components/ui'
+import { DataTable, ErrorAlert, PageSpinner, Pager, StatusBadge, TextField } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/my-attendance')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['siswa']),
@@ -29,8 +30,12 @@ function MyAttendancePage() {
   const data = q.data?.records ?? []
   const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 15 } } })
 
+  // Aturan: tanggal wajib, awal <= akhir, akhir tidak di masa depan, rentang dibatasi
+  const schema = useMemo(() => makeMyRangeSchema(), [])
+
   const form = useForm({
     defaultValues: range,
+    validators: { onChange: schema, onSubmit: schema },
     onSubmit: ({ value }) => setRange(value),
   })
 
@@ -57,33 +62,16 @@ function MyAttendancePage() {
       <div className="card border border-base-300 bg-base-100">
         <form
           noValidate
-          className="card-body grid grid-cols-1 items-end gap-4 p-5 md:grid-cols-3"
+          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-3"
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
             form.handleSubmit()
           }}
         >
-          <form.Field name="startDate" validators={vString(({ value }) => (!value ? 'Tanggal awal wajib diisi' : undefined))}>
-            {(f) => <TextField label="Dari Tanggal" field={f} type="date" />}
-          </form.Field>
-          <form.Field
-            name="endDate"
-            validators={{
-              onChangeListenTo: ['startDate'],
-              onChange: ({ value, fieldApi }) =>
-                !value ? 'Tanggal akhir wajib diisi'
-                : value < fieldApi.form.getFieldValue('startDate') ? 'Tanggal awal tidak boleh melebihi tanggal akhir'
-                : undefined,
-              onSubmit: ({ value, fieldApi }) =>
-                !value ? 'Tanggal akhir wajib diisi'
-                : value < fieldApi.form.getFieldValue('startDate') ? 'Tanggal awal tidak boleh melebihi tanggal akhir'
-                : undefined,
-            }}
-          >
-            {(f) => <TextField label="Sampai Tanggal" field={f} type="date" />}
-          </form.Field>
-          <button type="submit" className="btn btn-primary w-full">Tampilkan</button>
+          <form.Field name="startDate">{(f) => <TextField label="Dari Tanggal" field={f} type="date" max={todayStr()} />}</form.Field>
+          <form.Field name="endDate">{(f) => <TextField label="Sampai Tanggal" field={f} type="date" max={todayStr()} />}</form.Field>
+          <button type="submit" className="btn btn-primary mt-6 w-full">Tampilkan</button>
         </form>
       </div>
 
