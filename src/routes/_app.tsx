@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import {
-  BarChart3, CalendarCheck, ClipboardCheck, DoorOpen, LayoutDashboard, LogOut, Menu, School, Settings as SettingsIcon, UserCog, Users,
+  BarChart3, BookOpenCheck, CalendarCheck, ClipboardCheck, ClipboardList, DoorOpen, LayoutDashboard, LogOut, Menu, School, Settings as SettingsIcon, UserCog, Users,
 } from 'lucide-react'
 import { requireUser } from '~/lib/auth'
 import { settingsQuery } from '~/lib/queries'
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/_app')({
   component: AppLayout,
 })
 
-type NavTo = '/dashboard' | '/attendance' | '/reports' | '/students' | '/classes' | '/teachers' | '/my-attendance' | '/settings'
+type NavTo = '/dashboard' | '/attendance' | '/reports' | '/assignments' | '/tasks' | '/students' | '/classes' | '/teachers' | '/my-attendance' | '/settings'
 
 function NavItem({ to, icon, label, onNavigate }: { to: NavTo; icon: React.ReactNode; label: string; onNavigate: () => void }) {
   return (
@@ -92,6 +92,7 @@ function AppLayout() {
                 <NavItem to="/dashboard" icon={<LayoutDashboard className={ic} />} label="Dashboard" onNavigate={close} />
                 <li className="menu-title mt-3">Operasional</li>
                 <NavItem to="/attendance" icon={<ClipboardCheck className={ic} />} label="Input Absensi" onNavigate={close} />
+                <NavItem to="/assignments" icon={<ClipboardList className={ic} />} label="Tugas" onNavigate={close} />
                 <NavItem to="/reports" icon={<BarChart3 className={ic} />} label="Laporan" onNavigate={close} />
               </>
             )}
@@ -104,7 +105,10 @@ function AppLayout() {
               </>
             )}
             {isStudent && (
-              <NavItem to="/my-attendance" icon={<CalendarCheck className={ic} />} label="Kehadiran Saya" onNavigate={close} />
+              <>
+                <NavItem to="/my-attendance" icon={<CalendarCheck className={ic} />} label="Kehadiran Saya" onNavigate={close} />
+                <NavItem to="/tasks" icon={<BookOpenCheck className={ic} />} label="Tugas Saya" onNavigate={close} />
+              </>
             )}
             <li className="menu-title mt-3">Sistem</li>
             <NavItem to="/settings" icon={<SettingsIcon className={ic} />} label="Pengaturan" onNavigate={close} />

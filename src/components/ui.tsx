@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 // import type { InputHTMLAttributes, ReactNode } from 'react'
 import { FlexRender } from '@tanstack/react-table'
 import type { Table } from '@tanstack/react-table'
@@ -134,7 +134,7 @@ export const hasError = (field: AnyFieldApi) => !!errorText(field)
 export const vString = (fn: (a: { value: string }) => string | undefined) => ({ onChange: fn, onSubmit: fn })
 
 /** Teruskan error TanStack Form ke Constraint Validation API agar kelas `validator` daisyUI aktif. */
-function useValidity<T extends HTMLInputElement | HTMLSelectElement>(message: string) {
+function useValidity<T extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(message: string) {
   const ref = useRef<T>(null)
   useEffect(() => {
     ref.current?.setCustomValidity(message)
@@ -221,6 +221,38 @@ export function SelectField({
       >
         {children}
       </select>
+    </FieldShell>
+  )
+}
+
+type TextareaExtra = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange' | 'onBlur' | 'name' | 'id'>
+
+export function TextAreaField({ 
+  label, 
+  field, 
+  hint, 
+  ...rest 
+}: { 
+  label: string; 
+  field: AnyFieldApi; 
+  hint?: string 
+} & TextareaExtra) {
+  const message = errorText(field)
+  const ref = useValidity<HTMLTextAreaElement>(message)
+
+  return (
+    <FieldShell label={label} hint={hint} message={message}>
+      <textarea
+        {...rest}
+        ref={ref}
+        id={field.name}
+        name={field.name}
+        value={field.state.value ?? ''}
+        onBlur={field.handleBlur}
+        onChange={(e) => field.handleChange(e.target.value)}
+        aria-invalid={!!message}
+        className={`textarea validator w-full ${message ? 'textarea-error' : ''}`}
+      />
     </FieldShell>
   )
 }
