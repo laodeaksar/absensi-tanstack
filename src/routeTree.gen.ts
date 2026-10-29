@@ -20,6 +20,12 @@ import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppStudentsRouteImport } from './routes/_app/students'
 import { Route as AppTeachersRouteImport } from './routes/_app/teachers'
+import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignments/index'
+import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
+import { Route as AppTasksAssignmentIdRouteImport } from './routes/_app/tasks/$assignmentId'
+import { Route as AppAssignmentsAssignmentIdQuestionsRouteImport } from './routes/_app/assignments/$assignmentId/questions'
+import { Route as AppAssignmentsAssignmentIdSubmissionsRouteImport } from './routes/_app/assignments/$assignmentId/submissions'
+import { Route as AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport } from './routes/_app/assignments/$assignmentId/review.$submissionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -75,6 +81,39 @@ const AppTeachersRoute = AppTeachersRouteImport.update({
   path: '/teachers',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
+  id: '/assignments/',
+  path: '/assignments/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksAssignmentIdRoute = AppTasksAssignmentIdRouteImport.update({
+  id: '/tasks/$assignmentId',
+  path: '/tasks/$assignmentId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssignmentsAssignmentIdQuestionsRoute =
+  AppAssignmentsAssignmentIdQuestionsRouteImport.update({
+    id: '/assignments/$assignmentId/questions',
+    path: '/assignments/$assignmentId/questions',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppAssignmentsAssignmentIdSubmissionsRoute =
+  AppAssignmentsAssignmentIdSubmissionsRouteImport.update({
+    id: '/assignments/$assignmentId/submissions',
+    path: '/assignments/$assignmentId/submissions',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppAssignmentsAssignmentIdReviewSubmissionIdRoute =
+  AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport.update({
+    id: '/assignments/$assignmentId/review/$submissionId',
+    path: '/assignments/$assignmentId/review/$submissionId',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,6 +126,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/students': typeof AppStudentsRoute
   '/teachers': typeof AppTeachersRoute
+  '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
+  '/assignments/': typeof AppAssignmentsIndexRoute
+  '/tasks/': typeof AppTasksIndexRoute
+  '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
+  '/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
+  '/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,6 +144,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/students': typeof AppStudentsRoute
   '/teachers': typeof AppTeachersRoute
+  '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
+  '/assignments': typeof AppAssignmentsIndexRoute
+  '/tasks': typeof AppTasksIndexRoute
+  '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
+  '/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
+  '/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +164,12 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/students': typeof AppStudentsRoute
   '/_app/teachers': typeof AppTeachersRoute
+  '/_app/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
+  '/_app/assignments/': typeof AppAssignmentsIndexRoute
+  '/_app/tasks/': typeof AppTasksIndexRoute
+  '/_app/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
+  '/_app/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
+  '/_app/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,6 +184,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/students'
     | '/teachers'
+    | '/tasks/$assignmentId'
+    | '/assignments/'
+    | '/tasks/'
+    | '/assignments/$assignmentId/questions'
+    | '/assignments/$assignmentId/submissions'
+    | '/assignments/$assignmentId/review/$submissionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,6 +202,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/students'
     | '/teachers'
+    | '/tasks/$assignmentId'
+    | '/assignments'
+    | '/tasks'
+    | '/assignments/$assignmentId/questions'
+    | '/assignments/$assignmentId/submissions'
+    | '/assignments/$assignmentId/review/$submissionId'
   id:
     | '__root__'
     | '/'
@@ -152,6 +221,12 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/students'
     | '/_app/teachers'
+    | '/_app/tasks/$assignmentId'
+    | '/_app/assignments/'
+    | '/_app/tasks/'
+    | '/_app/assignments/$assignmentId/questions'
+    | '/_app/assignments/$assignmentId/submissions'
+    | '/_app/assignments/$assignmentId/review/$submissionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -239,6 +314,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeachersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/assignments/': {
+      id: '/_app/assignments/'
+      path: '/assignments'
+      fullPath: '/assignments/'
+      preLoaderRoute: typeof AppAssignmentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks/': {
+      id: '/_app/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof AppTasksIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks/$assignmentId': {
+      id: '/_app/tasks/$assignmentId'
+      path: '/tasks/$assignmentId'
+      fullPath: '/tasks/$assignmentId'
+      preLoaderRoute: typeof AppTasksAssignmentIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assignments/$assignmentId/questions': {
+      id: '/_app/assignments/$assignmentId/questions'
+      path: '/assignments/$assignmentId/questions'
+      fullPath: '/assignments/$assignmentId/questions'
+      preLoaderRoute: typeof AppAssignmentsAssignmentIdQuestionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assignments/$assignmentId/submissions': {
+      id: '/_app/assignments/$assignmentId/submissions'
+      path: '/assignments/$assignmentId/submissions'
+      fullPath: '/assignments/$assignmentId/submissions'
+      preLoaderRoute: typeof AppAssignmentsAssignmentIdSubmissionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assignments/$assignmentId/review/$submissionId': {
+      id: '/_app/assignments/$assignmentId/review/$submissionId'
+      path: '/assignments/$assignmentId/review/$submissionId'
+      fullPath: '/assignments/$assignmentId/review/$submissionId'
+      preLoaderRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -251,6 +368,12 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppStudentsRoute: typeof AppStudentsRoute
   AppTeachersRoute: typeof AppTeachersRoute
+  AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute
+  AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
+  AppTasksIndexRoute: typeof AppTasksIndexRoute
+  AppAssignmentsAssignmentIdQuestionsRoute: typeof AppAssignmentsAssignmentIdQuestionsRoute
+  AppAssignmentsAssignmentIdSubmissionsRoute: typeof AppAssignmentsAssignmentIdSubmissionsRoute
+  AppAssignmentsAssignmentIdReviewSubmissionIdRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -262,6 +385,15 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRoute,
   AppTeachersRoute: AppTeachersRoute,
+  AppTasksAssignmentIdRoute: AppTasksAssignmentIdRoute,
+  AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
+  AppTasksIndexRoute: AppTasksIndexRoute,
+  AppAssignmentsAssignmentIdQuestionsRoute:
+    AppAssignmentsAssignmentIdQuestionsRoute,
+  AppAssignmentsAssignmentIdSubmissionsRoute:
+    AppAssignmentsAssignmentIdSubmissionsRoute,
+  AppAssignmentsAssignmentIdReviewSubmissionIdRoute:
+    AppAssignmentsAssignmentIdReviewSubmissionIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
