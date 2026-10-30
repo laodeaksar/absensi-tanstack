@@ -338,7 +338,7 @@ function AssignmentForm({
                 : undefined
             }
           >
-            <option value="" disabled>
+            <option disabled selected value="">
               -- Pilih Kelas --
             </option>
             {options.map((c) => (

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Thermometer, UserCheck, UserX, Users } from "lucide-react";
+import { DynamicIcon, IconName } from "lucide-react/dynamic"
 import type { ReactNode } from "react";
 import { allowRoles } from "~/lib/auth";
 import { dashboardQuery } from "~/lib/queries";

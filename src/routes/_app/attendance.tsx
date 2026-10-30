@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useForm, useStore } from '@tanstack/react-form'
+import { useForm, useSelector } from '@tanstack/react-form'
 import type { AnyFieldApi } from '@tanstack/react-form'
 import { useTable } from '@tanstack/react-table'
 import { Save } from 'lucide-react'
@@ -134,7 +134,7 @@ const STATUS_STYLE = {
 
 /** Kolom keterangan: pesan error muncul setelah disentuh atau setelah percobaan simpan. */
 function NotesCell({ field }: Readonly<{ field: AnyFieldApi }>) {
-  const attempts = useStore(field.form.store, (s) => s.submissionAttempts)
+  const attempts = useSelector(field.form.store, (s) => s.submissionAttempts)
   const msg = field.state.meta.isTouched || attempts > 0 ? firstMessage(field.state.meta.errors) : ''
   return (
     <div className="min-w-48">
