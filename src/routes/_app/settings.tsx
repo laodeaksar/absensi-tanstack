@@ -39,7 +39,7 @@ function SchoolSettings() {
     mutationFn: api.saveSettings,
     onSuccess: (r) => {
       toast.success(r.message || 'Pengaturan tersimpan')
-      qc.invalidateQueries({ queryKey: qk.settings })
+      void qc.invalidateQueries({ queryKey: qk.settings })
     },
   })
 
@@ -74,7 +74,7 @@ function SchoolSettings() {
       onSubmit={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        form.handleSubmit()
+        void form.handleSubmit()
       }}
       className="space-y-6"
     >
@@ -156,7 +156,7 @@ function PasswordCard() {
         onSubmit={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          form.handleSubmit()
+          void form.handleSubmit()
         }}
       >
         <h3 className="card-title text-base">Akun Saya</h3>

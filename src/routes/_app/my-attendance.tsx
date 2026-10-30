@@ -66,7 +66,7 @@ function MyAttendancePage() {
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            form.handleSubmit()
+            void form.handleSubmit()
           }}
         >
           <form.Field name="startDate">{(f) => <TextField label="Dari Tanggal" field={f} type="date" max={todayStr()} />}</form.Field>

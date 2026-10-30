@@ -57,8 +57,8 @@ function AttendancePage() {
     defaultValues: { date: search.date ?? todayStr(), classId: search.classId ?? '' },
     validators: { onChange: filterSchema, onSubmit: filterSchema },
     onSubmit: ({ value }) => {
-      qc.invalidateQueries({ queryKey: qk.attendance })
-      navigate({ to: '/attendance', search: { date: value.date, classId: value.classId } })
+      void qc.invalidateQueries({ queryKey: qk.attendance })
+      void navigate({ to: '/attendance', search: { date: value.date, classId: value.classId } })
     },
   })
 
@@ -79,7 +79,7 @@ function AttendancePage() {
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            form.handleSubmit()
+            void form.handleSubmit()
           }}
         >
           <form.Field name="date">
@@ -114,7 +114,7 @@ function AttendancePage() {
   )
 }
 
-function AttendanceSection({ date, classId }: { date: string; classId: string }) {
+function AttendanceSection({ date, classId }: Readonly<{ date: string; classId: string }>) {
   const q = useQuery(attendanceFormQuery(date, classId))
   if (q.isPending) return <PageSpinner />
   if (q.error) return <ErrorAlert message={q.error.message} />
@@ -133,7 +133,7 @@ const STATUS_STYLE = {
 } as const
 
 /** Kolom keterangan: pesan error muncul setelah disentuh atau setelah percobaan simpan. */
-function NotesCell({ field }: { field: AnyFieldApi }) {
+function NotesCell({ field }: Readonly<{ field: AnyFieldApi }>) {
   const attempts = useStore(field.form.store, (s) => s.submissionAttempts)
   const msg = field.state.meta.isTouched || attempts > 0 ? firstMessage(field.state.meta.errors) : ''
   return (
@@ -151,7 +151,7 @@ function NotesCell({ field }: { field: AnyFieldApi }) {
   )
 }
 
-function AttendanceForm({ date, classId, entries }: { date: string; classId: string; entries: AttendanceEntry[] }) {
+function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; classId: string; entries: AttendanceEntry[] }>) {
   const qc = useQueryClient()
 
   const rows = useMemo<Row[]>(
@@ -170,9 +170,9 @@ function AttendanceForm({ date, classId, entries }: { date: string; classId: str
     mutationFn: (payload: { student_id: string; status: string; notes: string }[]) => api.submitAttendance(date, classId, payload),
     onSuccess: (r) => {
       toast.success(r.message || 'Data berhasil disimpan')
-      qc.invalidateQueries({ queryKey: qk.attendance })
-      qc.invalidateQueries({ queryKey: qk.dashboard })
-      qc.invalidateQueries({ queryKey: qk.report })
+      void qc.invalidateQueries({ queryKey: qk.attendance })
+      void qc.invalidateQueries({ queryKey: qk.dashboard })
+      void qc.invalidateQueries({ queryKey: qk.report })
     },
     onError: (e) => toast.error(e.message),
   })
@@ -247,7 +247,7 @@ function AttendanceForm({ date, classId, entries }: { date: string; classId: str
       onSubmit={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        form.handleSubmit()
+        void form.handleSubmit()
       }}
     >
       <div className="flex items-center justify-between border-b border-base-300 bg-base-200/60 p-4">
