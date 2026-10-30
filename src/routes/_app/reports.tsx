@@ -68,7 +68,7 @@ function ReportsPage() {
     defaultValues: { startDate: search.startDate ?? '', endDate: search.endDate ?? '', classId: search.classId ?? '' },
     validators: { onChange: schema, onSubmit: schema },
     onSubmit: ({ value }) => {
-      navigate({
+      void navigate({
         to: '/reports',
         search: {
           startDate: value.startDate || undefined,
@@ -122,7 +122,7 @@ function ReportsPage() {
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            form.handleSubmit()
+            void form.handleSubmit()
           }}
         >
           <form.Field name="startDate">{(f) => <TextField label="Dari Tanggal" field={f} type="date" />}</form.Field>
