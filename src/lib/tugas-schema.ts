@@ -4,7 +4,7 @@ import { isRealDate } from './date'
 export const MIN_OPTIONS = 2
 export const MAX_OPTIONS = 6
 export const ESSAY_MAX = 5000
-export const letter = (i: number) => String.fromCharCode(65 + i)
+export const letter = (i: number) => String.fromCodePoint(65 + i)
 
 /** 'yyyy-MM-ddTHH:mm' menurut waktu lokal browser (untuk membandingkan dengan input datetime-local). */
 export function nowLocalInput() {
@@ -54,7 +54,7 @@ export function makeAssignmentSchema(r: AssignmentRules) {
 export function makeQuestionSchema() {
   return z
     .object({
-      type: z.string().refine((v) => v === 'pilihan_ganda' || v === 'esai', 'Pilih tipe soal'),
+      type: z.enum(['pilihan_ganda', 'esai'], { error: 'Pilih tipe soal' }),
       text: z.string().trim().min(1, 'Pertanyaan wajib diisi').max(2000, 'Maksimal 2000 karakter'),
       options: z.array(z.string()),
       correct_index: z.string(),

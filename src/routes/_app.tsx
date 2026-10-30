@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_app')({
     if (me.must_change_password && location.pathname !== '/settings') throw redirect({ to: '/settings' })
     return { me }
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(settingsQuery),
+  loader: ({ context }) => context.queryClient.query(settingsQuery),
   component: AppLayout,
 })
 

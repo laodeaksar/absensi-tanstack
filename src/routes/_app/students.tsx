@@ -17,7 +17,7 @@ import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, SelectFiel
 export const Route = createFileRoute('/_app/students')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(studentsQuery), context.queryClient.ensureQueryData(classesQuery)]),
+    Promise.all([context.queryClient.query(studentsQuery), context.queryClient.query(classesQuery)]),
   component: StudentsPage,
 })
 

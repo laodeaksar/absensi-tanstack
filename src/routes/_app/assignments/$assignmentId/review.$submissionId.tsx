@@ -12,7 +12,7 @@ import { ErrorAlert, TextField, TextAreaField } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/review/$submissionId')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(reviewQuery(params.submissionId)),
+  loader: ({ context, params }) => context.queryClient.query(reviewQuery(params.submissionId)),
   component: ReviewPage,
 })
 
@@ -36,10 +36,10 @@ function ReviewPage() {
     mutationFn: (grades: { question_id: string; score: string; feedback: string }[]) => tugas.grade(submissionId, grades),
     onSuccess: (r) => {
       toast.success(r.message)
-      qc.invalidateQueries({ queryKey: tk.review(submissionId) })
-      qc.invalidateQueries({ queryKey: tk.subs(assignmentId) })
-      qc.invalidateQueries({ queryKey: tk.list })
-      navigate({ to: '/assignments/$assignmentId/submissions', params: { assignmentId } })
+      void qc.invalidateQueries({ queryKey: tk.review(submissionId) })
+      void qc.invalidateQueries({ queryKey: tk.subs(assignmentId) })
+      void qc.invalidateQueries({ queryKey: tk.list })
+      void navigate({ to: '/assignments/$assignmentId/submissions', params: { assignmentId } })
     },
   })
 
@@ -79,7 +79,7 @@ function ReviewPage() {
         onSubmit={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          form.handleSubmit()
+          void form.handleSubmit()
         }}
       >
         {answers.map((a, n) => {
@@ -98,7 +98,7 @@ function ReviewPage() {
                   </div>
                   <ul className="space-y-1 text-sm">
                     {q.options.map((o, i) => (
-                      <li key={i} className={`flex items-center gap-2 ${i === Number(q.correct_index) ? 'font-semibold text-success' : ''}`}>
+                      <li key={`${q.question_id}-${o}`} className={`flex items-center gap-2 ${i === Number(q.correct_index) ? 'font-semibold text-success' : ''}`}>
                         <span className="w-5">{letter(i)}.</span>
                         <span>{o}</span>
                         {i === chosen ? <span className="badge badge-ghost badge-sm">jawaban siswa</span> : null}
@@ -149,7 +149,7 @@ function ReviewPage() {
               {(grades) => {
                 const manual = grades.reduce((t, g) => {
                   const v = Number(g.score.trim().replace(',', '.'))
-                  return t + (g.score.trim() !== '' && isFinite(v) ? v : 0)
+                  return t + (g.score.trim() !== '' && Number.isFinite(v) ? v : 0)
                 }, 0)
                 const total = submission.auto_score + manual
                 return (

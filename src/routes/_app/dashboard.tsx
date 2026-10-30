@@ -8,7 +8,7 @@ import { StatusDonut, TrendChart } from '~/components/charts'
 
 export const Route = createFileRoute('/_app/dashboard')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
-  loader: ({ context }) => context.queryClient.ensureQueryData(dashboardQuery),
+  loader: ({ context }) => context.queryClient.query(dashboardQuery),
   component: DashboardPage,
 })
 

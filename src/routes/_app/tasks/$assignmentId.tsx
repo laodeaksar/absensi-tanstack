@@ -13,7 +13,7 @@ import { ErrorAlert, PageSpinner, TextAreaField, useConfirm } from '~/components
 
 export const Route = createFileRoute('/_app/tasks/$assignmentId')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['siswa']),
-  loader: ({ context }) => context.queryClient.ensureQueryData(myTasksQuery),
+  loader: ({ context }) => context.queryClient.query(myTasksQuery),
   component: TaskPage,
 })
 

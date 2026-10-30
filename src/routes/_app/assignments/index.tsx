@@ -19,7 +19,7 @@ import { DataTable, ErrorAlert, Modal, Pager, SearchBox, SelectField, TextField,
 export const Route = createFileRoute('/_app/assignments/')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(assignmentsQuery), context.queryClient.ensureQueryData(classesQuery)]),
+    Promise.all([context.queryClient.query(assignmentsQuery), context.queryClient.query(classesQuery)]),
   component: AssignmentsPage,
 })
 

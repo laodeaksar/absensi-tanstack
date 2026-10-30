@@ -11,7 +11,7 @@ import { DataTable, Pager, SearchBox } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/submissions')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(submissionsQuery(params.assignmentId)),
+  loader: ({ context, params }) => context.queryClient.query(submissionsQuery(params.assignmentId)),
   component: SubmissionsPage,
 })
 
@@ -24,57 +24,76 @@ const STATUS: Record<SubmissionStatus, { label: string; cls: string }> = {
 
 const col = columnHelperFor<SubmissionRow>()
 
+function StudentNameCell({ name }: Readonly<{ name: string }>) {
+  return <span className="font-medium">{name}</span>
+}
+
+function SubmissionStatusCell({ status }: Readonly<{ status: SubmissionStatus }>) {
+  const value = STATUS[status]
+  return <span className={`badge badge-soft badge-sm ${value.cls}`}>{value.label}</span>
+}
+
+function SubmissionScoreCell({ row }: Readonly<{ row: SubmissionRow }>) {
+  if (row.status === 'dinilai') {
+    return <span className="font-medium">{row.nilai} <span className="text-xs text-base-content/60">({row.score}/{row.max_score})</span></span>
+  }
+  if (row.status === 'diserahkan') {
+    return <span className="text-xs text-base-content/60">Pilihan ganda: {row.score}</span>
+  }
+  return <span className="text-base-content/40">-</span>
+}
+
+function SubmittedAtCell({ value }: Readonly<{ value: number | '' }>) {
+  return <>{value === '' ? '-' : new Date(Number(value)).toLocaleString('id-ID')}</>
+}
+
+function SubmissionActionCell({ row, assignmentId }: Readonly<{ row: SubmissionRow; assignmentId: string }>) {
+  if (row.status !== 'diserahkan' && row.status !== 'dinilai') return null
+  return (
+    <Link
+      to="/assignments/$assignmentId/review/$submissionId"
+      params={{ assignmentId, submissionId: row.submission_id }}
+      className="btn btn-ghost btn-xs text-primary"
+    >
+      {row.status === 'diserahkan' ? 'Nilai' : 'Lihat / Ubah'}
+    </Link>
+  )
+}
+
+function createSubmissionColumns(assignmentId: string) {
+  return col.columns([
+    col.accessor('nis', { header: 'NIS' }),
+    col.accessor('full_name', { header: 'Nama Siswa', cell: (cell) => <StudentNameCell name={cell.getValue()} /> }),
+    col.accessor('status', {
+      header: 'Status',
+      cell: (cell) => <SubmissionStatusCell status={cell.getValue()} />,
+    }),
+    col.display({
+      id: 'score',
+      header: 'Nilai',
+      enableSorting: false,
+      cell: ({ row }) => <SubmissionScoreCell row={row.original} />,
+    }),
+    col.accessor((row) => row.submitted_at, {
+      id: 'submitted',
+      header: 'Dikumpulkan',
+      cell: (cell) => <SubmittedAtCell value={cell.getValue()} />,
+    }),
+    col.display({
+      id: 'actions',
+      header: 'Aksi',
+      enableSorting: false,
+      cell: ({ row }) => <SubmissionActionCell row={row.original} assignmentId={assignmentId} />,
+    }),
+  ])
+}
+
 function SubmissionsPage() {
   const { assignmentId } = Route.useParams()
   const { data: res } = useSuspenseQuery(submissionsQuery(assignmentId))
   const [search, setSearch] = useState('')
 
-  const columns = useMemo(
-    () =>
-      col.columns([
-        col.accessor('nis', { header: 'NIS' }),
-        col.accessor('full_name', { header: 'Nama Siswa', cell: (i) => <span className="font-medium">{i.getValue()}</span> }),
-        col.accessor('status', {
-          header: 'Status',
-          cell: (i) => <span className={`badge badge-soft badge-sm ${STATUS[i.getValue()].cls}`}>{STATUS[i.getValue()].label}</span>,
-        }),
-        col.display({
-          id: 'score',
-          header: 'Nilai',
-          enableSorting: false,
-          cell: ({ row }) => {
-            const r = row.original
-            if (r.status === 'dinilai') return <span className="font-medium">{r.nilai} <span className="text-xs text-base-content/60">({r.score}/{r.max_score})</span></span>
-            if (r.status === 'diserahkan') return <span className="text-xs text-base-content/60">Pilihan ganda: {r.score}</span>
-            return <span className="text-base-content/40">-</span>
-          },
-        }),
-        col.accessor((r) => r.submitted_at, {
-          id: 'submitted',
-          header: 'Dikumpulkan',
-          cell: (i) => (i.getValue() === '' ? '-' : new Date(Number(i.getValue())).toLocaleString('id-ID')),
-        }),
-        col.display({
-          id: 'actions',
-          header: 'Aksi',
-          enableSorting: false,
-          cell: ({ row }) => {
-            const r = row.original
-            if (r.status !== 'diserahkan' && r.status !== 'dinilai') return null
-            return (
-              <Link
-                to="/assignments/$assignmentId/review/$submissionId"
-                params={{ assignmentId, submissionId: r.submission_id }}
-                className="btn btn-ghost btn-xs text-primary"
-              >
-                {r.status === 'diserahkan' ? 'Nilai' : 'Lihat / Ubah'}
-              </Link>
-            )
-          },
-        }),
-      ]),
-    [assignmentId],
-  )
+  const columns = useMemo(() => createSubmissionColumns(assignmentId), [assignmentId])
 
   const data = useMemo(() => {
     const q = search.trim().toLowerCase()

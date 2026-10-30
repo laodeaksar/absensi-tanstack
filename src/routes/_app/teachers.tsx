@@ -19,7 +19,7 @@ import { PasswordStrength } from '~/components/PasswordStrength'
 export const Route = createFileRoute('/_app/teachers')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(teachersQuery), context.queryClient.ensureQueryData(classesQuery)]),
+    Promise.all([context.queryClient.query(teachersQuery), context.queryClient.query(classesQuery)]),
   component: TeachersPage,
 })
 

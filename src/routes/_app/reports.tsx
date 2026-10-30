@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_app/reports')({
     go: s.go === true || s.go === 'true' ? true : undefined,
   }),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(classesQuery), context.queryClient.ensureQueryData(settingsQuery)]),
+    Promise.all([context.queryClient.query(classesQuery), context.queryClient.query(settingsQuery)]),
   component: ReportsPage,
 })
 

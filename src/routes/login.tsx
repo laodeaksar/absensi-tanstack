@@ -12,10 +12,10 @@ import { ErrorAlert, TextField } from '~/components/ui'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async ({ context }) => {
-    const me = await context.queryClient.ensureQueryData(meQuery)
+    const me = await context.queryClient.query(meQuery)
     if (me) throw redirect({ to: homeFor(me) })
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(publicSettingsQuery),
+  loader: ({ context }) => context.queryClient.query(publicSettingsQuery),
   component: LoginPage,
 })
 

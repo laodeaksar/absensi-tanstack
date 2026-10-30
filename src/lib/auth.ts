@@ -8,7 +8,7 @@ export type HomePath = '/dashboard' | '/my-attendance'
 export const homeFor = (u: SessionUser): HomePath => (u.role === 'siswa' ? '/my-attendance' : '/dashboard')
 
 export async function requireUser(ctx: { queryClient: QueryClient }) {
-  const me = await ctx.queryClient.ensureQueryData(meQuery)
+  const me = await ctx.queryClient.query(meQuery)
   if (!me) throw redirect({ to: '/login' })
   return me
 }

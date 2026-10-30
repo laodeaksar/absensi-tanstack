@@ -59,7 +59,7 @@ const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ ne
 /** RPC generik untuk semua endpoint yang butuh login. Token tidak pernah sampai ke browser. */
 export const gasRpc = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
+  .validator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
   .handler(async ({ data, context }) => {
     try {
       const res = await callGas<any>(data.fn, [context.token, ...data.args])
@@ -75,7 +75,7 @@ export const gasRpc = createServerFn({ method: 'POST' })
   })
 
 export const loginFn = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
+  .validator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
   .handler(async ({ data }) => {
     const res = await callGas<{ token: string; user: SessionUser }>('login', [data.username, data.password])
     setCookie(TOKEN_COOKIE, res.token, cookieOptions())

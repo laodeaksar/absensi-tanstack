@@ -4,7 +4,7 @@ import { meQuery } from '~/lib/queries'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async ({ context }) => {
-    const me = await context.queryClient.ensureQueryData(meQuery)
+    const me = await context.queryClient.query(meQuery)
     throw redirect({ to: me ? homeFor(me) : '/login' })
   },
 })

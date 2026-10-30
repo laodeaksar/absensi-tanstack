@@ -18,9 +18,9 @@ export const Route = createFileRoute('/_app/classes')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
   loader: ({ context }) =>
     Promise.all([
-      context.queryClient.ensureQueryData(classesQuery),
-      context.queryClient.ensureQueryData(teachersQuery),
-      context.queryClient.ensureQueryData(settingsQuery),
+      context.queryClient.query(classesQuery),
+      context.queryClient.query(teachersQuery),
+      context.queryClient.query(settingsQuery),
     ]),
   component: ClassesPage,
 })

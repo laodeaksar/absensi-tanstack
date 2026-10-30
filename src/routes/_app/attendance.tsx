@@ -25,7 +25,7 @@ export const Route = createFileRoute('/_app/attendance')({
     classId: typeof s.classId === 'string' ? s.classId : undefined,
   }),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(classesQuery), context.queryClient.ensureQueryData(settingsQuery)]),
+    Promise.all([context.queryClient.query(classesQuery), context.queryClient.query(settingsQuery)]),
   component: AttendancePage,
 })
 
