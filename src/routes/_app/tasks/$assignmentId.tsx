@@ -64,6 +64,20 @@ function TaskPage() {
     },
   });
   
+  const late = useMemo(() => {
+    return task?.status === "belum" && task.due_at !== "" && task.due_at <= nowLocalInput();
+  }, [task]);
+
+  const isLate = late;
+  const isContinuing = task?.status === "berlangsung";
+  const isLoading = start.isPending;
+
+  const label = useMemo(() => {
+    if (isLate) return "Lewat tenggat";
+    if (isContinuing) return "Lanjutkan Mengerjakan";
+    return "Mulai Mengerjakan";
+  }, [isLate, isContinuing]);
+
   if (!task) {
     return (
       <div className="space-y-4">
@@ -74,20 +88,6 @@ function TaskPage() {
       </div>
     );
   }
-
-  const late = useMemo(() => {
-    return task.status === "belum" && task.due_at !== "" && task.due_at <= nowLocalInput();
-  }, [task]);
-
-  const isLate = late;
-  const isContinuing = task.status === "berlangsung";
-  const isLoading = start.isPending;
-
-const label = useMemo(() => {
-  if (isLate) return "Lewat tenggat";
-  if (isContinuing) return "Lanjutkan Mengerjakan";
-  return "Mulai Mengerjakan";
-}, [isLate, isContinuing]);
 
   if (session)
     return <TaskForm session={session} key={session.submission_id} onFinished={() => setSession(null)} />;

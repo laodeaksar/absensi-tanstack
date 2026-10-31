@@ -12,8 +12,6 @@ import { isActive, parseClassIds } from '~/lib/types'
 import type { ReportRow } from '~/lib/types'
 import { DataTable, ErrorAlert, PageSpinner, Pager, SelectField, StatusBadge, TextField } from '~/components/ui'
 
-type Status = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
-
 export const Route = createFileRoute('/_app/reports')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
   validateSearch: (s: Record<string, unknown>) => ({
