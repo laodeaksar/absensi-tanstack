@@ -59,7 +59,7 @@ const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ ne
 /** RPC generik untuk semua endpoint yang butuh login (ke Convex). Token tidak pernah sampai ke browser. */
 export const gasRpc = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
+  .validator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
   .handler(async ({ data, context }) => {
     try {
       const res = await callConvex<any>(data.fn, data.args, context.token)
@@ -75,7 +75,7 @@ export const gasRpc = createServerFn({ method: 'POST' })
   })
 
 export const loginFn = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
+  .validator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
   .handler(async ({ data }) => {
     const res = await callConvex<{ ok: boolean; token?: string; user?: SessionUser; message?: string }>('login', [
       data.username,
