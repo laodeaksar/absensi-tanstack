@@ -14,8 +14,8 @@ const MAX_REPORT_ROWS = 10_000;
 async function assertAttendanceEditable(ctx: QueryCtx, user: Doc<"users">, date: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) fail("Format tanggal tidak valid.");
   if (!isRealDate(date)) fail("Tanggal tidak valid.");
-  if (user.role === "admin") return;
   if (date > todayStr(0)) fail("Tidak dapat mengisi absensi untuk tanggal yang akan datang.");
+  if (user.role === "admin") return;
   const days = Number((await getSettingsMap(ctx)).edit_window_days) || 0;
   if (days > 0 && date < todayStr(-days)) {
     fail(`Absensi tanggal ${date} sudah dikunci. Guru hanya dapat mengisi atau mengubah absensi maksimal ${days} hari ke belakang.`);
@@ -119,7 +119,8 @@ export const getDashboardStats = query({
     }
 
     const from = todayStr(-7);
-    const recent = (await ctx.db.query("attendance").withIndex("by_date", (q) => q.gte("attendance_date", from)).collect()).filter((a) =>
+    const to = todayStr(0);
+    const recent = (await ctx.db.query("attendance").withIndex("by_date", (q) => q.gte("attendance_date", from).lte("attendance_date", to)).collect()).filter((a) =>
       inScope(a.class_id),
     );
 

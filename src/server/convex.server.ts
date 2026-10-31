@@ -1,6 +1,5 @@
 // Hanya berjalan di server. Menjembatani Start -> Convex (menggantikan gas.server.ts / Apps Script).
 import { ConvexHttpClient } from "convex/browser";
-import { ConvexError } from "convex/values";
 import { api } from "~/convex/_generated/api";
 
 type Route = {
@@ -60,8 +59,8 @@ export const ROUTES: Record<string, Route> = {
   getMyResult: q(api.assignment.getMyResult, ([assignmentId]) => ({ assignmentId })),
 };
 
-const isConvexError = (e: unknown): e is ConvexError<unknown> =>
-  e instanceof ConvexError || (typeof e === "object" && e !== null && (e as { name?: string }).name === "ConvexError");
+const isConvexError = (e: unknown): e is { name: string; data: unknown } =>
+  typeof e === "object" && e !== null && (e as { name?: string }).name === "ConvexError" && "data" in e;
 
 export async function callConvex<T = any>(fn: string, args: unknown[] = [], token?: string): Promise<T> {
   const route = ROUTES[fn];
