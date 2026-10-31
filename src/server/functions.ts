@@ -1,7 +1,7 @@
 import { createMiddleware, createServerFn } from '@tanstack/react-start'
 import { deleteCookie, getCookie, setCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import { callGas } from './gas.server'
+import { callConvex } from './convex.server'
 import type { SessionUser } from '~/lib/types'
 
 const TOKEN_COOKIE = 'eduabsen_token'
@@ -17,7 +17,7 @@ function cookieOptions() {
   }
 }
 
-// Daftar fungsi Apps Script yang boleh dipanggil dari browser (token disisipkan server).
+// Daftar fungsi backend yang boleh dipanggil dari browser (token disisipkan server).
 export const GAS_FUNCTIONS = [
   'fetchMasterData',
   'saveStudent',
@@ -56,14 +56,14 @@ const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ ne
   return next({ context: { token } })
 })
 
-/** RPC generik untuk semua endpoint yang butuh login. Token tidak pernah sampai ke browser. */
+/** RPC generik untuk semua endpoint yang butuh login (ke Convex). Token tidak pernah sampai ke browser. */
 export const gasRpc = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .validator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
+  .inputValidator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
   .handler(async ({ data, context }) => {
     try {
-      const res = await callGas<any>(data.fn, [context.token, ...data.args])
-      // Setelah ganti password, sesi lama dibatalkan di Apps Script
+      const res = await callConvex<any>(data.fn, data.args, context.token)
+      // Setelah ganti password, semua sesi dibatalkan di backend
       if (data.fn === 'changePassword') deleteCookie(TOKEN_COOKIE, { path: '/' })
       return res
     } catch (e) {
@@ -75,9 +75,13 @@ export const gasRpc = createServerFn({ method: 'POST' })
   })
 
 export const loginFn = createServerFn({ method: 'POST' })
-  .validator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
+  .inputValidator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
   .handler(async ({ data }) => {
-    const res = await callGas<{ token: string; user: SessionUser }>('login', [data.username, data.password])
+    const res = await callConvex<{ ok: boolean; token?: string; user?: SessionUser; message?: string }>('login', [
+      data.username,
+      data.password,
+    ])
+    if (!res.ok || !res.token || !res.user) throw new Error(res.message || 'Login gagal.')
     setCookie(TOKEN_COOKIE, res.token, cookieOptions())
     return res.user
   })
@@ -86,7 +90,7 @@ export const logoutFn = createServerFn({ method: 'POST' }).handler(async () => {
   const token = getCookie(TOKEN_COOKIE)
   if (token) {
     try {
-      await callGas('logout', [token])
+      await callConvex('logout', [], token)
     } catch {
       /* abaikan: cookie tetap dihapus */
     }
@@ -100,7 +104,7 @@ export const getMeFn = createServerFn({ method: 'GET' }).handler(async (): Promi
   const token = getCookie(TOKEN_COOKIE)
   if (!token) return null
   try {
-    const res = await callGas<{ user: SessionUser }>('getMe', [token])
+    const res = await callConvex<{ user: SessionUser }>('getMe', [], token)
     return res.user
   } catch (e) {
     if (e instanceof Error && e.message.includes('AUTH_FAILED')) {
@@ -113,7 +117,7 @@ export const getMeFn = createServerFn({ method: 'GET' }).handler(async (): Promi
 
 export const getPublicSettingsFn = createServerFn({ method: 'GET' }).handler(async () => {
   try {
-    const res = await callGas<{ settings: { school_name: string } }>('getPublicSettings')
+    const res = await callConvex<{ settings: { school_name: string } }>('getPublicSettings')
     return res.settings
   } catch {
     return { school_name: 'EduAbsen' }
