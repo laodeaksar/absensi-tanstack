@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useLayoutEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
@@ -43,10 +43,10 @@ function TeachersPage() {
   })
 
   const actions = useRef({ edit: (_t: Teacher) => {}, toggle: (_t: Row) => {} })
-  actions.current = {
-    edit: (t) => setModal({ open: true, teacher: t }),
-    toggle: (t) => toggle.mutate({ user_id: t.user_id, is_active: !t.active }),
-  }
+  useLayoutEffect(() => {
+    actions.current.edit = (t) => setModal({ open: true, teacher: t });
+    actions.current.toggle = (t) => toggle.mutate({ user_id: t.user_id, is_active: !t.active });
+  }, [toggle]);
 
   const columns = useMemo(
     () =>

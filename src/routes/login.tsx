@@ -24,11 +24,12 @@ function useCountdown(until: number) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     if (until <= Date.now()) return
-    setNow(Date.now())
+
     const id = setInterval(() => {
       setNow(Date.now())
       if (Date.now() >= until) clearInterval(id)
     }, 1000)
+    
     return () => clearInterval(id)
   }, [until])
   return Math.max(0, Math.ceil((until - now) / 1000))

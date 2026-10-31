@@ -63,6 +63,20 @@ function TaskPage() {
       void qc.invalidateQueries({ queryKey: tk.myTasks }); // status mungkin berubah (sudah dikumpulkan / waktu habis)
     },
   });
+  
+  const late = useMemo(() => {
+    return task.status === "belum" && task.due_at !== "" && task.due_at <= nowLocalInput();
+  }, [task]);
+  
+  const isLate = late;
+const isContinuing = task.status === "berlangsung";
+const isLoading = start.isPending;
+
+const label = useMemo(() => {
+  if (isLate) return "Lewat tenggat";
+  if (isContinuing) return "Lanjutkan Mengerjakan";
+  return "Mulai Mengerjakan";
+}, [isLate, isContinuing]);
 
   if (!task) {
     return (
@@ -76,7 +90,7 @@ function TaskPage() {
   }
 
   if (session)
-    return <TaskForm session={session} onFinished={() => setSession(null)} />;
+    return <TaskForm session={session} key={session.id} onFinished={() => setSession(null)} />;
 
   if (task.status === "dinilai")
     return <ResultCard assignmentId={assignmentId} />;
@@ -98,11 +112,6 @@ function TaskPage() {
       </div>
     );
   }
-
-  const late =
-    task.status === "belum" &&
-    task.due_at !== "" &&
-    task.due_at <= nowLocalInput();
 
   return (
     <div className="space-y-4">
@@ -152,18 +161,16 @@ function TaskPage() {
             <button
               type="button"
               className="btn btn-primary"
-              disabled={start.isPending || late}
+              disabled={isLoading || isLate}
               onClick={() => start.mutate()}
+              title={isLate ? "Tenggat waktu sudah lewat" : undefined}
             >
-              {start.isPending ? (
-                <span className="loading loading-spinner loading-sm" />
-              ) : null}
-              {late
-                ? "Lewat tenggat"
-                : task.status === "berlangsung"
-                  ? "Lanjutkan Mengerjakan"
-                  : "Mulai Mengerjakan"}
+              {isLoading && <span className="loading loading-spinner loading-sm" />}
+              {label}
             </button>
+            {isLate && (
+              <span className="text-xs text-error mt-1">Tenggat telah berakhir</span>
+            )}
           </div>
         </div>
       </div>
@@ -320,19 +327,22 @@ function TaskForm({
     );
   }, [answers, draftKey]);
 
-  // Pewaktu memakai jam server (selisih dihitung sekali) agar tidak bergantung jam perangkat
-  const offset = useMemo(() => session.server_now - Date.now(), [session]);
-  const [left, setLeft] = useState(() =>
-    session.deadline ? session.deadline - (Date.now() + offset) : Infinity,
-  );
-  useEffect(() => {
-    if (!session.deadline) return;
-    const tick = () => setLeft(session.deadline - (Date.now() + offset));
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [session, offset]);
+ // hitung selisih server - client SEKALI pas component mount
+// ini boleh impure karena di dalam lazy initializer
+const [offset] = useState(() => session.server_now - Date.now());
 
+const [left, setLeft] = useState(() => {
+  return session.deadline ? session.deadline - (Date.now() + offset) : Infinity;
+});
+
+useEffect(() => {
+  if (!session.deadline) return;
+  const tick = () => setLeft(session.deadline - (Date.now() + offset));
+  tick();
+  const id = setInterval(tick, 1000);
+  return () => clearInterval(id);
+}, [session.deadline, offset]);
+ 
   // Waktu habis: kumpulkan otomatis apa adanya (tanpa dialog)
   const auto = useRef(false);
   useEffect(() => {

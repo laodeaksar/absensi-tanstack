@@ -12,6 +12,8 @@ import { isActive, parseClassIds } from '~/lib/types'
 import type { ReportRow } from '~/lib/types'
 import { DataTable, ErrorAlert, PageSpinner, Pager, SelectField, StatusBadge, TextField } from '~/components/ui'
 
+type Status = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
+
 export const Route = createFileRoute('/_app/reports')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
   validateSearch: (s: Record<string, unknown>) => ({
@@ -62,7 +64,7 @@ function ReportsPage() {
 
   const filters = { startDate: search.startDate, endDate: search.endDate, classId: search.classId }
   const report = useQuery({ ...reportQuery(filters), enabled: !!urlCheck?.success })
-  const data = report.data ?? []
+  const data = useMemo(() => report.data ?? [], [report.data])
 
   const form = useForm({
     defaultValues: { startDate: search.startDate ?? '', endDate: search.endDate ?? '', classId: search.classId ?? '' },
@@ -82,7 +84,29 @@ function ReportsPage() {
 
   const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 25 } } })
 
-  const stats = useMemo(() => {
+const stats = useMemo(() => {
+  const s = { hadir: 0, sakit: 0, izin: 0, alpa: 0, total: data?.length ?? 0 };
+  
+  if (!data) return s;
+
+  for (const r of data) {
+    switch (r.status) {
+      case 'Hadir': s.hadir++; break;
+      case 'Sakit': s.sakit++; break;
+      case 'Izin': s.izin++; break;
+      case 'Alpa': s.alpa++; break;
+      default: break; // jangan hitung kalau status aneh
+    }
+  }
+  return s;
+}, [data]);
+
+const pct = useMemo(() => {
+  if (!stats.total) return '0%';
+  return `${((stats.hadir / stats.total) * 100).toFixed(1)}%`;
+}, [stats]);
+
+ /* const stats1 = useMemo(() => {
     const s = { hadir: 0, sakit: 0, izin: 0, alpa: 0 }
     for (const r of data) {
       if (r.status === 'Hadir') s.hadir++
@@ -92,7 +116,7 @@ function ReportsPage() {
     }
     return s
   }, [data])
-  const pct = data.length ? `${((stats.hadir / data.length) * 100).toFixed(1)}%` : '0%'
+  const pct1 = data.length ? `${((stats.hadir / data.length) * 100).toFixed(1)}%` : '0%'*/
 
   // Cetak semua baris: perbesar ukuran halaman sementara, kembalikan setelah dialog cetak
   const print = () => {

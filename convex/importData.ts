@@ -144,9 +144,18 @@ export const importRows = mutation({
     if (secret !== expected) fail("Secret impor salah.");
     if (rows.length > 500) fail("Maksimal 500 baris per panggilan.");
 
-    let inserted = 0;
     let skipped = 0;
-    for (const r of rows as Row[]) (await importOne(ctx, table, r)) ? inserted++ : skipped++;
-    return { table, inserted, skipped };
+let inserted = 0;
+
+for (const r of rows as Row[]) {
+  const ok = await importOne(ctx, table, r);
+  if (ok) {
+    inserted++;
+  } else {
+    skipped++;
+  }
+}
+
+return { table, inserted, skipped };
   },
 });

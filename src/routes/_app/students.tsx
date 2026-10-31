@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   useMutation,
@@ -66,15 +66,15 @@ function StudentsPage() {
     edit: (_s: Student) => {},
     reset: (_s: Student) => {},
   });
-  actions.current = {
-    edit: (s) => setModal({ open: true, student: s }),
-    reset: async (s) => {
+  useLayoutEffect(() => {
+    actions.current.edit = (s) => setModal({ open: true, student: s });
+    actions.current.reset = async (s) => {
       const ok = await confirm(
         `Buat atau reset akun ${s.full_name}?\nUsername = NIS, password = NISN. Siswa diminta menggantinya saat login.`,
       );
       if (ok) reset.mutate(s.student_id);
-    },
-  };
+    };
+  }, [confirm, reset]);
 
   const columns = useMemo(
     () =>

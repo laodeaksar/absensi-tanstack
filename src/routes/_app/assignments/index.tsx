@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   useMutation,
@@ -67,9 +67,9 @@ function AssignmentsPage() {
     edit: (_a: Assignment) => {},
     remove: (_a: Assignment) => {},
   });
-  actions.current = {
-    edit: (a) => setModal({ open: true, item: a }),
-    remove: async (a) => {
+  useLayoutEffect(() => {
+  actions.current.edit = (a) => setModal({ open: true, item: a });
+  actions.current.remove = async (a) => {
       const extra =
         a.started_count > 0
           ? `\n${a.started_count} siswa sudah mulai mengerjakan; jawaban dan nilai mereka ikut terhapus.`
@@ -80,8 +80,8 @@ function AssignmentsPage() {
         )
       )
         remove.mutate(a.assignment_id);
-    },
-  };
+    };
+  }, [confirm, remove]);
 
   const columns = useMemo(
     () =>

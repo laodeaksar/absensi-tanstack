@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   useMutation,
@@ -52,7 +52,9 @@ function ClassesPage() {
   });
 
   const actions = useRef({ edit: (_c: ClassRow) => {} });
-  actions.current = { edit: (c) => setModal({ open: true, cls: c }) };
+  useLayoutEffect(() => {
+    actions.current.edit = (c) => setModal({ open: true, cls: c });
+  }, []);
 
   const columns = useMemo(
     () =>
