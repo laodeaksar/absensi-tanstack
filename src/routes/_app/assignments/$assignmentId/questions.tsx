@@ -28,8 +28,8 @@ import {
   SelectField,
   TextField,
   TextAreaField,
-  useConfirm,
 } from "~/components/ui";
+import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute(
   "/_app/assignments/$assignmentId/questions",
@@ -79,7 +79,12 @@ function QuestionActionsCell({
   locked,
   onEdit,
   onRemove,
-}: Readonly<{ question: Question; locked: boolean; onEdit: (question: Question) => void; onRemove: (question: Question) => void }>) {
+}: Readonly<{ 
+  question: Question; 
+  locked: boolean; 
+  onEdit: (question: Question) => void; 
+  onRemove: (question: Question) => void
+}>) {
   return (
     <div className="whitespace-nowrap">
       <button type="button" className="btn btn-ghost btn-xs text-primary" disabled={locked} onClick={() => onEdit(question)}>
@@ -96,7 +101,11 @@ function createQuestionColumns({
   locked,
   onEdit,
   onRemove,
-}: Readonly<{ locked: boolean; onEdit: (question: Question) => void; onRemove: (question: Question) => void }>) {
+}: Readonly<{ 
+  locked: boolean; 
+  onEdit: (question: Question) => void; 
+  onRemove: (question: Question) => void
+}>) {
   return col.columns([
     col.display({ id: "no", header: "No", cell: ({ row }) => row.index + 1 }),
     col.display({ id: "q", header: "Soal", cell: ({ row }) => <QuestionTextCell question={row.original} /> }),
@@ -110,7 +119,15 @@ function createQuestionColumns({
   ]);
 }
 
-function CorrectOptionRadio({ index, checked, onSelect }: Readonly<{ index: number; checked: boolean; onSelect: (value: string) => void }>) {
+function CorrectOptionRadio({ 
+  index, 
+  checked,
+  onSelect 
+}: Readonly<{ 
+  index: number; 
+  checked: boolean; 
+  onSelect: (value: string) => void 
+}>) {
   return (
     <input
       type="radio"

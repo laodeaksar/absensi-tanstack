@@ -10,7 +10,15 @@ import { makeReportFilterSchema } from '~/lib/report-schema'
 import { columnHelperFor, features } from '~/lib/table'
 import { isActive, parseClassIds } from '~/lib/types'
 import type { ReportRow } from '~/lib/types'
-import { DataTable, ErrorAlert, PageSpinner, Pager, SelectField, StatusBadge, TextField } from '~/components/ui'
+import { 
+  DataTable, 
+  ErrorAlert, 
+  PageSpinner, 
+  Pager, 
+  SelectField, 
+  StatusBadge, 
+  TextField 
+} from '~/components/ui'
 
 export const Route = createFileRoute('/_app/reports')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -65,7 +73,11 @@ function ReportsPage() {
   const data = useMemo(() => report.data ?? [], [report.data])
 
   const form = useForm({
-    defaultValues: { startDate: search.startDate ?? '', endDate: search.endDate ?? '', classId: search.classId ?? '' },
+    defaultValues: { 
+      startDate: search.startDate ?? '', 
+      endDate: search.endDate ?? '', 
+      classId: search.classId ?? '' 
+    },
     validators: { onChange: schema, onSubmit: schema },
     onSubmit: ({ value }) => {
       void navigate({
@@ -82,39 +94,27 @@ function ReportsPage() {
 
   const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 25 } } })
 
-const stats = useMemo(() => {
-  const s = { hadir: 0, sakit: 0, izin: 0, alpa: 0, total: data?.length ?? 0 };
+  const stats = useMemo(() => {
+    const s = { hadir: 0, sakit: 0, izin: 0, alpa: 0, total: data?.length ?? 0 };
   
-  if (!data) return s;
+    if (!data) return s;
 
-  for (const r of data) {
-    switch (r.status) {
-      case 'Hadir': s.hadir++; break;
-      case 'Sakit': s.sakit++; break;
-      case 'Izin': s.izin++; break;
-      case 'Alpa': s.alpa++; break;
-      default: break; // jangan hitung kalau status aneh
-    }
-  }
-  return s;
-}, [data]);
-
-const pct = useMemo(() => {
-  if (!stats.total) return '0%';
-  return `${((stats.hadir / stats.total) * 100).toFixed(1)}%`;
-}, [stats]);
-
- /* const stats1 = useMemo(() => {
-    const s = { hadir: 0, sakit: 0, izin: 0, alpa: 0 }
     for (const r of data) {
-      if (r.status === 'Hadir') s.hadir++
-      else if (r.status === 'Sakit') s.sakit++
-      else if (r.status === 'Izin') s.izin++
-      else s.alpa++
+      switch (r.status) {
+        case 'Hadir': s.hadir++; break;
+        case 'Sakit': s.sakit++; break;
+        case 'Izin': s.izin++; break;
+        case 'Alpa': s.alpa++; break;
+        default: break; // jangan hitung kalau status aneh
+      }
     }
-    return s
-  }, [data])
-  const pct1 = data.length ? `${((stats.hadir / data.length) * 100).toFixed(1)}%` : '0%'*/
+    return s;
+  }, [data]);
+
+  const pct = useMemo(() => {
+    if (!stats.total) return '0%';
+    return `${((stats.hadir / stats.total) * 100).toFixed(1)}%`;
+  }, [stats]);
 
   // Cetak semua baris: perbesar ukuran halaman sementara, kembalikan setelah dialog cetak
   const print = () => {
@@ -147,8 +147,12 @@ const pct = useMemo(() => {
             void form.handleSubmit()
           }}
         >
-          <form.Field name="startDate">{(f) => <TextField label="Dari Tanggal" field={f} type="date" />}</form.Field>
-          <form.Field name="endDate">{(f) => <TextField label="Sampai Tanggal" field={f} type="date" />}</form.Field>
+          <form.Field name="startDate">
+            {(f) => <TextField label="Dari Tanggal" field={f} type="date" />}
+          </form.Field>
+          <form.Field name="endDate">
+            {(f) => <TextField label="Sampai Tanggal" field={f} type="date" />}
+          </form.Field>
           <form.Field name="classId">
             {(f) => (
               <SelectField label="Kelas" field={f}>

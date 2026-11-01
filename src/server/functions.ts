@@ -75,9 +75,17 @@ export const gasRpc = createServerFn({ method: 'POST' })
   })
 
 export const loginFn = createServerFn({ method: 'POST' })
-  .validator(z.object({ username: z.string().min(1), password: z.string().min(1) }))
+  .validator(z.object({ 
+    username: z.string().min(1), 
+    password: z.string().min(1) 
+  }))
   .handler(async ({ data }) => {
-    const res = await callConvex<{ ok: boolean; token?: string; user?: SessionUser; message?: string }>('login', [
+    const res = await callConvex<{ 
+      ok: boolean; 
+      token?: string; 
+      user?: SessionUser; 
+      message?: string 
+    }>('login', [
       data.username,
       data.password,
     ])

@@ -9,7 +9,14 @@ import { myAttendanceQuery } from '~/lib/queries'
 import { makeMyRangeSchema } from '~/lib/report-schema'
 import { columnHelperFor, features } from '~/lib/table'
 import type { MyAttendance } from '~/lib/types'
-import { DataTable, ErrorAlert, PageSpinner, Pager, StatusBadge, TextField } from '~/components/ui'
+import {
+  DataTable, 
+  ErrorAlert, 
+  PageSpinner, 
+  Pager,
+  StatusBadge, 
+  TextField 
+} from '~/components/ui'
 
 export const Route = createFileRoute('/_app/my-attendance')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['siswa']),

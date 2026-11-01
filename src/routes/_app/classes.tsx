@@ -188,8 +188,10 @@ function ClassForm({
         classes,
         editingId: cls?.class_id,
         teacherIds: teacherOptions.map((t) => t.user_id),
+        teacherNames: Object.fromEntries(teachers.map((t) => [t.user_id, t.full_name])),
+        original: cls ? { homeroom_teacher: cls.homeroom_teacher, academic_year: cls.academic_year } : undefined,
       }),
-    [classes, cls?.class_id, teacherOptions],
+    [classes, teachers, cls, teacherOptions],
   );
 
   // Saran tingkat dari kelas yang sudah ada

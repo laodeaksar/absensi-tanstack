@@ -25,8 +25,8 @@ import {
   SearchBox,
   SelectField,
   TextField,
-  useConfirm,
 } from "~/components/ui";
+import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute("/_app/students")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),

@@ -49,7 +49,12 @@ export const PBKDF2_ITERATIONS = 100_000;
 export async function pbkdf2Hex(password: string, salt: string) {
   const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: enc.encode(salt), iterations: PBKDF2_ITERATIONS },
+    { 
+      name: "PBKDF2", 
+      hash: "SHA-256", 
+      salt: enc.encode(salt), 
+      iterations: PBKDF2_ITERATIONS 
+    },
     key,
     256,
   );
@@ -71,7 +76,11 @@ export function safeEqual(a: string, b: string) {
 /** Hash baru (pbkdf2) untuk password. */
 export async function newHash(password: string) {
   const salt = randomSalt();
-  return { password_salt: salt, password_hash: await pbkdf2Hex(password, salt), hash_algo: "pbkdf2" as const };
+  return { 
+    password_salt: salt, 
+    password_hash: await pbkdf2Hex(password, salt), 
+    hash_algo: "pbkdf2" as const 
+  };
 }
 
 /* ---------- kebijakan password kuat (sama dengan frontend: password-policy.ts) ---------- */
@@ -83,21 +92,28 @@ const COMMON = [
 ];
 const tokensOf = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length >= 3);
 
-export function assertStrongPassword(pw: string, forbidden: (string | undefined | null)[] = []) {
-  if (pw.length < 8) fail("Password minimal 8 karakter.");
-  if (pw.length > 100) fail("Password maksimal 100 karakter.");
-  if (!/[a-z]/.test(pw)) fail("Password harus mengandung huruf kecil.");
-  if (!/[A-Z]/.test(pw)) fail("Password harus mengandung huruf besar.");
-  if (!/[0-9]/.test(pw)) fail("Password harus mengandung angka.");
-  if (!/[^A-Za-z0-9]/.test(pw)) fail("Password harus mengandung simbol, misalnya !@#$%.");
+/** Pesan pelanggaran kebijakan password kuat yang pertama, atau null jika lolos. */
+export function passwordIssue(pw: string, forbidden: (string | undefined | null)[] = []): string | null {
+  if (pw.length < 8) return "Password minimal 8 karakter.";
+  if (pw.length > 100) return "Password maksimal 100 karakter.";
+  if (!/[a-z]/.test(pw)) return "Password harus mengandung huruf kecil.";
+  if (!/[A-Z]/.test(pw)) return "Password harus mengandung huruf besar.";
+  if (!/[0-9]/.test(pw)) return "Password harus mengandung angka.";
+  if (!/[^A-Za-z0-9]/.test(pw)) return "Password harus mengandung simbol, misalnya !@#$%.";
   const low = pw.toLowerCase();
-  if (/(.)\1{3,}/.test(pw) || COMMON.some((c) => low.includes(c))) fail("Password terlalu umum atau mudah ditebak.");
+  if (/(.)\1{3,}/.test(pw) || COMMON.some((c) => low.includes(c))) return "Password terlalu umum atau mudah ditebak.";
   const personal = forbidden.flatMap((f) => {
-    const s = String(f ?? "");
-    const whole = s.toLowerCase().replace(/\s+/g, "");
-    return [...tokensOf(s), ...(whole.length >= 3 ? [whole] : [])];
+    const t = String(f ?? "");
+    const whole = t.toLowerCase().replace(/\s+/g, "");
+    return [...tokensOf(t), ...(whole.length >= 3 ? [whole] : [])];
   });
-  if (personal.some((t) => low.includes(t))) fail("Password tidak boleh memuat username, nama, NIP, atau data pribadi lain.");
+  if (personal.some((t) => low.includes(t))) return "Password tidak boleh memuat username, nama, NIP, atau data pribadi lain.";
+  return null;
+}
+
+export function assertStrongPassword(pw: string, forbidden: (string | undefined | null)[] = []) {
+  const issue = passwordIssue(pw, forbidden);
+  if (issue) fail(issue);
 }
 
 /* ---------- autentikasi ---------- */
@@ -117,7 +133,10 @@ export async function requireAuth(ctx: QueryCtx, token: string, opts: AuthOpts =
     .withIndex("by_token", (q) => q.eq("token_hash", tokenHash))
     .unique();
   if (!sess || sess.expires_at < Date.now()) fail("AUTH_FAILED");
-  const user = await ctx.db.query("users").withIndex("by_user_id", (q) => q.eq("user_id", sess!.user_id)).unique();
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_user_id", (q) => q.eq("user_id", sess!.user_id))
+    .unique();
   if (!user || !user.is_active) fail("AUTH_FAILED");
   if (user!.must_change_password && !opts.allowPending) fail("MUST_CHANGE_PASSWORD");
   if (user!.role === "siswa" && !opts.allowStudent) fail("FORBIDDEN");
@@ -126,7 +145,10 @@ export async function requireAuth(ctx: QueryCtx, token: string, opts: AuthOpts =
 }
 
 export async function revokeSessions(ctx: MutationCtx, userId: string) {
-  const rows = await ctx.db.query("sessions").withIndex("by_user", (q) => q.eq("user_id", userId)).collect();
+  const rows = await ctx.db
+    .query("sessions")
+    .withIndex("by_user", (q) => q.eq("user_id", userId))
+    .collect();
   for (const s of rows) await ctx.db.delete(s._id);
 }
 
@@ -172,11 +194,20 @@ export const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Helper kecil agar query berdasarkan ID string ringkas. */
 export async function classById(ctx: QueryCtx, classId: string) {
-  return ctx.db.query("classes").withIndex("by_class_id", (q) => q.eq("class_id", classId)).unique();
+  return ctx.db
+    .query("classes")
+    .withIndex("by_class_id", (q) => q.eq("class_id", classId))
+    .unique();
 }
 export async function studentById(ctx: QueryCtx, studentId: string) {
-  return ctx.db.query("students").withIndex("by_student_id", (q) => q.eq("student_id", studentId)).unique();
+  return ctx.db
+    .query("students")
+    .withIndex("by_student_id", (q) => q.eq("student_id", studentId))
+    .unique();
 }
 export async function userById(ctx: QueryCtx, userId: string) {
-  return ctx.db.query("users").withIndex("by_user_id", (q) => q.eq("user_id", userId)).unique();
+  return ctx.db
+    .query("users")
+    .withIndex("by_user_id", (q) => q.eq("user_id", userId))
+    .unique();
 }

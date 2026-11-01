@@ -8,7 +8,13 @@ import { Save } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { api } from '~/lib/api'
 import {
-  NOTES_MIN, STATUS_VALUES, earliestDate, firstMessage, gridSchema, makeFilterSchema, needsNotes,
+  NOTES_MIN, 
+  STATUS_VALUES, 
+  earliestDate, 
+  firstMessage, 
+  gridSchema, 
+  makeFilterSchema, 
+  needsNotes,
 } from '~/lib/attendance-schema'
 import { todayStr } from '~/lib/date'
 import { attendanceFormQuery, classesQuery, qk, settingsQuery } from '~/lib/queries'
@@ -16,7 +22,13 @@ import { columnHelperFor, features } from '~/lib/table'
 import { toast } from '~/lib/toast'
 import { isActive, parseClassIds } from '~/lib/types'
 import type { AttendanceEntry } from '~/lib/types'
-import { DataTable, ErrorAlert, PageSpinner, SelectField, TextField } from '~/components/ui'
+import { 
+  DataTable, 
+  ErrorAlert, 
+  PageSpinner, 
+  SelectField, 
+  TextField 
+} from '~/components/ui'
 
 export const Route = createFileRoute('/_app/attendance')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -64,7 +76,9 @@ function AttendancePage() {
 
   // Parameter URL divalidasi dengan aturan yang sama (URL bisa diubah manual)
   const urlCheck = useMemo(
-    () => (search.date || search.classId ? filterSchema.safeParse({ date: search.date ?? '', classId: search.classId ?? '' }) : null),
+    () => (search.date || search.classId 
+      ? filterSchema.safeParse({ date: search.date ?? '', classId: search.classId ?? '' }) 
+      : null),
     [filterSchema, search.date, search.classId],
   )
 
@@ -268,7 +282,9 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
             return (
               <p className="text-sm text-base-content/70">
                 Terisi {filled} dari {vals.length} siswa
-                {missing > 0 ? <span className="ml-2 text-error">· {missing} perlu keterangan</span> : null}
+                {missing > 0 
+                  ? <span className="ml-2 text-error">· {missing} perlu keterangan</span> 
+                  : null}
               </p>
             )
           }}
@@ -277,7 +293,9 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
             <button type="submit" className="btn btn-primary" disabled={busy || rows.length === 0}>
-              {busy ? <span className="loading loading-spinner loading-sm" /> : <Save className="size-4" />}
+              {busy 
+                ? <span className="loading loading-spinner loading-sm" /> 
+                : <Save className="size-4" />}
               Simpan Data Absensi
             </button>
           )}

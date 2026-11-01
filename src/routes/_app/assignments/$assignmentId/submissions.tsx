@@ -35,7 +35,7 @@ function SubmissionStatusCell({ status }: Readonly<{ status: SubmissionStatus }>
 
 function SubmissionScoreCell({ row }: Readonly<{ row: SubmissionRow }>) {
   if (row.status === 'dinilai') {
-    return <span className="font-medium">{row.nilai} <span className="text-xs text-base-content/60">({row.score}/{row.max_score})</span></span>
+    return <span className="font-medium">{row.nilai}<span className="text-xs text-base-content/60">({row.score}/{row.max_score})</span></span>
   }
   if (row.status === 'diserahkan') {
     return <span className="text-xs text-base-content/60">Pilihan ganda: {row.score}</span>
@@ -47,7 +47,13 @@ function SubmittedAtCell({ value }: Readonly<{ value: number | '' }>) {
   return <>{value === '' ? '-' : new Date(Number(value)).toLocaleString('id-ID')}</>
 }
 
-function SubmissionActionCell({ row, assignmentId }: Readonly<{ row: SubmissionRow; assignmentId: string }>) {
+function SubmissionActionCell({ 
+  row, 
+  assignmentId 
+}: Readonly<{ 
+  row: SubmissionRow; 
+  assignmentId: string 
+}>) {
   if (row.status !== 'diserahkan' && row.status !== 'dinilai') return null
   return (
     <Link

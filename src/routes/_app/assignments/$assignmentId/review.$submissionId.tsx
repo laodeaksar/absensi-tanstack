@@ -55,7 +55,11 @@ function ReviewPage() {
     onSubmitInvalid: () => toast.error('Lengkapi nilai semua soal esai.'),
     onSubmit: async ({ value }) => {
       await save
-        .mutateAsync(value.grades.map((g) => ({ question_id: g.question_id, score: g.score.trim().replace(',', '.'), feedback: g.feedback.trim() })))
+        .mutateAsync(value.grades.map((g) => ({ 
+          question_id: g.question_id, 
+          score: g.score.trim().replace(',', '.'), 
+          feedback: g.feedback.trim() 
+        })))
         .catch(() => {})
     },
   })

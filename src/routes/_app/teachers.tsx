@@ -13,7 +13,15 @@ import { toast } from '~/lib/toast'
 import { isActive, parseClassIds } from '~/lib/types'
 import type { Teacher, TeacherInput } from '~/lib/types'
 import { firstMessage } from '~/lib/validation'
-import { ActiveBadge, DataTable, ErrorAlert, Modal, Pager, SearchBox, TextField } from '~/components/ui'
+import { 
+  ActiveBadge,
+  DataTable, 
+  ErrorAlert, 
+  Modal, 
+  Pager, 
+  SearchBox, 
+  TextField 
+} from '~/components/ui'
 import { PasswordStrength } from '~/components/PasswordStrength'
 
 export const Route = createFileRoute('/_app/teachers')({

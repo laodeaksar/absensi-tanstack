@@ -7,13 +7,14 @@ import {
   fail, 
   newHash, 
   nowIso, 
+  passwordIssue, 
   pbkdf2Hex, 
   randomToken, 
   requireAuth, 
   revokeSessions,
   safeEqual, 
   sessionUser, 
-  sha256Hex, 
+  sha256Hex,
   studentById,
 } from "./lib";
 
@@ -35,10 +36,17 @@ async function verifyPassword(ctx: QueryCtx, user: Doc<"users">, password: strin
 }
 
 async function recordFailure(ctx: MutationCtx, key: string, now: number) {
-  const row = await ctx.db.query("login_attempts").withIndex("by_key", (q) => q.eq("key", key)).unique();
+  const row = await ctx.db
+    .query("login_attempts")
+    .withIndex("by_key", (q) => q.eq("key", key))
+    .unique();
   // Hitungan direset bila kegagalan terakhir sudah lewat 15 menit
   const fails = row && now - row.last_fail <= LOCK_MS ? row.fails + 1 : 1;
-  const patch = { fails, last_fail: now, locked_until: fails >= MAX_FAILS ? now + LOCK_MS : 0 };
+  const patch = { 
+    fails, 
+    last_fail: now, 
+    locked_until: fails >= MAX_FAILS ? now + LOCK_MS : 0 
+  };
   if (row) await ctx.db.patch(row._id, patch);
   else await ctx.db.insert("login_attempts", { key, ...patch });
 }
@@ -54,22 +62,48 @@ export const login = mutation({
     const now = Date.now();
     if (!key || key.length > 100 || password.length > 200) return { ok: false as const, message: "Username atau password salah." };
 
-    const attempt = await ctx.db.query("login_attempts").withIndex("by_key", (q) => q.eq("key", key)).unique();
+    const attempt = await ctx.db
+      .query("login_attempts")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
     if (attempt && attempt.locked_until > now) {
-      return { ok: false as const, message: "Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit." };
+      return { 
+        ok: false as const, 
+        message: "Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit."
+      };
     }
 
-    const user = await ctx.db.query("users").withIndex("by_username_lc", (q) => q.eq("username_lc", key)).unique();
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_username_lc", (q) => q.eq("username_lc", key))
+      .unique();
     const valid = !!user && user.is_active && (await verifyPassword(ctx, user, password));
     if (!valid || !user) {
       await recordFailure(ctx, key, now);
-      return { ok: false as const, message: "Username atau password salah." };
+      return { 
+        ok: false as const, 
+        message: "Username atau password salah." 
+      };
     }
 
     if (attempt) await ctx.db.delete(attempt._id);
 
     // Upgrade hash lama (sha256 hasil migrasi) ke pbkdf2 saat berhasil login
-    if (user.hash_algo === "sha256") await ctx.db.patch(user._id, { ...(await newHash(password)), updated_at: nowIso() });
+    if (user.hash_algo === "sha256") await ctx.db.patch(user._id, { 
+      ...(await newHash(password)), 
+      updated_at: nowIso() 
+    });
+
+    // Akun lama dengan password yang belum memenuhi kebijakan kuat: wajib ganti password mulai login ini.
+    // (Akun dengan password awal NISN sudah otomatis wajib ganti.)
+    let mustChange = user.must_change_password;
+    if (!mustChange && user.hash_algo !== "nisn" && passwordIssue(password, [user.username, user.full_name, user.nip, user.phone])) {
+      mustChange = true;
+      await ctx.db.patch(user._id, { 
+        must_change_password: true, 
+        updated_at: nowIso() 
+      });
+    }
 
     const token = randomToken();
     await ctx.db.insert("sessions", {
@@ -78,7 +112,14 @@ export const login = mutation({
       expires_at: now + SESSION_MS,
       created_at: now,
     });
-    return { ok: true as const, token, user: sessionUser(user) };
+    return { 
+      ok: true as const, 
+      token, 
+      user: { 
+        ...sessionUser(user), 
+        must_change_password: mustChange 
+      }
+    };
   },
 });
 
@@ -86,7 +127,10 @@ export const logout = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const th = await sha256Hex(token);
-    const s = await ctx.db.query("sessions").withIndex("by_token", (q) => q.eq("token_hash", th)).unique();
+    const s = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token_hash", th))
+      .unique();
     if (s) await ctx.db.delete(s._id);
     return { ok: true };
   },
@@ -102,7 +146,11 @@ export const getMe = query({
 });
 
 export const changePassword = mutation({
-  args: { token: v.string(), oldPassword: v.string(), newPassword: v.string() },
+  args: { 
+    token: v.string(), 
+    oldPassword: v.string(), 
+    newPassword: v.string() 
+  },
   handler: async (ctx, { token, oldPassword, newPassword }) => {
     const user = await requireAuth(ctx, token, { allowStudent: true, allowPending: true });
     if (!oldPassword) fail("Password lama wajib diisi.");
@@ -111,7 +159,11 @@ export const changePassword = mutation({
 
     if (!(await verifyPassword(ctx, user, oldPassword))) fail("Password lama tidak sesuai.");
 
-    await ctx.db.patch(user._id, { ...(await newHash(newPassword)), must_change_password: false, updated_at: nowIso() });
+    await ctx.db.patch(user._id, { 
+      ...(await newHash(newPassword)), 
+      must_change_password: false, 
+      updated_at: nowIso() 
+    });
     await revokeSessions(ctx, user.user_id); // semua sesi (termasuk ini) berakhir; login ulang
     return { message: "Password berhasil diubah." };
   },

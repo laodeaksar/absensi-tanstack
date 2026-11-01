@@ -23,8 +23,8 @@ import {
   ErrorAlert,
   PageSpinner,
   TextAreaField,
-  useConfirm,
 } from "~/components/ui";
+import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute("/_app/tasks/$assignmentId")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["siswa"]),
@@ -64,11 +64,11 @@ function TaskPage() {
     },
   });
   
-  const late = useMemo(() => {
+  const isLate = useMemo(() => {
     return task?.status === "belum" && task.due_at !== "" && task.due_at <= nowLocalInput();
   }, [task]);
 
-  const isLate = late;
+  // const isLate = late;
   const isContinuing = task?.status === "berlangsung";
   const isLoading = start.isPending;
 
@@ -254,7 +254,10 @@ function ResultCard({ assignmentId }: Readonly<{ assignmentId: string }>) {
 function TaskForm({
   session,
   onFinished,
-}: Readonly<{ session: TaskSession; onFinished: () => void }>) {
+}: Readonly<{ 
+  session: TaskSession; 
+  onFinished: () => void 
+}>) {
   const qc = useQueryClient();
   const { confirm, dialog } = useConfirm();
   const id = session.assignment.assignment_id;
@@ -327,21 +330,21 @@ function TaskForm({
     );
   }, [answers, draftKey]);
 
- // hitung selisih server - client SEKALI pas component mount
-// ini boleh impure karena di dalam lazy initializer
-const [offset] = useState(() => session.server_now - Date.now());
+  // hitung selisih server - client SEKALI pas component mount
+  // ini boleh impure karena di dalam lazy initializer
+  const [offset] = useState(() => session.server_now - Date.now());
 
-const [left, setLeft] = useState(() => {
-  return session.deadline ? session.deadline - (Date.now() + offset) : Infinity;
-});
+  const [left, setLeft] = useState(() => {
+    return session.deadline ? session.deadline - (Date.now() + offset) : Infinity;
+  });
 
-useEffect(() => {
-  if (!session.deadline) return;
-  const tick = () => setLeft(session.deadline - (Date.now() + offset));
-  tick();
-  const id = setInterval(tick, 1000);
-  return () => clearInterval(id);
-}, [session.deadline, offset]);
+  useEffect(() => {
+    if (!session.deadline) return;
+    const tick = () => setLeft(session.deadline - (Date.now() + offset));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [session.deadline, offset]);
  
   // Waktu habis: kumpulkan otomatis apa adanya (tanpa dialog)
   const auto = useRef(false);

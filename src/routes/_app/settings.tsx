@@ -82,11 +82,19 @@ function SchoolSettings() {
         <div className="card-body max-w-2xl">
           <h3 className="card-title text-base">Data Sekolah</h3>
           <p className="text-sm text-base-content/60">Dipakai pada judul aplikasi dan kop laporan cetak.</p>
-          <form.Field name="school_name">{(f) => <TextField label="Nama Sekolah" field={f} maxLength={100} />}</form.Field>
-          <form.Field name="school_address">{(f) => <TextField label="Alamat Sekolah" field={f} maxLength={200} />}</form.Field>
+          <form.Field name="school_name">
+            {(f) => <TextField label="Nama Sekolah" field={f} maxLength={100} />}
+          </form.Field>
+          <form.Field name="school_address">
+            {(f) => <TextField label="Alamat Sekolah" field={f} maxLength={200} />}
+          </form.Field>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <form.Field name="principal_name">{(f) => <TextField label="Nama Kepala Sekolah" field={f} maxLength={100} />}</form.Field>
-            <form.Field name="principal_nip">{(f) => <TextField label="NIP Kepala Sekolah" field={f} inputMode="numeric" />}</form.Field>
+            <form.Field name="principal_name">
+              {(f) => <TextField label="Nama Kepala Sekolah" field={f} maxLength={100} />}
+            </form.Field>
+            <form.Field name="principal_nip">
+              {(f) => <TextField label="NIP Kepala Sekolah" field={f} inputMode="numeric" />}
+            </form.Field>
           </div>
         </div>
       </div>
@@ -140,11 +148,18 @@ function PasswordCard() {
   })
 
   const form = useForm({
-    defaultValues: { old: '', next: '', confirm: '' },
+    defaultValues: { 
+      old: '', 
+      next: '', 
+      confirm: ''
+    },
     validators: { onChange: schema, onSubmit: schema },
     onSubmitInvalid: () => toast.error('Periksa kembali isian yang ditandai merah.'),
     onSubmit: async ({ value }) => {
-      await change.mutateAsync({ oldPw: value.old, newPw: value.next }).catch(() => {})
+      await change.mutateAsync({ 
+        oldPw: value.old, 
+        newPw: value.next 
+      }).catch(() => {})
     },
   })
 

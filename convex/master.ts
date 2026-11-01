@@ -7,13 +7,13 @@ import {
   classById, 
   fail, 
   newHash, 
-  nowIso, 
+  nowIso,
   randomId, 
   requireAuth, 
   revokeSessions,
   strip, 
   studentById, 
-  teacherOut, 
+  teacherOut,
   userById,
 } from "./lib";
 
@@ -27,7 +27,10 @@ export const fetchMasterData = query({
     const user = await requireAuth(ctx, token);
     if (type === "teachers") {
       if (user.role !== "admin") fail("FORBIDDEN");
-      const rows = await ctx.db.query("users").withIndex("by_role", (q) => q.eq("role", "guru")).collect();
+      const rows = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "guru"))
+        .collect();
       return { data: rows.map(teacherOut) };
     }
     if (type === "classes") {
@@ -67,14 +70,20 @@ function studentUserDoc(s: Doc<"students">, now: string): Omit<Doc<"users">, "_i
 /** Samakan akun login siswa dengan data siswa (NIS, nama, status aktif). Mengembalikan peringatan atau "". */
 async function syncStudentAccount(ctx: MutationCtx, studentId: string) {
   const s = await studentById(ctx, studentId);
-  const u = await ctx.db.query("users").withIndex("by_student_id", (q) => q.eq("student_id", studentId)).unique();
+  const u = await ctx.db
+    .query("users")
+    .withIndex("by_student_id", (q) => q.eq("student_id", studentId))
+    .unique();
   if (!s || !u) return "";
 
   const nis = s.nis.trim();
   const patch: Partial<Doc<"users">> = { full_name: s.full_name || u.full_name, is_active: s.is_active, updated_at: nowIso() };
   let warning = "";
   if (nis && nis !== u.username) {
-    const clash = await ctx.db.query("users").withIndex("by_username_lc", (q) => q.eq("username_lc", nis.toLowerCase())).collect();
+    const clash = await ctx.db
+      .query("users")
+      .withIndex("by_username_lc", (q) => q.eq("username_lc", nis.toLowerCase()))
+      .collect();
     if (clash.some((x) => x.user_id !== u.user_id)) warning = "Username akun siswa tidak diubah karena NIS baru bentrok dengan akun lain.";
     else {
       patch.username = nis;
@@ -155,7 +164,9 @@ export const generateStudentAccounts = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     await requireAuth(ctx, token, { admin: true });
-    const users = await ctx.db.query("users").collect();
+    const users = await ctx.db
+      .query("users")
+      .collect();
     const hasAccount = new Set(users.filter((u) => u.student_id).map((u) => u.student_id));
     const taken = new Set(users.map((u) => u.username_lc));
 
@@ -244,10 +255,18 @@ export const saveClass = mutation({
       fail("Nama kelas sudah ada pada tahun ajaran tersebut.");
     }
 
-    // Wali kelas harus guru aktif (wali yang sudah ada tetap boleh dipertahankan walau nonaktif)
-    if (homeroom && homeroom !== existing?.homeroom_teacher) {
+    if (homeroom) {
       const wali = await userById(ctx, homeroom);
-      if (!wali || wali.role !== "guru" || !wali.is_active) fail("Wali kelas tidak valid.");
+      const changedTeacher = homeroom !== existing?.homeroom_teacher;
+      // Wali kelas harus guru aktif (wali yang sudah ada tetap boleh dipertahankan walau nonaktif)
+      if (changedTeacher && (!wali || wali.role !== "guru" || !wali.is_active)) fail("Wali kelas tidak valid.");
+
+      // Satu guru hanya boleh menjadi wali satu kelas aktif per tahun ajaran.
+      // Hanya diperiksa saat wali atau tahun ajarannya diubah, supaya data lama tidak menghalangi edit lain.
+      if (changedTeacher || year !== existing?.academic_year) {
+        const other = all.find((c) => c.is_active && c.class_id !== id && c.homeroom_teacher === homeroom && c.academic_year === year);
+        if (other) fail(`${wali?.full_name ?? "Guru ini"} sudah menjadi wali kelas ${other.class_name} pada tahun ajaran ${year}.`);
+      }
     }
 
     const now = nowIso();

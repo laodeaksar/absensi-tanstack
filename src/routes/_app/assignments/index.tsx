@@ -27,8 +27,8 @@ import {
   SelectField,
   TextField,
   TextAreaField,
-  useConfirm,
 } from "~/components/ui";
+import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute("/_app/assignments/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
