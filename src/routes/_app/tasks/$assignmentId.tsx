@@ -10,15 +10,15 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { ArrowLeft, Clock, Hourglass, Send } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { toast } from "~/lib/toast";
-import { tugas } from "~/lib/tugas-api";
-import { myResultQuery, myTasksQuery, tk } from "~/lib/tugas-queries";
+import { api } from "~/lib/tugas-api";
+import { myResultQuery, myTasksQuery, qk } from "~/lib/queries";
 import {
   ESSAY_MAX,
   letter,
   makeTakeSchema,
   nowLocalInput,
-} from "~/lib/tugas-schema";
-import type { AnswerInput, TaskSession } from "~/lib/tugas-types";
+} from "~/lib/assignment-schema";
+import type { AnswerInput, TaskSession } from "~/lib/types";
 import {
   ErrorAlert,
   PageSpinner,
@@ -60,7 +60,7 @@ function TaskPage() {
     onSuccess: (s) => setSession(s),
     onError: (e) => {
       toast.error(e.message);
-      void qc.invalidateQueries({ queryKey: tk.myTasks }); // status mungkin berubah (sudah dikumpulkan / waktu habis)
+      void qc.invalidateQueries({ queryKey: qk.myTasks }); // status mungkin berubah (sudah dikumpulkan / waktu habis)
     },
   });
   
@@ -286,11 +286,11 @@ function TaskForm({
   );
 
   const submit = useMutation({
-    mutationFn: (answers: AnswerInput[]) => tugas.submit(id, answers),
+    mutationFn: (answers: AnswerInput[]) => api.submit(id, answers),
     onSuccess: async (r) => {
       sessionStorage.removeItem(draftKey);
       toast.success(r.message);
-      void qc.invalidateQueries({ queryKey: tk.myTasks });
+      void qc.invalidateQueries({ queryKey: qk.myTasks });
       void qc.invalidateQueries({ queryKey: ["my-result"] });
       onFinished();
     },

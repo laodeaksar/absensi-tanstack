@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:convex": "convex deploy --cmd 'npm run build'",
     "lint": "oxlint",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {

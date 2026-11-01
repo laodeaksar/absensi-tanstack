@@ -4,9 +4,9 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTable } from '@tanstack/react-table'
 import { allowRoles } from '~/lib/auth'
 import { columnHelperFor, features } from '~/lib/table'
-import { myTasksQuery } from '~/lib/tugas-queries'
-import { nowLocalInput } from '~/lib/tugas-schema'
-import type { MyTask, SubmissionStatus } from '~/lib/tugas-types'
+import { myTasksQuery } from '~/lib/queries'
+import { nowLocalInput } from '~/lib/assignment-schema'
+import type { MyTask, SubmissionStatus } from '~/lib/types'
 import { DataTable, Pager } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/tasks/')({

@@ -9,13 +9,12 @@ import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
-import { classesQuery } from "~/lib/queries";
+import { classesQuery, assignmentsQuery, qk } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
-import { tugas } from "~/lib/tugas-api";
-import { assignmentsQuery, tk } from "~/lib/tugas-queries";
-import { makeAssignmentSchema } from "~/lib/tugas-schema";
-import type { Assignment } from "~/lib/tugas-types";
+import { api } from "~/lib/api";
+import { makeAssignmentSchema } from "~/lib/assignment-schema";
+import type { Assignment } from "~/lib/types";
 import { isActive, parseClassIds } from "~/lib/types";
 import { firstMessage } from "~/lib/validation";
 import {
@@ -55,10 +54,10 @@ function AssignmentsPage() {
   const { confirm, dialog } = useConfirm();
 
   const remove = useMutation({
-    mutationFn: (id: string) => tugas.deleteAssignment(id),
+    mutationFn: (id: string) => api.deleteAssignment(id),
     onSuccess: (r) => {
       toast.success(r.message);
-      void qc.invalidateQueries({ queryKey: tk.list });
+      void qc.invalidateQueries({ queryKey: qk.list });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -68,8 +67,8 @@ function AssignmentsPage() {
     remove: (_a: Assignment) => {},
   });
   useLayoutEffect(() => {
-  actions.current.edit = (a) => setModal({ open: true, item: a });
-  actions.current.remove = async (a) => {
+    actions.current.edit = (a) => setModal({ open: true, item: a });
+    actions.current.remove = async (a) => {
       const extra =
         a.started_count > 0
           ? `\n${a.started_count} siswa sudah mulai mengerjakan; jawaban dan nilai mereka ikut terhapus.`
@@ -274,7 +273,7 @@ function AssignmentForm({
   );
 
   const save = useMutation({
-    mutationFn: tugas.saveAssignment,
+    mutationFn: api.saveAssignment,
     onSuccess: (r) => {
       toast.success(r.message);
       onDone();

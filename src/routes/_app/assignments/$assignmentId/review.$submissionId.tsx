@@ -5,9 +5,9 @@ import { useForm } from '@tanstack/react-form'
 import { ArrowLeft, Check, X } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { toast } from '~/lib/toast'
-import { tugas } from '~/lib/tugas-api'
-import { reviewQuery, tk } from '~/lib/tugas-queries'
-import { letter, makeGradeSchema } from '~/lib/tugas-schema'
+import { api } from '~/lib/api'
+import { reviewQuery, qk } from '~/lib/tugas-queries'
+import { letter, makeGradeSchema } from '~/lib/assignment-schema'
 import { ErrorAlert, TextField, TextAreaField } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/review/$submissionId')({
@@ -33,12 +33,17 @@ function ReviewPage() {
   )
 
   const save = useMutation({
-    mutationFn: (grades: { question_id: string; score: string; feedback: string }[]) => tugas.grade(submissionId, grades),
+    mutationFn: (
+      grades: { 
+        question_id: string; 
+        score: string; 
+        feedback: string 
+      }[]) => api.grade(submissionId, grades),
     onSuccess: (r) => {
       toast.success(r.message)
-      void qc.invalidateQueries({ queryKey: tk.review(submissionId) })
-      void qc.invalidateQueries({ queryKey: tk.subs(assignmentId) })
-      void qc.invalidateQueries({ queryKey: tk.list })
+      void qc.invalidateQueries({ queryKey: qk.review(submissionId) })
+      void qc.invalidateQueries({ queryKey: qk.subs(assignmentId) })
+      void qc.invalidateQueries({ queryKey: qk.list })
       void navigate({ to: '/assignments/$assignmentId/submissions', params: { assignmentId } })
     },
   })

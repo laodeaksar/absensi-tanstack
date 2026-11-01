@@ -5,8 +5,8 @@ import { useTable } from '@tanstack/react-table'
 import { ArrowLeft } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { columnHelperFor, features } from '~/lib/table'
-import { submissionsQuery } from '~/lib/tugas-queries'
-import type { SubmissionRow, SubmissionStatus } from '~/lib/tugas-types'
+import { submissionsQuery } from '~/lib/queries'
+import type { SubmissionRow, SubmissionStatus } from '~/lib/types'
 import { DataTable, Pager, SearchBox } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/submissions')({
@@ -106,23 +106,47 @@ function SubmissionsPage() {
     return q ? res.data.filter((r) => `${r.full_name} ${r.nis}`.toLowerCase().includes(q)) : res.data
   }, [res.data, search])
 
-  const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 20 } } })
+  const table = useTable({ 
+    features, 
+    columns, 
+    data, 
+    initialState: { 
+      pagination: { 
+        pageIndex: 0, 
+        pageSize: 20 
+      }
+    } 
+  })
 
   const count = (s: SubmissionStatus) => res.data.filter((r) => r.status === s).length
 
   return (
     <div className="space-y-4">
       <div>
-        <Link to="/assignments" className="btn btn-ghost btn-xs mb-1 -ml-2"><ArrowLeft className="size-4" /> Kembali</Link>
+        <Link to="/assignments" className="btn btn-ghost btn-xs mb-1 -ml-2">
+          <ArrowLeft className="size-4" /> Kembali
+        </Link>
         <h2 className="text-2xl font-bold">Pengumpulan: {res.assignment.title}</h2>
         <p className="text-sm text-base-content/60">Kelas {res.assignment.class_name} - total {res.assignment.max_score} poin</p>
       </div>
 
       <div className="stats stats-vertical w-full border border-base-300 bg-base-100 sm:stats-horizontal">
-        <div className="stat"><div className="stat-title">Belum</div><div className="stat-value text-2xl">{count('belum')}</div></div>
-        <div className="stat"><div className="stat-title">Mengerjakan</div><div className="stat-value text-2xl text-info">{count('berlangsung')}</div></div>
-        <div className="stat"><div className="stat-title">Perlu dinilai</div><div className="stat-value text-2xl text-warning">{count('diserahkan')}</div></div>
-        <div className="stat"><div className="stat-title">Sudah dinilai</div><div className="stat-value text-2xl text-success">{count('dinilai')}</div></div>
+        <div className="stat">
+          <div className="stat-title">Belum</div>
+          <div className="stat-value text-2xl">{count('belum')}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">Mengerjakan</div>
+          <div className="stat-value text-2xl text-info">{count('berlangsung')}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">Perlu dinilai</div>
+          <div className="stat-value text-2xl text-warning">{count('diserahkan')}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">Sudah dinilai</div>
+          <div className="stat-value text-2xl text-success">{count('dinilai')}</div>
+        </div>
       </div>
 
       <div className="card overflow-hidden border border-base-300 bg-base-100">

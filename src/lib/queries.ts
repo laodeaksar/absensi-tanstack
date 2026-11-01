@@ -13,6 +13,12 @@ export const qk = {
   attendance: ['attendance'] as const,
   report: ['report'] as const,
   my: ['my-attendance'] as const,
+  list: ['assignments'] as const,
+  detail: (id: string) => ['assignments', id, 'detail'] as const,
+  subs: (id: string) => ['assignments', id, 'subs'] as const,
+  review: (id: string) => ['review', id] as const,
+  myTasks: ['my-tasks'] as const,
+  result: (id: string) => ['my-result', id] as const,
 }
 
 export const meQuery = queryOptions({
@@ -46,7 +52,47 @@ export const attendanceFormQuery = (date: string, classId: string) =>
   })
 
 export const reportQuery = (f: ReportFilters) =>
-  queryOptions({ queryKey: [...qk.report, f], queryFn: () => api.report(f), staleTime: 0 })
+  queryOptions({ 
+    queryKey: [...qk.report, f], 
+    queryFn: () => api.report(f), 
+    staleTime: 0
+  })
 
 export const myAttendanceQuery = (f: { startDate: string; endDate: string }) =>
-  queryOptions({ queryKey: [...qk.my, f], queryFn: () => api.myAttendance(f), staleTime: 0 })
+  queryOptions({ 
+    queryKey: [...qk.my, f],
+    queryFn: () => api.myAttendance(f), 
+    staleTime: 0 
+  })
+
+export const assignmentsQuery = queryOptions({ queryKey: tk.list, queryFn: tugas.list, staleTime: 10_000 })
+
+export const assignmentDetailQuery = (id: string) =>
+  queryOptions({ 
+    queryKey: qk.detail(id), 
+    queryFn: () => api.detail(id), 
+    staleTime: 0 
+  })
+
+export const submissionsQuery = (id: string) =>
+  queryOptions({ 
+    queryKey: qk.subs(id), 
+    queryFn: () => api.submissions(id),
+    staleTime: 0 
+  })
+
+export const reviewQuery = (submissionId: string) =>
+  queryOptions({ 
+    queryKey: qk.review(submissionId), 
+    queryFn: () => api.review(submissionId), 
+    staleTime: 0 
+  })
+
+export const myTasksQuery = queryOptions({ queryKey: tk.myTasks, queryFn: tugas.myTasks, staleTime: 0 })
+
+export const myResultQuery = (id: string) =>
+  queryOptions({ 
+    queryKey: qk.result(id), 
+    queryFn: () => api.myResult(id), 
+    staleTime: 0 
+  })

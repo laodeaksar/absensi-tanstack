@@ -11,15 +11,15 @@ import { ArrowLeft, Lock, Plus, Trash2 } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
-import { tugas } from "~/lib/tugas-api";
-import { assignmentDetailQuery, tk } from "~/lib/tugas-queries";
+import { api } from "~/lib/api";
+import { assignmentDetailQuery, qk } from "~/lib/queries";
 import {
   MAX_OPTIONS,
   MIN_OPTIONS,
   letter,
   makeQuestionSchema,
-} from "~/lib/tugas-schema";
-import type { Question, QuestionInput } from "~/lib/tugas-types";
+} from "~/lib/assignment-schema";
+import type { Question, QuestionInput } from "~/lib/types";
 import { firstMessage } from "~/lib/validation";
 import {
   DataTable,
@@ -153,13 +153,13 @@ function QuestionsPage() {
 
   const refresh = () => {
     void Promise.all([
-      qc.invalidateQueries({ queryKey: tk.detail(assignmentId) }),
-      qc.invalidateQueries({ queryKey: tk.list }),
+      qc.invalidateQueries({ queryKey: qk.detail(assignmentId) }),
+      qc.invalidateQueries({ queryKey: qk.list }),
     ]);
   };
 
   const remove = useMutation({
-    mutationFn: (id: string) => tugas.deleteQuestion(id),
+    mutationFn: (id: string) => api.deleteQuestion(id),
     onSuccess: (r) => {
       toast.success(r.message);
       refresh();
@@ -278,7 +278,7 @@ function QuestionForm({
   const schema = useMemo(() => makeQuestionSchema(), []);
 
   const save = useMutation({
-    mutationFn: (v: QuestionInput) => tugas.saveQuestion(v),
+    mutationFn: (v: QuestionInput) => api.saveQuestion(v),
     onSuccess: (r) => {
       toast.success(r.message);
       onDone();
