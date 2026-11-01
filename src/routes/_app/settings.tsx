@@ -7,13 +7,17 @@ import { api } from '~/lib/api'
 import { makePasswordSchema, schoolSchema } from '~/lib/settings-schema'
 import { toast } from '~/lib/toast'
 import { ErrorAlert, TextField } from '~/components/ui'
-import { PasswordStrength } from '~/components/PasswordStrength'
+import { PasswordStrength } from '~/components/password-strength'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsPage,
 })
 
-const ROLE_LABEL = { admin: 'Administrator', guru: 'Guru', siswa: 'Siswa' } as const
+const ROLE_LABEL = { 
+  admin: 'Administrator', 
+  guru: 'Guru', 
+  siswa: 'Siswa' 
+} as const
 
 function SettingsPage() {
   const { me } = Route.useRouteContext()

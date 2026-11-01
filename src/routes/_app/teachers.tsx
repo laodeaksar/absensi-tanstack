@@ -22,7 +22,7 @@ import {
   SearchBox, 
   TextField 
 } from '~/components/ui'
-import { PasswordStrength } from '~/components/PasswordStrength'
+import { PasswordStrength } from '~/components/password-strength'
 
 export const Route = createFileRoute('/_app/teachers')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
@@ -250,7 +250,9 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
       <form.Field name="email">{(f) => <TextField label="Email" field={f} type="email" />}</form.Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <form.Field name="username">{(f) => <TextField label="Username" field={f} autoComplete="off" />}</form.Field>
+        <form.Field name="username">
+          {(f) => <TextField label="Username" field={f} autoComplete="off" />}
+        </form.Field>
         <form.Field name="password">
           {(f) => (
             <TextField
@@ -286,7 +288,9 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
                           className="checkbox checkbox-sm checkbox-primary"
                           checked={checked}
                           onChange={() =>
-                            f.handleChange(checked ? f.state.value.filter((id) => id !== c.class_id) : [...f.state.value, c.class_id])
+                            f.handleChange(checked 
+                              ? f.state.value.filter((id) => id !== c.class_id) 
+                              : [...f.state.value, c.class_id])
                           }
                         />
                         <span>

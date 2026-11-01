@@ -5,7 +5,7 @@ import { errorText } from '~/utils/form'
 
 /* Field TanStack Form dengan validator daisyUI (kelas `validator` + `validator-hint`). */
 
-export function FieldShell({ 
+function FieldShell({ 
   label, 
   hint, 
   message, 
@@ -82,38 +82,6 @@ export function TextField({
   )
 }
 
-type TextareaExtra = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange' | 'onBlur' | 'name' | 'id'>
-
-export function TextAreaField({ 
-  label, 
-  field, 
-  hint, 
-  ...rest 
-}: { 
-  label: string; 
-  field: AnyFieldApi; 
-  hint?: string 
-} & TextareaExtra) {
-  const message = errorText(field)
-  const ref = useValidity<HTMLTextAreaElement>(message)
-
-  return (
-    <FieldShell label={label} hint={hint} message={message}>
-      <textarea
-        {...rest}
-        ref={ref}
-        id={field.name}
-        name={field.name}
-        value={field.state.value ?? ''}
-        onBlur={field.handleBlur}
-        onChange={(e) => field.handleChange(e.target.value)}
-        aria-invalid={!!message}
-        className={`textarea validator w-full ${message ? 'textarea-error' : ''}`}
-      />
-    </FieldShell>
-  )
-}
-
 type SelectExtra = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'onChange' | 'onBlur' | 'name' | 'id'>
 
 export function SelectField({
@@ -146,6 +114,38 @@ export function SelectField({
       >
         {children}
       </select>
+    </FieldShell>
+  )
+}
+
+type TextareaExtra = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange' | 'onBlur' | 'name' | 'id'>
+
+export function TextAreaField({ 
+  label, 
+  field, 
+  hint, 
+  ...rest 
+}: { 
+  label: string; 
+  field: AnyFieldApi; 
+  hint?: string 
+} & TextareaExtra) {
+  const message = errorText(field)
+  const ref = useValidity<HTMLTextAreaElement>(message)
+
+  return (
+    <FieldShell label={label} hint={hint} message={message}>
+      <textarea
+        {...rest}
+        ref={ref}
+        id={field.name}
+        name={field.name}
+        value={field.state.value ?? ''}
+        onBlur={field.handleBlur}
+        onChange={(e) => field.handleChange(e.target.value)}
+        aria-invalid={!!message}
+        className={`textarea validator w-full ${message ? 'textarea-error' : ''}`}
+      />
     </FieldShell>
   )
 }
