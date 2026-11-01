@@ -3,8 +3,18 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import {
-  assertStrongPassword, classById, fail, newHash, nowIso, randomId, requireAuth, revokeSessions,
-  strip, studentById, teacherOut, userById,
+  assertStrongPassword, 
+  classById, 
+  fail, 
+  newHash, 
+  nowIso, 
+  randomId, 
+  requireAuth, 
+  revokeSessions,
+  strip, 
+  studentById, 
+  teacherOut, 
+  userById,
 } from "./lib";
 
 const flag = (x: unknown) => x === true || x === "true" || x === "TRUE";

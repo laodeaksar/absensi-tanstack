@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build2": "convex deploy --cmd 'vite build'",
+    "build:convex": "convex deploy --cmd 'npm run build'",
     "lint": "oxlint",
     "preview": "vite preview"
   },
