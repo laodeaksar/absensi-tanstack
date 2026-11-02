@@ -76,8 +76,12 @@ function MyAttendancePage() {
             void form.handleSubmit()
           }}
         >
-          <form.Field name="startDate">{(f) => <TextField label="Dari Tanggal" field={f} type="date" max={todayStr()} />}</form.Field>
-          <form.Field name="endDate">{(f) => <TextField label="Sampai Tanggal" field={f} type="date" max={todayStr()} />}</form.Field>
+          <form.Field name="startDate">
+            {(f) => <TextField label="Dari Tanggal" field={f} type="date" max={todayStr()} />}
+          </form.Field>
+          <form.Field name="endDate">
+            {(f) => <TextField label="Sampai Tanggal" field={f} type="date" max={todayStr()} />}
+          </form.Field>
           <button type="submit" className="btn btn-primary mt-6 w-full">Tampilkan</button>
         </form>
       </div>
@@ -87,11 +91,25 @@ function MyAttendancePage() {
 
       {s ? (
         <div className="stats stats-vertical w-full border border-base-300 bg-base-100 sm:stats-horizontal">
-          <div className="stat"><div className="stat-title">Hadir</div><div className="stat-value text-2xl text-success">{s.hadir}</div></div>
-          <div className="stat"><div className="stat-title">Sakit</div><div className="stat-value text-2xl text-warning">{s.sakit}</div></div>
-          <div className="stat"><div className="stat-title">Izin</div><div className="stat-value text-2xl text-info">{s.izin}</div></div>
-          <div className="stat"><div className="stat-title">Alpa</div><div className="stat-value text-2xl text-error">{s.alpa}</div></div>
-          <div className="stat"><div className="stat-title">Kehadiran</div><div className="stat-value text-2xl text-primary">{s.persentase}%</div></div>
+          <div className="stat">
+            <div className="stat-title">Hadir</div>
+            <div className="stat-value text-2xl text-success">{s.hadir}</div></div>
+          <div className="stat">
+            <div className="stat-title">Sakit</div>
+            <div className="stat-value text-2xl text-warning">{s.sakit}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Izin</div>
+            <div className="stat-value text-2xl text-info">{s.izin}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Alpa</div>
+            <div className="stat-value text-2xl text-error">{s.alpa}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Kehadiran</div>
+            <div className="stat-value text-2xl text-primary">{s.persentase}%</div>
+          </div>
         </div>
       ) : null}
 

@@ -156,7 +156,7 @@ function ReportsPage() {
           <form.Field name="classId">
             {(f) => (
               <SelectField label="Kelas" field={f}>
-                <option disabled selected value="">Semua Kelas</option>
+                <option selected value="">Semua Kelas</option>
                 {options.map((c) => (
                   <option key={c.class_id} value={c.class_id}>{c.class_name}</option>
                 ))}
@@ -181,12 +181,30 @@ function ReportsPage() {
 
       {data.length > 0 ? (
         <div className="stats stats-vertical w-full border border-base-300 bg-base-100 md:stats-horizontal">
-          <div className="stat"><div className="stat-title">Total Data</div><div className="stat-value text-2xl text-primary">{data.length}</div></div>
-          <div className="stat"><div className="stat-title">Hadir</div><div className="stat-value text-2xl text-success">{stats.hadir}</div></div>
-          <div className="stat"><div className="stat-title">Sakit</div><div className="stat-value text-2xl text-warning">{stats.sakit}</div></div>
-          <div className="stat"><div className="stat-title">Izin</div><div className="stat-value text-2xl text-info">{stats.izin}</div></div>
-          <div className="stat"><div className="stat-title">Alpa</div><div className="stat-value text-2xl text-error">{stats.alpa}</div></div>
-          <div className="stat"><div className="stat-title">Tingkat Kehadiran</div><div className="stat-value text-primary">{pct}</div></div>
+          <div className="stat">
+            <div className="stat-title">Total Data</div>
+            <div className="stat-value text-2xl text-primary">{data.length}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Hadir</div>
+            <div className="stat-value text-2xl text-success">{stats.hadir}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Sakit</div>
+            <div className="stat-value text-2xl text-warning">{stats.sakit}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Izin</div>
+            <div className="stat-value text-2xl text-info">{stats.izin}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Alpa</div>
+            <div className="stat-value text-2xl text-error">{stats.alpa}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Tingkat Kehadiran</div>
+            <div className="stat-value text-primary">{pct}</div>
+          </div>
         </div>
       ) : null}
 

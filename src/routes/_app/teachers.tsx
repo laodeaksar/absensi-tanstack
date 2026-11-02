@@ -240,14 +240,22 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
         form.handleSubmit()
       }}
     >
-      <form.Field name="full_name">{(f) => <TextField label="Nama Lengkap" field={f} />}</form.Field>
+      <form.Field name="full_name">
+        {(f) => <TextField label="Nama Lengkap" field={f} />}
+      </form.Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <form.Field name="nip">{(f) => <TextField label="NIP" field={f} inputMode="numeric" />}</form.Field>
-        <form.Field name="phone">{(f) => <TextField label="No. HP" field={f} inputMode="tel" />}</form.Field>
+        <form.Field name="nip">{
+          (f) => <TextField label="NIP" field={f} inputMode="numeric" />}
+        </form.Field>
+        <form.Field name="phone">
+          {(f) => <TextField label="No. HP" field={f} inputMode="tel" />}
+        </form.Field>
       </div>
 
-      <form.Field name="email">{(f) => <TextField label="Email" field={f} type="email" />}</form.Field>
+      <form.Field name="email">
+        {(f) => <TextField label="Email" field={f} type="email" />}
+      </form.Field>
 
       <div className="grid grid-cols-2 gap-4">
         <form.Field name="username">
