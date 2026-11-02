@@ -6,7 +6,7 @@ import { ArrowLeft, Check, X } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { toast } from '~/lib/toast'
 import { api } from '~/lib/api'
-import { reviewQuery, qk } from '~/lib/tugas-queries'
+import { reviewQuery, qk } from '~/lib/queries'
 import { letter, makeGradeSchema } from '~/lib/assignment-schema'
 import { ErrorAlert, TextField, TextAreaField } from '~/components/ui'
 

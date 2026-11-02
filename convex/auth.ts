@@ -60,7 +60,11 @@ export const login = mutation({
   handler: async (ctx, { username, password }) => {
     const key = username.trim().toLowerCase();
     const now = Date.now();
-    if (!key || key.length > 100 || password.length > 200) return { ok: false as const, message: "Username atau password salah." };
+    if (!key || key.length > 100 || password.length > 200) {
+      return { 
+        ok: false as const, 
+        message: "Username atau password salah." };
+    }
 
     const attempt = await ctx.db
       .query("login_attempts")

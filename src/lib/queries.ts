@@ -39,10 +39,23 @@ export const settingsQuery = queryOptions({
   staleTime: 5 * 60_000,
 })
 
-export const studentsQuery = queryOptions({ queryKey: qk.students, queryFn: api.students })
-export const classesQuery = queryOptions({ queryKey: qk.classes, queryFn: api.classes })
-export const teachersQuery = queryOptions({ queryKey: qk.teachers, queryFn: api.teachers })
-export const dashboardQuery = queryOptions({ queryKey: qk.dashboard, queryFn: api.dashboard, staleTime: 15_000 })
+export const studentsQuery = queryOptions({ 
+  queryKey: qk.students, 
+  queryFn: api.students 
+})
+export const classesQuery = queryOptions({ 
+  queryKey: qk.classes, 
+  queryFn: api.classes 
+})
+export const teachersQuery = queryOptions({ 
+  queryKey: qk.teachers, 
+  queryFn: api.teachers 
+})
+export const dashboardQuery = queryOptions({ 
+  queryKey: qk.dashboard, 
+  queryFn: api.dashboard, 
+  staleTime: 15_000
+})
 
 export const attendanceFormQuery = (date: string, classId: string) =>
   queryOptions({
@@ -65,7 +78,11 @@ export const myAttendanceQuery = (f: { startDate: string; endDate: string }) =>
     staleTime: 0 
   })
 
-export const assignmentsQuery = queryOptions({ queryKey: tk.list, queryFn: tugas.list, staleTime: 10_000 })
+export const assignmentsQuery = queryOptions({ 
+  queryKey: qk.list, 
+  queryFn: api.list, 
+  staleTime: 10_000
+})
 
 export const assignmentDetailQuery = (id: string) =>
   queryOptions({ 
@@ -88,7 +105,11 @@ export const reviewQuery = (submissionId: string) =>
     staleTime: 0 
   })
 
-export const myTasksQuery = queryOptions({ queryKey: tk.myTasks, queryFn: tugas.myTasks, staleTime: 0 })
+export const myTasksQuery = queryOptions({ 
+  queryKey: qk.myTasks, 
+  queryFn: api.myTasks, 
+  staleTime: 0 
+})
 
 export const myResultQuery = (id: string) =>
   queryOptions({ 

@@ -2,7 +2,19 @@ import { useEffect, useState } from 'react'
 import { Link, Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import {
-  BarChart3, BookOpenCheck, CalendarCheck, ClipboardCheck, ClipboardList, DoorOpen, LayoutDashboard, LogOut, Menu, School, Settings as SettingsIcon, UserCog, Users,
+  BarChart3, 
+  BookOpenCheck, 
+  CalendarCheck, 
+  ClipboardCheck, 
+  ClipboardList, 
+  DoorOpen, 
+  LayoutDashboard, 
+  LogOut, 
+  Menu, 
+  School, 
+  Settings as SettingsIcon, 
+  UserCog, 
+  Users,
 } from 'lucide-react'
 import { requireUser } from '~/lib/auth'
 import { settingsQuery } from '~/lib/queries'
@@ -22,7 +34,17 @@ export const Route = createFileRoute('/_app')({
 
 type NavTo = '/dashboard' | '/attendance' | '/reports' | '/assignments' | '/tasks' | '/students' | '/classes' | '/teachers' | '/my-attendance' | '/settings'
 
-function NavItem({ to, icon, label, onNavigate }: { to: NavTo; icon: React.ReactNode; label: string; onNavigate: () => void }) {
+function NavItem({ 
+  to, 
+  icon, 
+  label, 
+  onNavigate 
+}: { 
+  to: NavTo; 
+  icon: React.ReactNode; 
+  label: string; 
+  onNavigate: () => void
+}) {
   return (
     <li>
       <Link to={to} onClick={onNavigate} activeProps={{ className: 'menu-active' }}>
@@ -89,33 +111,88 @@ function AppLayout() {
           <ul className="menu w-full flex-1 gap-1 p-3">
             {!isStudent && (
               <>
-                <NavItem to="/dashboard" icon={<LayoutDashboard className={ic} />} label="Dashboard" onNavigate={close} />
+                <NavItem 
+                  to="/dashboard" 
+                  icon={<LayoutDashboard className={ic} />} 
+                  label="Dashboard" 
+                  onNavigate={close}
+                />
                 <li className="menu-title mt-3">Operasional</li>
-                <NavItem to="/attendance" icon={<ClipboardCheck className={ic} />} label="Input Absensi" onNavigate={close} />
-                <NavItem to="/assignments" icon={<ClipboardList className={ic} />} label="Tugas" onNavigate={close} />
-                <NavItem to="/reports" icon={<BarChart3 className={ic} />} label="Laporan" onNavigate={close} />
+                <NavItem 
+                  to="/attendance" 
+                  icon={<ClipboardCheck className={ic} />} 
+                  label="Input Absensi" 
+                  onNavigate={close} 
+                />
+                <NavItem 
+                  to="/assignments" 
+                  icon={<ClipboardList className={ic} />} 
+                  label="Tugas" 
+                  onNavigate={close}
+                />
+                <NavItem 
+                  to="/reports" 
+                  icon={<BarChart3 className={ic} />} 
+                  label="Laporan" 
+                  onNavigate={close} 
+                />
               </>
             )}
             {isAdmin && (
               <>
                 <li className="menu-title mt-3">Master Data</li>
-                <NavItem to="/students" icon={<Users className={ic} />} label="Data Siswa" onNavigate={close} />
-                <NavItem to="/classes" icon={<DoorOpen className={ic} />} label="Data Kelas" onNavigate={close} />
-                <NavItem to="/teachers" icon={<UserCog className={ic} />} label="Data Guru" onNavigate={close} />
+                <NavItem 
+                  to="/students" 
+                  icon={<Users className={ic} />} 
+                  label="Data Siswa" 
+                  onNavigate={close} 
+                />
+                <NavItem 
+                  to="/classes" 
+                  icon={<DoorOpen className={ic} />} 
+                  label="Data Kelas" 
+                  onNavigate={close} 
+                />
+                <NavItem 
+                  to="/teachers" 
+                  icon={<UserCog className={ic} />} 
+                  label="Data Guru" 
+                  onNavigate={close} 
+                />
               </>
             )}
             {isStudent && (
               <>
-                <NavItem to="/my-attendance" icon={<CalendarCheck className={ic} />} label="Kehadiran Saya" onNavigate={close} />
-                <NavItem to="/tasks" icon={<BookOpenCheck className={ic} />} label="Tugas Saya" onNavigate={close} />
+                <NavItem 
+                  to="/my-attendance" 
+                  icon={<CalendarCheck className={ic} />} 
+                  label="Kehadiran Saya" 
+                  onNavigate={close} 
+                />
+                <NavItem 
+                  to="/tasks"
+                  icon={<BookOpenCheck className={ic} />} 
+                  label="Tugas Saya" 
+                  onNavigate={close} 
+                />
               </>
             )}
             <li className="menu-title mt-3">Sistem</li>
-            <NavItem to="/settings" icon={<SettingsIcon className={ic} />} label="Pengaturan" onNavigate={close} />
+            <NavItem 
+              to="/settings" 
+              icon={<SettingsIcon className={ic} />} 
+              label="Pengaturan" 
+              onNavigate={close} 
+            />
           </ul>
 
           <div className="shrink-0 border-t border-base-300 p-4">
-            <button type="button" className="btn btn-outline w-full" onClick={() => logout.mutate()} disabled={logout.isPending}>
+            <button 
+              type="button" 
+              className="btn btn-outline w-full" 
+              onClick={() => logout.mutate()} 
+              disabled={logout.isPending}
+            >
               <LogOut className="size-4" /> Logout
             </button>
           </div>

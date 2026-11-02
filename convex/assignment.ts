@@ -44,18 +44,27 @@ async function manageAssignment(ctx: QueryCtx, user: Doc<"users">, id: string) {
 }
 
 async function findSubmission(ctx: QueryCtx, id: string) {
-  const s = await ctx.db.query("submissions").withIndex("by_submission_id", (q) => q.eq("submission_id", id)).unique();
+  const s = await ctx.db
+    .query("submissions")
+    .withIndex("by_submission_id", (q) => q.eq("submission_id", id))
+    .unique();
   if (!s) fail("Data pengumpulan tidak ditemukan.");
   return s!;
 }
 
 const questionsOf = async (ctx: QueryCtx, assignmentId: string) =>
-  (await ctx.db.query("questions").withIndex("by_assignment", (q) => q.eq("assignment_id", assignmentId)).collect()).sort(
-    (a, b) => a.order_no - b.order_no,
+  (await ctx.db
+    .query("questions")
+    .withIndex("by_assignment", (q) => q.eq("assignment_id", assignmentId))
+    .collect())
+    .sort((a, b) => a.order_no - b.order_no,
   );
 
 const submissionsOf = (ctx: QueryCtx, assignmentId: string) =>
-  ctx.db.query("submissions").withIndex("by_assignment", (q) => q.eq("assignment_id", assignmentId)).collect();
+  ctx.db
+    .query("submissions")
+    .withIndex("by_assignment", (q) => q.eq("assignment_id", assignmentId))
+    .collect();
 
 const maxScoreOf = (qs: Doc<"questions">[]) => qs.reduce((t, q) => t + q.points, 0);
 
@@ -83,12 +92,18 @@ async function classNameMap(ctx: QueryCtx) {
 }
 
 async function activeMemberIds(ctx: QueryCtx, classId: string) {
-  const hist = await ctx.db.query("student_class_history").withIndex("by_class", (q) => q.eq("class_id", classId)).collect();
+  const hist = await ctx.db
+    .query("student_class_history")
+    .withIndex("by_class", (q) => q.eq("class_id", classId))
+    .collect();
   return [...new Set(hist.filter((h) => h.is_active).map((h) => h.student_id))];
 }
 
 async function myClassIds(ctx: QueryCtx, studentId: string) {
-  const hist = await ctx.db.query("student_class_history").withIndex("by_student", (q) => q.eq("student_id", studentId)).collect();
+  const hist = await ctx.db
+    .query("student_class_history")
+    .withIndex("by_student", (q) => q.eq("student_id", studentId))
+    .collect();
   return [...new Set(hist.filter((h) => h.is_active).map((h) => h.class_id))];
 }
 

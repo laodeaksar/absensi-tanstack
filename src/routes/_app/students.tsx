@@ -132,7 +132,12 @@ function StudentsPage() {
     features,
     columns,
     data,
-    initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
+    initialState: { 
+      pagination: { 
+        pageIndex: 0, 
+        pageSize: 10 
+      } 
+    },
   });
 
   return (
@@ -150,7 +155,7 @@ function StudentsPage() {
                   "Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.",
                 )
               )
-                generate.mutate();
+              generate.mutate();
             }}
           >
             <KeyRound className="size-4" /> Buat Akun Siswa

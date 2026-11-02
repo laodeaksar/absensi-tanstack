@@ -10,7 +10,7 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { ArrowLeft, Clock, Hourglass, Send } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { toast } from "~/lib/toast";
-import { api } from "~/lib/tugas-api";
+import { api } from "~/lib/api";
 import { myResultQuery, myTasksQuery, qk } from "~/lib/queries";
 import {
   ESSAY_MAX,
@@ -56,7 +56,7 @@ function TaskPage() {
   const [session, setSession] = useState<TaskSession | null>(null);
 
   const start = useMutation({
-    mutationFn: () => tugas.start(assignmentId),
+    mutationFn: () => api.start(assignmentId),
     onSuccess: (s) => setSession(s),
     onError: (e) => {
       toast.error(e.message);
@@ -297,7 +297,7 @@ function TaskForm({
     onError: async (e) => {
       toast.error(e.message);
       if (/habis|sudah dikumpulkan/i.test(e.message)) {
-        await qc.invalidateQueries({ queryKey: tk.myTasks });
+        await qc.invalidateQueries({ queryKey: qk.myTasks });
         onFinished();
       }
     },

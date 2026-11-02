@@ -70,7 +70,6 @@ export const api = {
   review: (submissionId: string) => rpc<ReviewData>('getSubmissionForReview', submissionId),
   grade: (submissionId: string, grades: GradeInput[]) => rpc<Msg>('gradeSubmission', submissionId, grades),
 
-  // siswa
   myTasks: () => rpc<{ data: MyTask[] }>('listMyTasks').then((r) => r.data),
   start: (id: string) => rpc<TaskSession>('startTask', id),
   submit: (id: string, answers: AnswerInput[]) => rpc<Msg & { status: string }>('submitTask', id, answers),

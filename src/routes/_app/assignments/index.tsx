@@ -228,7 +228,7 @@ function AssignmentsPage() {
           item={modal.item}
           onDone={() => {
             setModal({ open: false, item: null });
-            void qc.invalidateQueries({ queryKey: tk.list });
+            void qc.invalidateQueries({ queryKey: qk.list });
           }}
           onCancel={() => setModal((m) => ({ ...m, open: false }))}
         />
