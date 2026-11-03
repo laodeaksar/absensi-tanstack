@@ -377,7 +377,7 @@ function AssignmentForm({
             ? firstMessage(f.state.meta.errors)
             : "";
           return (
-            <div className="pt-1">
+            <div className="pt-1 min-w-0">
               <label
                 className={`flex items-center gap-2 text-sm ${questionCount === 0 ? "opacity-60" : "cursor-pointer"}`}
               >
@@ -391,7 +391,7 @@ function AssignmentForm({
                 <span>Publikasikan ke siswa</span>
               </label>
               {questionCount === 0 ? (
-                <p className="label mt-1">
+                <p className="label mt-1 [overflow-wrap:anywhere]">
                   Tambahkan soal terlebih dahulu sebelum mempublikasikan.
                 </p>
               ) : null}

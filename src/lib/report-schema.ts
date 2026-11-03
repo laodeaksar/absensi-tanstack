@@ -14,7 +14,11 @@ export function makeReportFilterSchema(rules: { classIds: string[] }) {
     })
     .superRefine((v, ctx) => {
       const msg = rangeIssue(v.startDate, v.endDate)
-      if (msg) ctx.addIssue({ code: 'custom', path: ['endDate'], message: msg })
+      if (msg) ctx.addIssue({ 
+        code: 'custom', 
+        path: ['endDate'], 
+        message: msg 
+      })
     })
 }
 
@@ -32,6 +36,10 @@ export function makeMyRangeSchema() {
     })
     .superRefine((v, ctx) => {
       const msg = rangeIssue(v.startDate, v.endDate)
-      if (msg) ctx.addIssue({ code: 'custom', path: ['endDate'], message: msg })
+      if (msg) ctx.addIssue({ 
+        code: 'custom', 
+        path: ['endDate'], 
+        message: msg 
+      })
     })
 }

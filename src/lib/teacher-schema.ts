@@ -39,18 +39,34 @@ export function makeTeacherSchema(rules: TeacherRules) {
       const nip = v.nip.trim()
 
       if (username && taken('username', username)) {
-        ctx.addIssue({ code: 'custom', path: ['username'], message: 'Username sudah digunakan' })
+        ctx.addIssue({ 
+          code: 'custom', 
+          path: ['username'], 
+          message: 'Username sudah digunakan' 
+        })
       }
       if (nip && taken('nip', nip)) {
-        ctx.addIssue({ code: 'custom', path: ['nip'], message: 'NIP sudah digunakan' })
+        ctx.addIssue({ 
+          code: 'custom', 
+          path: ['nip'], 
+          message: 'NIP sudah digunakan'
+        })
       }
 
       // Password: wajib untuk guru baru, opsional saat edit; bila diisi harus kuat
       if (isNew && !v.password) {
-        ctx.addIssue({ code: 'custom', path: ['password'], message: 'Password wajib diisi untuk guru baru' })
+        ctx.addIssue({ 
+          code: 'custom', 
+          path: ['password'], 
+          message: 'Password wajib diisi untuk guru baru'
+        })
       } else if (v.password) {
         const issue = passwordIssues(v.password, { forbidden: [username, v.full_name, nip, v.phone] })[0]
-        if (issue) ctx.addIssue({ code: 'custom', path: ['password'], message: issue })
+        if (issue) ctx.addIssue({ 
+          code: 'custom', 
+          path: ['password'], 
+          message: issue 
+        })
       }
     })
 }

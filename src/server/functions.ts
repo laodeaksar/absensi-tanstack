@@ -1,74 +1,48 @@
 import { createMiddleware, createServerFn } from '@tanstack/react-start'
 import { deleteCookie, getCookie, setCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import { callConvex } from './convex.server'
+import { callConvex, isRpcName } from './convex.server'
+import type { RpcName } from './convex.server'
+
 import type { SessionUser } from '~/lib/types'
 
-const TOKEN_COOKIE = 'eduabsen_token'
-const SIX_HOURS = 60 * 60 * 6
+const SESSION_COOKIE = 'eduabsen_token' // nilai tetap agar sesi berjalan tidak putus
+const SESSION_MAX_AGE_S = 60 * 60 * 6
 
-function cookieOptions() {
+function sessionCookieOptions() {
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: SIX_HOURS,
+    maxAge: SESSION_MAX_AGE_S,
   }
 }
 
-// Daftar fungsi backend yang boleh dipanggil dari browser (token disisipkan server).
-export const GAS_FUNCTIONS = [
-  'fetchMasterData',
-  'saveStudent',
-  'saveClass',
-  'saveTeacher',
-  'generateStudentAccounts',
-  'resetStudentAccount',
-  'getAttendanceForm',
-  'submitAttendanceBatch',
-  'getDashboardStats',
-  'getReportData',
-  'getMyAttendance',
-  'getSettings',
-  'saveSettings',
-  'changePassword',
-  // Tugas
-  'listAssignments',
-  'saveAssignment',
-  'deleteAssignment',
-  'getAssignmentDetail',
-  'saveQuestion',
-  'deleteQuestion',
-  'listSubmissions',
-  'getSubmissionForReview',
-  'gradeSubmission',
-  'listMyTasks',
-  'startTask',
-  'submitTask',
-  'getMyResult',
-] as const
-export type GasName = (typeof GAS_FUNCTIONS)[number]
+export type { RpcName } // agar api.ts tetap mengimpor dari '~/server/functions'
 
 const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
-  const token = getCookie(TOKEN_COOKIE)
+  const token = getCookie(SESSION_COOKIE)
   if (!token) throw new Error('AUTH_FAILED')
   return next({ context: { token } })
 })
 
 /** RPC generik untuk semua endpoint yang butuh login (ke Convex). Token tidak pernah sampai ke browser. */
-export const gasRpc = createServerFn({ method: 'POST' })
+export const rpcFn = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .validator(z.object({ fn: z.enum(GAS_FUNCTIONS), args: z.array(z.unknown()) }))
+  .validator(z.object({ 
+    fn: z.custom<RpcName>(isRpcName, "Fungsi tidak dikenal"), 
+    args: z.array(z.unknown()) 
+  }))
   .handler(async ({ data, context }) => {
     try {
       const res = await callConvex<any>(data.fn, data.args, context.token)
       // Setelah ganti password, semua sesi dibatalkan di backend
-      if (data.fn === 'changePassword') deleteCookie(TOKEN_COOKIE, { path: '/' })
+      if (data.fn === 'changePassword') deleteCookie(SESSION_COOKIE, { path: '/' })
       return res
     } catch (e) {
       if (e instanceof Error && e.message.includes('AUTH_FAILED')) {
-        deleteCookie(TOKEN_COOKIE, { path: '/' })
+        deleteCookie(SESSION_COOKIE, { path: '/' })
       }
       throw e
     }
@@ -90,12 +64,12 @@ export const loginFn = createServerFn({ method: 'POST' })
       data.password,
     ])
     if (!res.ok || !res.token || !res.user) throw new Error(res.message || 'Login gagal.')
-    setCookie(TOKEN_COOKIE, res.token, cookieOptions())
+    setCookie(SESSION_COOKIE, res.token, sessionCookieOptions())
     return res.user
   })
 
 export const logoutFn = createServerFn({ method: 'POST' }).handler(async () => {
-  const token = getCookie(TOKEN_COOKIE)
+  const token = getCookie(SESSION_COOKIE)
   if (token) {
     try {
       await callConvex('logout', [], token)
@@ -103,20 +77,20 @@ export const logoutFn = createServerFn({ method: 'POST' }).handler(async () => {
       /* abaikan: cookie tetap dihapus */
     }
   }
-  deleteCookie(TOKEN_COOKIE, { path: '/' })
+  deleteCookie(SESSION_COOKIE, { path: '/' })
   return { ok: true }
 })
 
 /** Sesi aktif (atau null). Dipakai guard route. */
 export const getMeFn = createServerFn({ method: 'GET' }).handler(async (): Promise<SessionUser | null> => {
-  const token = getCookie(TOKEN_COOKIE)
+  const token = getCookie(SESSION_COOKIE)
   if (!token) return null
   try {
     const res = await callConvex<{ user: SessionUser }>('getMe', [], token)
     return res.user
   } catch (e) {
     if (e instanceof Error && e.message.includes('AUTH_FAILED')) {
-      deleteCookie(TOKEN_COOKIE, { path: '/' })
+      deleteCookie(SESSION_COOKIE, { path: '/' })
       return null
     }
     throw e

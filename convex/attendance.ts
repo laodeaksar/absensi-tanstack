@@ -30,7 +30,10 @@ async function assertAttendanceEditable(ctx: QueryCtx, user: Doc<"users">, date:
 }
 
 async function activeMembers(ctx: QueryCtx, classId: string) {
-  const hist = await ctx.db.query("student_class_history").withIndex("by_class", (q) => q.eq("class_id", classId)).collect();
+  const hist = await ctx.db
+    .query("student_class_history")
+    .withIndex("by_class", (q) => q.eq("class_id", classId))
+    .collect();
   return [...new Set(hist.filter((h) => h.is_active).map((h) => h.student_id))];
 }
 

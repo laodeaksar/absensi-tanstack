@@ -120,14 +120,25 @@ export const listAssignments = query({
 
     const data = [];
     for (const a of all) {
-      const qs = await ctx.db.query("questions").withIndex("by_assignment", (q) => q.eq("assignment_id", a.assignment_id)).collect();
+      const qs = await ctx.db
+        .query("questions")
+        .withIndex("by_assignment", (q) => q.eq("assignment_id", a.assignment_id))
+        .collect();
       const subs = await submissionsOf(ctx, a.assignment_id);
       data.push({
-        assignment_id: a.assignment_id, title: a.title, description: a.description, class_id: a.class_id,
-        class_name: classes.get(a.class_id) ?? "-", due_at: a.due_at, duration_minutes: a.duration_minutes,
-        is_published: a.is_published, question_count: qs.length, started_count: subs.length,
+        assignment_id: a.assignment_id, 
+        title: a.title, 
+        description: a.description, 
+        class_id: a.class_id,
+        class_name: classes.get(a.class_id) ?? "-", 
+        due_at: a.due_at, 
+        duration_minutes: a.duration_minutes,
+        is_published: a.is_published,
+        question_count: qs.length,
+        started_count: subs.length,
         submitted_count: subs.filter((s) => s.status !== "berlangsung").length,
-        pending_count: subs.filter((s) => s.status === "diserahkan").length, created_at: a.created_at,
+        pending_count: subs.filter((s) => s.status === "diserahkan").length, 
+        created_at: a.created_at,
       });
     }
     data.sort((x, y) => y.created_at.localeCompare(x.created_at));
@@ -180,10 +191,21 @@ export const saveAssignment = mutation({
 
     const id = randomId("ASG");
     await ctx.db.insert("assignments", {
-      assignment_id: id, title, description, class_id: classId, due_at: dueAt, duration_minutes: duration,
-      is_published: false, created_by: user.user_id, created_at: now, updated_at: now,
+      assignment_id: id, 
+      title, 
+      description, 
+      class_id: classId, 
+      due_at: dueAt, 
+      duration_minutes: duration,
+      is_published: false, 
+      created_by: user.user_id, 
+      created_at: now, 
+      updated_at: now,
     });
-    return { message: "Tugas dibuat. Tambahkan soal lalu publikasikan.", assignment_id: id };
+    return { 
+      message: "Tugas dibuat. Tambahkan soal lalu publikasikan.", 
+      assignment_id: id 
+    };
   },
 });
 
@@ -215,9 +237,16 @@ export const getAssignmentDetail = query({
     const classes = await classNameMap(ctx);
     return {
       assignment: {
-        assignment_id: a.assignment_id, title: a.title, description: a.description, class_id: a.class_id,
-        class_name: classes.get(a.class_id) ?? "-", due_at: a.due_at, duration_minutes: a.duration_minutes,
-        is_published: a.is_published, question_count: qs.length, started_count: subs.length,
+        assignment_id: a.assignment_id, 
+        title: a.title, 
+        description: a.description, 
+        class_id: a.class_id,
+        class_name: classes.get(a.class_id) ?? "-", 
+        due_at: a.due_at, 
+        duration_minutes: a.duration_minutes,
+        is_published: a.is_published, 
+        question_count: qs.length, 
+        started_count: subs.length,
         submitted_count: subs.filter((s) => s.status !== "berlangsung").length,
         pending_count: subs.filter((s) => s.status === "diserahkan").length,
       },
@@ -275,14 +304,29 @@ export const saveQuestion = mutation({
     if (d.question_id) {
       const q = await ctx.db.query("questions").withIndex("by_question_id", (x) => x.eq("question_id", String(d.question_id))).unique();
       if (!q || q.assignment_id !== a.assignment_id) fail("Soal tidak ditemukan.");
-      await ctx.db.patch(q!._id, { type: qType, text, options, correct_index: correct, points, updated_at: now });
+      await ctx.db.patch(q!._id, { 
+        type: qType, 
+        text, 
+        options, 
+        correct_index: correct, 
+        points, 
+        updated_at: now 
+      });
       return { message: "Soal diperbarui." };
     }
 
     const maxOrder = (await questionsOf(ctx, a.assignment_id)).reduce((m, q) => Math.max(m, q.order_no), 0);
     await ctx.db.insert("questions", {
-      question_id: randomId("QST"), assignment_id: a.assignment_id, type: qType, text, options, correct_index: correct,
-      points, order_no: maxOrder + 1, created_at: now, updated_at: now,
+      question_id: randomId("QST"), 
+      assignment_id: a.assignment_id, 
+      type: qType, 
+      text, 
+      options, 
+      correct_index: correct,
+      points, 
+      order_no: maxOrder + 1,
+      created_at: now, 
+      updated_at: now,
     });
     return { message: "Soal ditambahkan." };
   },
@@ -300,7 +344,10 @@ export const deleteQuestion = mutation({
     await ctx.db.delete(q!._id);
     // Tugas tanpa soal tidak boleh tetap terbit
     if (a.is_published && (await questionsOf(ctx, a.assignment_id)).length === 0) {
-      await ctx.db.patch(a._id, { is_published: false, updated_at: nowIso() });
+      await ctx.db.patch(a._id, { 
+        is_published: false, 
+        updated_at: nowIso() 
+      });
     }
     return { message: "Soal dihapus." };
   },
@@ -326,8 +373,11 @@ export const listSubmissions = query({
       const finished = sub?.status === "dinilai";
       const partial = sub?.status === "diserahkan";
       rows.push({
-        student_id: id, nis: st?.nis || "-", full_name: st?.full_name || "Siswa Tidak Ditemukan",
-        status: sub ? sub.status : "belum", submission_id: sub ? sub.submission_id : "",
+        student_id: id, 
+        nis: st?.nis || "-", 
+        full_name: st?.full_name || "Siswa Tidak Ditemukan",
+        status: sub ? sub.status : "belum",
+        submission_id: sub ? sub.submission_id : "",
         score: finished ? num(sub!.total_score) : partial ? num(sub!.auto_score) : "",
         max_score: max,
         nilai: finished && max > 0 ? round1((num(sub!.total_score) / max) * 100) : "",
@@ -338,7 +388,12 @@ export const listSubmissions = query({
 
     const classes = await classNameMap(ctx);
     return {
-      assignment: { assignment_id: a.assignment_id, title: a.title, class_name: classes.get(a.class_id) ?? "-", max_score: max },
+      assignment: { 
+        assignment_id: a.assignment_id, 
+        title: a.title, 
+        class_name: classes.get(a.class_id) ?? "-", 
+        max_score: max 
+      },
       data: rows,
     };
   },
@@ -359,11 +414,22 @@ export const getSubmissionForReview = query({
 
     return {
       submission: {
-        submission_id: sub.submission_id, status: sub.status, auto_score: num(sub.auto_score),
-        total_score: sub.total_score === null ? "" : sub.total_score, max_score: maxScoreOf(qs), submitted_at: num(sub.submitted_at),
+        submission_id: sub.submission_id, 
+        status: sub.status, 
+        auto_score: num(sub.auto_score),
+        total_score: sub.total_score === null ? "" : sub.total_score, 
+        max_score: maxScoreOf(qs),
+        submitted_at: num(sub.submitted_at),
       },
-      student: { full_name: st?.full_name || "-", nis: st?.nis || "-" },
-      assignment: { assignment_id: a.assignment_id, title: a.title, class_name: classes.get(a.class_id) ?? "-" },
+      student: { 
+        full_name: st?.full_name || "-", 
+        nis: st?.nis || "-" 
+      },
+      assignment: { 
+        assignment_id: a.assignment_id, 
+        title: a.title, 
+        class_name: classes.get(a.class_id) ?? "-" 
+      },
       answers: qs.map((q) => {
         const ans = answers.find((x) => x.question_id === q.question_id);
         return {
@@ -405,7 +471,10 @@ export const gradeSubmission = mutation({
       parsed.set(q.question_id, { score: round2(sc), feedback: fb });
     }
 
-    const answers = await ctx.db.query("answers").withIndex("by_submission", (x) => x.eq("submission_id", sub.submission_id)).collect();
+    const answers = await ctx.db
+      .query("answers")
+      .withIndex("by_submission", (x) => x.eq("submission_id", sub.submission_id))
+      .collect();
     let auto = 0;
     let manual = 0;
     for (const q of qs) {
@@ -419,15 +488,26 @@ export const gradeSubmission = mutation({
       if (ans) await ctx.db.patch(ans._id, { score: p.score, feedback: p.feedback });
       else {
         await ctx.db.insert("answers", {
-          answer_id: randomId("ANS"), submission_id: sub.submission_id, question_id: q.question_id,
-          answer: "", is_correct: null, score: p.score, feedback: p.feedback,
+          answer_id: randomId("ANS"), 
+          submission_id: sub.submission_id, 
+          question_id: q.question_id,
+          answer: "", 
+          is_correct: null, 
+          score: p.score, 
+          feedback: p.feedback,
         });
       }
     }
 
     await ctx.db.patch(sub._id, {
-      status: "dinilai", auto_score: round2(auto), manual_score: round2(manual), total_score: round2(auto + manual),
-      max_score: maxScoreOf(qs), graded_by: user.user_id, graded_at: Date.now(), updated_at: nowIso(),
+      status: "dinilai", 
+      auto_score: round2(auto), 
+      manual_score: round2(manual), 
+      total_score: round2(auto + manual),
+      max_score: maxScoreOf(qs), 
+      graded_by: user.user_id, 
+      graded_at: Date.now(), 
+      updated_at: nowIso(),
     });
     return { message: "Penilaian disimpan. Nilai kini terlihat oleh siswa." };
   },
@@ -455,8 +535,14 @@ export const listMyTasks = query({
       const max = maxScoreOf(qs);
       const finished = sub?.status === "dinilai";
       data.push({
-        assignment_id: a.assignment_id, title: a.title, description: a.description, class_name: classes.get(a.class_id) ?? "-",
-        due_at: a.due_at, duration_minutes: a.duration_minutes, question_count: qs.length, max_score: max,
+        assignment_id: a.assignment_id,
+        title: a.title, 
+        description: a.description, 
+        class_name: classes.get(a.class_id) ?? "-",
+        due_at: a.due_at, 
+        duration_minutes: a.duration_minutes, 
+        question_count: qs.length, 
+        max_score: max,
         status: sub ? sub.status : "belum",
         // Nilai hanya diberikan setelah status "dinilai" (esai sudah direview)
         score: finished ? num(sub!.total_score) : "",
@@ -487,14 +573,24 @@ async function finalizeSubmission(
       const score = correct ? q.points : 0;
       auto += score;
       await ctx.db.insert("answers", {
-        answer_id: randomId("ANS"), submission_id: sub.submission_id, question_id: q.question_id,
-        answer: valid ? String(idx) : "", is_correct: correct, score, feedback: "",
+        answer_id: randomId("ANS"), 
+        submission_id: sub.submission_id,
+        question_id: q.question_id,
+        answer: valid ? String(idx) : "",
+        is_correct: correct, 
+        score, 
+        feedback: "",
       });
     } else {
       hasEssay = true;
       await ctx.db.insert("answers", {
-        answer_id: randomId("ANS"), submission_id: sub.submission_id, question_id: q.question_id,
-        answer: String(raw ?? "").slice(0, ESSAY_MAX), is_correct: null, score: null, feedback: "",
+        answer_id: randomId("ANS"),
+        submission_id: sub.submission_id,
+        question_id: q.question_id,
+        answer: String(raw ?? "").slice(0, ESSAY_MAX), 
+        is_correct: null, 
+        score: null, 
+        feedback: "",
       });
     }
   }
@@ -534,9 +630,19 @@ export const startTask = mutation({
       const due = dueMs(a.due_at);
       if (due && now > due) fail("Batas waktu pengumpulan sudah lewat.");
       const id = await ctx.db.insert("submissions", {
-        submission_id: randomId("SUB"), assignment_id: a.assignment_id, student_id: user.student_id, status: "berlangsung",
-        started_at: now, submitted_at: null, auto_score: null, manual_score: null, total_score: null,
-        max_score: maxScoreOf(qs), graded_by: "", graded_at: null, updated_at: nowIso(),
+        submission_id: randomId("SUB"), 
+        assignment_id: a.assignment_id, 
+        student_id: user.student_id, 
+        status: "berlangsung",
+        started_at: now, 
+        submitted_at: null, 
+        auto_score: null, 
+        manual_score: null, 
+        total_score: null,
+        max_score: maxScoreOf(qs), 
+        graded_by: "", 
+        graded_at: null, 
+        updated_at: nowIso(),
       });
       sub = (await ctx.db.get(id))!;
     }
@@ -546,15 +652,21 @@ export const startTask = mutation({
       // Waktu habis tanpa kumpul. Catatan: perubahan di sini ikut dibatalkan bila kita melempar error,
       // jadi penutupan dilakukan lalu hasilnya dikembalikan sebagai pesan, bukan exception.
       await finalizeSubmission(ctx, sub, qs, new Map());
-      return { closed: true as const, message: "Waktu mengerjakan sudah habis. Tugas ditutup otomatis." };
+      return { 
+        closed: true as const, 
+        message: "Waktu mengerjakan sudah habis. Tugas ditutup otomatis." 
+      };
     }
 
     return {
       closed: false as const,
       submission_id: sub.submission_id,
       assignment: {
-        assignment_id: a.assignment_id, title: a.title, description: a.description,
-        duration_minutes: a.duration_minutes, due_at: a.due_at,
+        assignment_id: a.assignment_id, 
+        title: a.title, 
+        description: a.description,
+        duration_minutes: a.duration_minutes, 
+        due_at: a.due_at,
       },
       questions: qs.map((q) => questionOut(q, true)),
       started_at: sub.started_at,
@@ -580,7 +692,11 @@ export const submitTask = mutation({
     const deadline = deadlineOf(a, sub!);
     if (deadline && Date.now() > deadline + GRACE_MS) {
       await finalizeSubmission(ctx, sub!, qs, new Map());
-      return { status: "diserahkan" as const, closed: true, message: "Waktu mengerjakan sudah habis. Jawaban tidak dapat dikumpulkan." };
+      return { 
+        status: "diserahkan" as const, 
+        closed: true, 
+        message: "Waktu mengerjakan sudah habis. Jawaban tidak dapat dikumpulkan." 
+      };
     }
 
     const map = new Map<string, unknown>();
@@ -634,8 +750,14 @@ export const getMyResult = query({
     const total = num(sub!.total_score);
     return {
       ...base,
-      score: total, max_score: max, nilai: max > 0 ? round1((total / max) * 100) : 0,
-      mcq: { ...mcq, score: round2(mcq.score) }, essay: { ...essay, score: round2(essay.score) }, feedbacks,
+      score: total, 
+      max_score: max, 
+      nilai: max > 0 ? round1((total / max) * 100) : 0,
+      mcq: { ...mcq,
+      score: round2(mcq.score) }, 
+      essay: { ...essay, 
+      score: round2(essay.score) }, 
+      feedbacks,
     };
   },
 });

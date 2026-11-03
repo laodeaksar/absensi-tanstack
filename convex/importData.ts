@@ -33,11 +33,23 @@ async function importOne(ctx: MutationCtx, table: string, r: Row): Promise<boole
       // Akun siswa yang belum ganti password: password awal = NISN -> dicocokkan ke data siswa
       const nisnMode = role === "siswa" && mustChange;
       await ctx.db.insert("users", {
-        user_id: id, username: S(r.username), username_lc: S(r.username).toLowerCase(),
-        hash_algo: nisnMode ? "nisn" : "sha256", password_hash: nisnMode ? "" : S(r.password_hash),
-        password_salt: nisnMode ? "" : S(r.password_salt), full_name: S(r.full_name), role,
-        assigned_classes: J(r.assigned_classes), is_active: B(r.is_active), nip: S(r.nip), phone: S(r.phone), email: S(r.email),
-        student_id: S(r.student_id), must_change_password: mustChange, created_at: S(r.created_at), updated_at: S(r.updated_at),
+        user_id: id, 
+        username: S(r.username), 
+        username_lc: S(r.username).toLowerCase(),
+        hash_algo: nisnMode ? "nisn" : "sha256", 
+        password_hash: nisnMode ? "" : S(r.password_hash),
+        password_salt: nisnMode ? "" : S(r.password_salt), 
+        full_name: S(r.full_name), 
+        role,
+        assigned_classes: J(r.assigned_classes), 
+        is_active: B(r.is_active),
+        nip: S(r.nip), 
+        phone: S(r.phone), 
+        email: S(r.email),
+        student_id: S(r.student_id),
+        must_change_password: mustChange,
+        created_at: S(r.created_at),
+        updated_at: S(r.updated_at),
       });
       return true;
     }

@@ -45,13 +45,46 @@ export function evaluatePassword(pw: string, ctx: PolicyContext = {}) {
   const hasCommon = COMMON.some((c) => low.includes(c))
 
   const rules: PolicyRule[] = [
-    { id: 'len', label: `Minimal ${PASSWORD_MIN} karakter`, message: `Minimal ${PASSWORD_MIN} karakter`, ok: pw.length >= PASSWORD_MIN },
-    { id: 'lower', label: 'Huruf kecil (a-z)', message: 'Harus mengandung huruf kecil', ok: /[a-z]/.test(pw) },
-    { id: 'upper', label: 'Huruf besar (A-Z)', message: 'Harus mengandung huruf besar', ok: /[A-Z]/.test(pw) },
-    { id: 'digit', label: 'Angka (0-9)', message: 'Harus mengandung angka', ok: /[0-9]/.test(pw) },
-    { id: 'symbol', label: 'Simbol (!@#$...)', message: 'Harus mengandung simbol, misalnya !@#$%', ok: /[^A-Za-z0-9]/.test(pw) },
-    { id: 'common', label: 'Bukan kata umum / pola mudah', message: 'Terlalu umum atau mudah ditebak', ok: !hasCommon && !/(.)\1{3,}/.test(pw) },
-    { id: 'personal', label: 'Tidak memuat username / nama', message: 'Tidak boleh memuat username, nama, NIP, atau data pribadi lain', ok: !hasPersonal },
+    { 
+      id: 'len', 
+      label: `Minimal ${PASSWORD_MIN} karakter`,
+      message: `Minimal ${PASSWORD_MIN} karakter`, 
+      ok: pw.length >= PASSWORD_MIN 
+    },
+    { 
+      id: 'lower', 
+      label: 'Huruf kecil (a-z)', 
+      message: 'Harus mengandung huruf kecil', 
+      ok: /[a-z]/.test(pw) 
+    },
+    { 
+      id: 'upper', 
+      label: 'Huruf besar (A-Z)', 
+      message: 'Harus mengandung huruf besar', ok: /[A-Z]/.test(pw) },
+    { 
+      id: 'digit', 
+      label: 'Angka (0-9)',
+      message: 'Harus mengandung angka', 
+      ok: /[0-9]/.test(pw) 
+    },
+    { 
+      id: 'symbol', 
+      label: 'Simbol (!@#$...)', 
+      message: 'Harus mengandung simbol, misalnya !@#$%', 
+      ok: /[^A-Za-z0-9]/.test(pw) 
+    },
+    { 
+      id: 'common', 
+      label: 'Bukan kata umum / pola mudah', 
+      message: 'Terlalu umum atau mudah ditebak',
+      ok: !hasCommon && !/(.)\1{3,}/.test(pw)
+    },
+    { 
+      id: 'personal', 
+      label: 'Tidak memuat username / nama', 
+      message: 'Tidak boleh memuat username, nama, NIP, atau data pribadi lain', 
+      ok: !hasPersonal 
+    },
   ]
 
   const score = rules.filter((r) => r.ok).length

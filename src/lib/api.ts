@@ -1,5 +1,5 @@
-import { gasRpc } from '~/server/functions'
-import type { GasName } from '~/server/functions'
+import { rpcFn } from '~/server/functions'
+import type { RpcName } from '~/server/functions'
 import type {
   AttendanceEntry,
   ClassInput,
@@ -26,8 +26,8 @@ import type {
   TaskSession,
 } from './types'
 
-async function rpc<T>(fn: GasName, ...args: unknown[]): Promise<T> {
-  return (await gasRpc({ data: { fn, args } })) as T
+async function rpc<T>(fn: RpcName, ...args: unknown[]): Promise<T> {
+  return (await rpcFn({ data: { fn, args } })) as T
 }
 
 type Msg = { message: string }

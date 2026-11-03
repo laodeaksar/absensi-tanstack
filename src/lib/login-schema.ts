@@ -13,7 +13,11 @@ export const loginSchema = z.object({
     .max(50, 'Username maksimal 50 karakter')
     .regex(/^\S+$/, 'Username tidak boleh mengandung spasi'),
   // Password tidak di-trim: spasi di awal/akhir bisa jadi bagian password
-  password: z.string().min(1, 'Password wajib diisi').min(6, 'Password minimal 6 karakter').max(100, 'Password maksimal 100 karakter'),
+  password: z
+    .string()
+    .min(1, 'Password wajib diisi')
+    .min(6, 'Password minimal 6 karakter')
+    .max(100, 'Password maksimal 100 karakter'),
 })
 
 /** Server mengunci username setelah 5 kali gagal selama 15 menit (lihat login di Code.gs). */

@@ -61,7 +61,11 @@ export interface DashboardData {
     alpa: number
     persentase: number | string
   }
-  chartData: { labels: string[]; hadir: number[]; tidakHadir: number[] }
+  chartData: { 
+    labels: string[]; 
+    hadir: number[]; 
+    tidakHadir: number[] 
+  }
 }
 
 export interface AttendanceEntry {
@@ -89,10 +93,28 @@ export interface ReportFilters {
 }
 
 export interface MyAttendance {
-  profile: { full_name: string; nis: string; class_name: string }
-  today: { status: string; notes: string } | null
-  summary: { hadir: number; sakit: number; izin: number; alpa: number; persentase: number | string }
-  records: { date: string; status: string; notes: string; class_name: string }[]
+  profile: { 
+    full_name: string; 
+    nis: string; 
+    class_name: string
+  }
+  today: { 
+    status: string; 
+    notes: string 
+  } | null
+  summary: { 
+    hadir: number; 
+    sakit: number; 
+    izin: number; 
+    alpa: number; 
+    persentase: number | string
+  }
+  records: { 
+    date: string; 
+    status: string; 
+    notes: string; 
+    class_name: string 
+  }[]
 }
 
 export type StudentInput = {
@@ -173,7 +195,12 @@ export interface SubmissionRow {
 }
 
 export interface SubmissionList {
-  assignment: { assignment_id: string; title: string; class_name: string; max_score: number }
+  assignment: { 
+    assignment_id: string; 
+    title: string; 
+    class_name: string; 
+    max_score: number
+  }
   data: SubmissionRow[]
 }
 
@@ -186,9 +213,23 @@ export interface ReviewAnswer {
 }
 
 export interface ReviewData {
-  submission: { submission_id: string; status: SubmissionStatus; auto_score: number; total_score: number | ''; max_score: number; submitted_at: number }
-  student: { full_name: string; nis: string }
-  assignment: { assignment_id: string; title: string; class_name: string }
+  submission: { 
+    submission_id: string; 
+    status: SubmissionStatus; 
+    auto_score: number; 
+    total_score: number | ''; 
+    max_score: number; 
+    submitted_at: number 
+  }
+  student: { 
+    full_name: string; 
+    nis: string 
+  }
+  assignment: { 
+    assignment_id: string; 
+    title: string; 
+    class_name: string 
+  }
   answers: ReviewAnswer[]
 }
 
@@ -217,7 +258,13 @@ export interface StudentQuestion {
 
 export interface TaskSession {
   submission_id: string
-  assignment: { assignment_id: string; title: string; description: string; duration_minutes: number; due_at: string }
+  assignment: { 
+    assignment_id: string; 
+    title: string; 
+    description: string; 
+    duration_minutes: number; 
+    due_at: string 
+  }
   questions: StudentQuestion[]
   started_at: number
   /** epoch ms; 0 = tanpa batas */
@@ -231,9 +278,23 @@ export interface MyResult {
   score?: number
   max_score?: number
   nilai?: number
-  mcq?: { correct: number; total: number; score: number; max: number }
-  essay?: { total: number; score: number; max: number }
-  feedbacks?: { no: number; points: number; score: number; text: string }[]
+  mcq?: { 
+    correct: number;
+    total: number; 
+    score: number; 
+    max: number 
+  }
+  essay?: { 
+    total: number; 
+    score: number; 
+    max: number 
+  }
+  feedbacks?: { 
+    no: number; 
+    points: number; 
+    score: number; 
+    text: string 
+  }[]
 }
 
 export type AssignmentInput = {
@@ -256,8 +317,15 @@ export type QuestionInput = {
   points: number
 }
 
-export type GradeInput = { question_id: string; score: string; feedback: string }
-export type AnswerInput = { question_id: string; answer: string }
+export type GradeInput = { 
+  question_id: string; 
+  score: string; 
+  feedback: string 
+}
+export type AnswerInput = { 
+  question_id: string; 
+  answer: string 
+}
 
 export function parseClassIds(v: string | undefined): string[] {
   try {

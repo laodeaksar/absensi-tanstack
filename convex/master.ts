@@ -152,8 +152,14 @@ export const saveStudent = mutation({
     });
     if (cls) {
       await ctx.db.insert("student_class_history", {
-        history_id: randomId("HST"), student_id, class_id: cls.class_id, academic_year: cls.academic_year,
-        start_date: now, end_date: "", is_active: true, created_at: now,
+        history_id: randomId("HST"), 
+        student_id, 
+        class_id: cls.class_id, 
+        academic_year: cls.academic_year,
+        start_date: now, 
+        end_date: "", 
+        is_active: true, 
+        created_at: now,
       });
     }
     return { message: "Data siswa berhasil disimpan." };
@@ -170,7 +176,10 @@ export const generateStudentAccounts = mutation({
     const hasAccount = new Set(users.filter((u) => u.student_id).map((u) => u.student_id));
     const taken = new Set(users.map((u) => u.username_lc));
 
-    const students = (await ctx.db.query("students").collect()).filter((s) => s.is_active);
+    const students = (await ctx.db
+      .query("students")
+      .collect())
+      .filter((s) => s.is_active);
     const now = nowIso();
     let created = 0;
     const skipped: string[] = [];
@@ -215,8 +224,15 @@ export const resetStudentAccount = mutation({
     if (existing) {
       if (!s.is_active) fail("Siswa nonaktif. Aktifkan dulu sebelum mereset akun.");
       await ctx.db.patch(existing._id, {
-        username: nis, username_lc: nis.toLowerCase(), full_name: s.full_name || "Siswa", is_active: true,
-        hash_algo: "nisn", password_hash: "", password_salt: "", must_change_password: true, updated_at: now,
+        username: nis,
+        username_lc: nis.toLowerCase(), 
+        full_name: s.full_name || "Siswa", 
+        is_active: true,
+        hash_algo: "nisn", 
+        password_hash: "", 
+        password_salt: "",
+        must_change_password: true, 
+        updated_at: now,
       });
       await revokeSessions(ctx, existing.user_id);
       return { message: "Akun siswa direset: username = NIS, password = NISN." };
@@ -271,11 +287,24 @@ export const saveClass = mutation({
 
     const now = nowIso();
     if (existing) {
-      await ctx.db.patch(existing._id, { class_name: className, grade_level: grade, academic_year: year, homeroom_teacher: homeroom, updated_at: now });
+      await ctx.db.patch(existing._id, { 
+        class_name: className, 
+        grade_level: grade, 
+        academic_year: year, 
+        homeroom_teacher: homeroom, 
+        updated_at: now 
+      });
     } else {
       await ctx.db.insert("classes", {
-        class_id: randomId("CLS"), class_name: className, grade_level: grade, academic_year: year,
-        homeroom_teacher: homeroom, description: String(d.description ?? ""), is_active: true, created_at: now, updated_at: now,
+        class_id: randomId("CLS"), 
+        class_name: className, 
+        grade_level: grade, 
+        academic_year: year,
+        homeroom_teacher: homeroom, 
+        description: String(d.description ?? ""), 
+        is_active: true, 
+        created_at: now, 
+        updated_at: now,
       });
     }
     return { message: "Data kelas berhasil disimpan." };
@@ -312,10 +341,16 @@ export const saveTeacher = mutation({
     if (phone && !/^[0-9+][0-9\s-]{5,19}$/.test(phone)) fail("Nomor HP tidak valid.");
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("Format email tidak valid.");
 
-    const sameName = await ctx.db.query("users").withIndex("by_username_lc", (q) => q.eq("username_lc", username.toLowerCase())).collect();
+    const sameName = await ctx.db
+      .query("users")
+      .withIndex("by_username_lc", (q) => q.eq("username_lc", username.toLowerCase()))
+      .collect();
     if (sameName.some((u) => u.user_id !== existing?.user_id)) fail("Username sudah digunakan.");
     if (nip) {
-      const sameNip = await ctx.db.query("users").withIndex("by_nip", (q) => q.eq("nip", nip)).collect();
+      const sameNip = await ctx.db
+        .query("users")
+        .withIndex("by_nip", (q) => q.eq("nip", nip))
+        .collect();
       if (sameNip.some((u) => u.user_id !== existing?.user_id)) fail("NIP sudah digunakan.");
     }
 
@@ -339,17 +374,36 @@ export const saveTeacher = mutation({
 
     if (existing) {
       const patch: Partial<Doc<"users">> = {
-        username, username_lc: username.toLowerCase(), full_name: fullName, assigned_classes: assigned,
-        is_active: isActive, nip, phone, email, updated_at: now,
+        username, 
+        username_lc: username.toLowerCase(), 
+        full_name: fullName, 
+        assigned_classes: assigned,
+        is_active: isActive, 
+        nip, 
+        phone, 
+        email, 
+        updated_at: now,
       };
       if (pw) Object.assign(patch, await newHash(pw));
       await ctx.db.patch(existing._id, patch);
       await revokeSessions(ctx, existing.user_id); // paksa login ulang agar perubahan berlaku
     } else {
       await ctx.db.insert("users", {
-        user_id: randomId("USR"), username, username_lc: username.toLowerCase(), ...(await newHash(pw)),
-        full_name: fullName, role: "guru", assigned_classes: assigned, is_active: isActive,
-        nip, phone, email, student_id: "", must_change_password: false, created_at: now, updated_at: now,
+        user_id: randomId("USR"), 
+        username, 
+        username_lc: username.toLowerCase(), 
+        ...(await newHash(pw)),
+        full_name: fullName, 
+        role: "guru", 
+        assigned_classes: assigned,
+        is_active: isActive,
+        nip, 
+        phone, 
+        email, 
+        student_id: "", 
+        must_change_password: false,
+        created_at: now, 
+        updated_at: now,
       });
     }
     return { message: "Data guru berhasil disimpan." };

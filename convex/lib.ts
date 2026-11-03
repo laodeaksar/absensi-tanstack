@@ -168,10 +168,19 @@ export function sessionUser(u: Doc<"users">) {
 
 export function teacherOut(u: Doc<"users">) {
   return {
-    user_id: u.user_id, username: u.username, full_name: u.full_name, role: u.role,
-    assigned_classes: JSON.stringify(u.assigned_classes), is_active: u.is_active,
-    nip: u.nip, phone: u.phone, email: u.email, student_id: u.student_id,
-    must_change_password: u.must_change_password, created_at: u.created_at, updated_at: u.updated_at,
+    user_id: u.user_id, 
+    username: u.username, 
+    full_name: u.full_name, 
+    role: u.role,
+    assigned_classes: JSON.stringify(u.assigned_classes), 
+    is_active: u.is_active,
+    nip: u.nip, 
+    phone: u.phone, 
+    email: u.email, 
+    student_id: u.student_id,
+    must_change_password: u.must_change_password, 
+    created_at: u.created_at, 
+    updated_at: u.updated_at,
   };
 }
 

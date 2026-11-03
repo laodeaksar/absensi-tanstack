@@ -1,80 +1,110 @@
-// Hanya berjalan di server. Menjembatani Start -> Convex (menggantikan gas.server.ts / Apps Script).
+// Hanya berjalan di server. Jembatan TanStack Start → Convex.
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "~/convex/_generated/api";
 
-type Route = {
+type ConvexRoute = {
   kind: "query" | "mutation";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ref: any;
-  /** true = token sesi disisipkan sebagai argumen pertama */
+  /** true = token sesi disisipkan sebagai argumen */
   auth: boolean;
-  args: (a: unknown[]) => Record<string, unknown>;
+  /** Argumen posisi dari frontend → argumen bernama fungsi Convex */
+  mapArgs: (a: unknown[]) => Record<string, unknown>;
 };
 
-const q = (ref: Route["ref"], args: Route["args"] = () => ({}), auth = true): Route => ({ kind: "query", ref, auth, args });
-const m = (ref: Route["ref"], args: Route["args"] = () => ({}), auth = true): Route => ({ kind: "mutation", ref, auth, args });
+const queryRoute = (
+  ref: ConvexRoute["ref"], 
+  mapArgs: ConvexRoute["mapArgs"] = () => ({}), 
+  auth = true
+): ConvexRoute =>
+  ({ kind: "query", ref, auth, mapArgs });
+const mutationRoute = (
+  ref: ConvexRoute["ref"], 
+  mapArgs: ConvexRoute["mapArgs"] = () => ({}), 
+  auth = true
+): ConvexRoute =>
+  ({ kind: "mutation", ref, auth, mapArgs });
 
-/**
- * Nama fungsi sama dengan versi Apps Script, jadi frontend tidak berubah.
- * Argumen posisi dari frontend dipetakan ke argumen bernama milik fungsi Convex.
- */
-export const ROUTES: Record<string, Route> = {
-  // akun & pengaturan
-  login: m(api.auth.login, ([username, password]) => ({ username, password }), false),
-  logout: m(api.auth.logout),
-  getMe: q(api.auth.getMe),
-  changePassword: m(api.auth.changePassword, ([oldPassword, newPassword]) => ({ oldPassword, newPassword })),
-  getPublicSettings: q(api.settings.getPublicSettings, () => ({}), false),
-  getSettings: q(api.settings.getSettings),
-  saveSettings: m(api.settings.saveSettings, ([data]) => ({ data })),
+/** Nama fungsi RPC (dipakai api.ts) → fungsi Convex dan pemetaan argumennya. */
+export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
+ // akun & pengaturan
+  login: mutationRoute(api.auth.login, ([username, password]) => ({ username, password }), false),
+  logout: mutationRoute(api.auth.logout),
+  getMe: queryRoute(api.auth.getMe),
+  changePassword: mutationRoute(api.auth.changePassword, ([oldPassword, newPassword]) => ({ oldPassword, newPassword })),
+  getPublicSettings: queryRoute(api.settings.getPublicSettings, () => ({}), false),
+  getSettings: queryRoute(api.settings.getSettings),
+  saveSettings: mutationRoute(api.settings.saveSettings, ([data]) => ({ data })),
 
   // master data
-  fetchMasterData: q(api.master.fetchMasterData, ([type]) => ({ type })),
-  saveStudent: m(api.master.saveStudent, ([data]) => ({ data })),
-  saveClass: m(api.master.saveClass, ([data]) => ({ data })),
-  saveTeacher: m(api.master.saveTeacher, ([data]) => ({ data })),
-  generateStudentAccounts: m(api.master.generateStudentAccounts),
-  resetStudentAccount: m(api.master.resetStudentAccount, ([studentId]) => ({ studentId })),
+  fetchMasterData: queryRoute(api.master.fetchMasterData, ([type]) => ({ type })),
+  saveStudent: mutationRoute(api.master.saveStudent, ([data]) => ({ data })),
+  saveClass: mutationRoute(api.master.saveClass, ([data]) => ({ data })),
+  saveTeacher: mutationRoute(api.master.saveTeacher, ([data]) => ({ data })),
+  generateStudentAccounts: mutationRoute(api.master.generateStudentAccounts),
+  resetStudentAccount: mutationRoute(api.master.resetStudentAccount, ([studentId]) => ({ studentId })),
 
   // absensi
-  getAttendanceForm: q(api.attendance.getAttendanceForm, ([date, classId]) => ({ date, classId })),
-  submitAttendanceBatch: m(api.attendance.submitAttendanceBatch, ([date, classId, rows]) => ({ date, classId, rows })),
-  getDashboardStats: q(api.attendance.getDashboardStats),
-  getReportData: q(api.attendance.getReportData, ([filters]) => ({ filters })),
-  getMyAttendance: q(api.attendance.getMyAttendance, ([filters]) => ({ filters })),
+  getAttendanceForm: queryRoute(api.attendance.getAttendanceForm, ([date, classId]) => ({ date, classId })),
+  submitAttendanceBatch: mutationRoute(api.attendance.submitAttendanceBatch, ([date, classId, rows]) => ({ date, classId, rows })),
+  getDashboardStats: queryRoute(api.attendance.getDashboardStats),
+  getReportData: queryRoute(api.attendance.getReportData, ([filters]) => ({ filters })),
+  getMyAttendance: queryRoute(api.attendance.getMyAttendance, ([filters]) => ({ filters })),
 
   // tugas
-  listAssignments: q(api.assignment.listAssignments),
-  saveAssignment: m(api.assignment.saveAssignment, ([data]) => ({ data })),
-  deleteAssignment: m(api.assignment.deleteAssignment, ([assignmentId]) => ({ assignmentId })),
-  getAssignmentDetail: q(api.assignment.getAssignmentDetail, ([assignmentId]) => ({ assignmentId })),
-  saveQuestion: m(api.assignment.saveQuestion, ([data]) => ({ data })),
-  deleteQuestion: m(api.assignment.deleteQuestion, ([questionId]) => ({ questionId })),
-  listSubmissions: q(api.assignment.listSubmissions, ([assignmentId]) => ({ assignmentId })),
-  getSubmissionForReview: q(api.assignment.getSubmissionForReview, ([submissionId]) => ({ submissionId })),
-  gradeSubmission: m(api.assignment.gradeSubmission, ([submissionId, grades]) => ({ submissionId, grades })),
-  listMyTasks: q(api.assignment.listMyTasks),
-  startTask: m(api.assignment.startTask, ([assignmentId]) => ({ assignmentId })),
-  submitTask: m(api.assignment.submitTask, ([assignmentId, answers]) => ({ assignmentId, answers })),
-  getMyResult: q(api.assignment.getMyResult, ([assignmentId]) => ({ assignmentId })),
+  listAssignments: queryRoute(api.assignment.listAssignments),
+  saveAssignment: mutationRoute(api.assignment.saveAssignment, ([data]) => ({ data })),
+  deleteAssignment: mutationRoute(api.assignment.deleteAssignment, ([assignmentId]) => ({ assignmentId })),
+  getAssignmentDetail: queryRoute(api.assignment.getAssignmentDetail, ([assignmentId]) => ({ assignmentId })),
+  saveQuestion: mutationRoute(api.assignment.saveQuestion, ([data]) => ({ data })),
+  deleteQuestion: mutationRoute(api.assignment.deleteQuestion, ([questionId]) => ({ questionId })),
+  listSubmissions: queryRoute(api.assignment.listSubmissions, ([assignmentId]) => ({ assignmentId })),
+  getSubmissionForReview: queryRoute(api.assignment.getSubmissionForReview, ([submissionId]) => ({ submissionId })),
+  gradeSubmission: mutationRoute(api.assignment.gradeSubmission, ([submissionId, grades]) => ({ submissionId, grades })),
+  listMyTasks: queryRoute(api.assignment.listMyTasks),
+  startTask: mutationRoute(api.assignment.startTask, ([assignmentId]) => ({ assignmentId })),
+  submitTask: mutationRoute(api.assignment.submitTask, ([assignmentId, answers]) => ({ assignmentId, answers })),
+  getMyResult: queryRoute(api.assignment.getMyResult, ([assignmentId]) => ({ assignmentId })),
 };
+
+export type RouteName = keyof typeof CONVEX_ROUTES;
+
+/** Route yang punya server function sendiri, jadi tidak boleh lewat rpcFn. */
+const DEDICATED = [
+  "login", 
+  "logout", 
+  "getMe", 
+  "getPublicSettings"
+] as const satisfies readonly RouteName[];
+
+export type RpcName = Exclude<RouteName, (typeof DEDICATED)[number]>;
+
+export const isRpcName = (v: unknown): v is RpcName =>
+  typeof v === "string" &&
+  Object.hasOwn(CONVEX_ROUTES, v) &&
+  !(DEDICATED as readonly string[]).includes(v);
 
 const isConvexError = (e: unknown): e is { name: string; data: unknown } =>
   typeof e === "object" && e !== null && (e as { name?: string }).name === "ConvexError" && "data" in e;
 
-export async function callConvex<T = any>(fn: string, args: unknown[] = [], token?: string): Promise<T> {
-  const route = ROUTES[fn];
+export async function callConvex<T = any>(
+  fn: RouteName, 
+  args: unknown[] = [], token?: string
+): Promise<T> {
+  const route: ConvexRoute | undefined = CONVEX_ROUTES[fn];
   if (!route) throw new Error("Fungsi tidak dikenal.");
 
   const url = process.env.CONVEX_URL;
   if (!url) throw new Error("Server belum dikonfigurasi (CONVEX_URL).");
 
   const client = new ConvexHttpClient(url);
-  const payload = route.auth ? { token: token ?? "", ...route.args(args) } : route.args(args);
+  const payload = route.auth ? { token: token ?? "", ...route.mapArgs(args) } : route.mapArgs(args);
 
   let res: unknown;
   try {
-    res = route.kind === "query" ? await client.query(route.ref, payload) : await client.mutation(route.ref, payload);
+    res = route.kind === "query" 
+      ? await client.query(route.ref, payload) 
+      : await client.mutation(route.ref, payload);
   } catch (e) {
     // Pesan ConvexError sengaja dibuat untuk pengguna; error lain disembunyikan di production
     if (isConvexError(e)) throw new Error(typeof e.data === "string" ? e.data : JSON.stringify(e.data));

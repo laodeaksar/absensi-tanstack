@@ -26,9 +26,19 @@ export interface AssignmentRules {
 export function makeAssignmentSchema(r: AssignmentRules) {
   return z
     .object({
-      title: z.string().trim().min(1, 'Judul wajib diisi').max(150, 'Maksimal 150 karakter'),
-      description: z.string().trim().max(1000, 'Maksimal 1000 karakter'),
-      class_id: z.string().min(1, 'Pilih kelas').refine((id) => !id || r.classIds.includes(id), 'Kelas tidak tersedia untuk akun Anda'),
+      title: z
+        .string()
+        .trim()
+        .min(1, 'Judul wajib diisi')
+        .max(150, 'Maksimal 150 karakter'),
+      description: z
+        .string()
+        .trim()
+        .max(1000, 'Maksimal 1000 karakter'),
+      class_id: z
+        .string()
+        .min(1, 'Pilih kelas')
+        .refine((id) => !id || r.classIds.includes(id), 'Kelas tidak tersedia untuk akun Anda'),
       due_at: z
         .string()
         .refine((v) => v === '' || (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) && isRealDate(v.slice(0, 10))), 'Tenggat tidak valid'),
@@ -40,11 +50,19 @@ export function makeAssignmentSchema(r: AssignmentRules) {
     })
     .superRefine((v, ctx) => {
       if (v.is_published && r.questionCount === 0) {
-        ctx.addIssue({ code: 'custom', path: ['is_published'], message: 'Tambahkan minimal satu soal sebelum mempublikasikan' })
+        ctx.addIssue({ 
+          code: 'custom', 
+          path: ['is_published'], 
+          message: 'Tambahkan minimal satu soal sebelum mempublikasikan' 
+        })
       }
       // Tugas baru: tenggat harus di masa depan. Saat edit, tenggat lampau boleh dipertahankan.
       if (r.isNew && v.due_at && v.due_at <= nowLocalInput()) {
-        ctx.addIssue({ code: 'custom', path: ['due_at'], message: 'Tenggat harus di waktu yang akan datang' })
+        ctx.addIssue({ 
+          code: 'custom', 
+          path: ['due_at'], 
+          message: 'Tenggat harus di waktu yang akan datang' 
+        })
       }
     })
 }
