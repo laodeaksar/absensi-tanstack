@@ -6,7 +6,7 @@ import { qk, settingsQuery } from '~/lib/queries'
 import { api } from '~/lib/api'
 import { makePasswordSchema, schoolSchema } from '~/lib/settings-schema'
 import { toast } from '~/lib/toast'
-import { ErrorAlert, TextField } from '~/components/ui'
+import { ErrorAlert, TextField, PasswordField } from '~/components/ui'
 import { PasswordStrength } from '~/components/password-strength'
 
 export const Route = createFileRoute('/_app/settings')({
@@ -184,16 +184,38 @@ function PasswordCard() {
         </p>
 
         <form.Field name="old">
-          {(f) => <TextField label="Password Lama" field={f} type="password" autoComplete="current-password" />}
+          {(f) => (
+            <PasswordField
+              label="Password Lama" 
+              field={f} 
+              type="password" 
+              autoComplete="current-password" 
+            />
+          )}
         </form.Field>
         <form.Field name="next">
-          {(f) => <TextField label="Password Baru" field={f} type="password" autoComplete="new-password" placeholder="Minimal 8 karakter" />}
+          {(f) => (
+            <PasswordField
+              label="Password Baru"
+              field={f} 
+              type="password" 
+              autoComplete="new-password" 
+              placeholder="Minimal 8 karakter" 
+            />
+          )}
         </form.Field>
         <form.Subscribe selector={(s) => s.values.next}>
           {(next) => <PasswordStrength value={next} forbidden={[me.username, me.full_name]} />}
         </form.Subscribe>
         <form.Field name="confirm">
-          {(f) => <TextField label="Ulangi Password Baru" field={f} type="password" autoComplete="new-password" />}
+          {(f) => (
+            <PasswordField 
+              label="Ulangi Password Baru" 
+              field={f} 
+              type="password" 
+              autoComplete="new-password" 
+            />
+          )}
         </form.Field>
 
         <ErrorAlert message={change.error?.message} />

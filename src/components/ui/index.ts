@@ -6,5 +6,12 @@ export { ErrorAlert } from './error-alert'
 export { SearchBox } from './search-box'
 export { Modal } from './modal'
 export { ConfirmDialog } from './confirm-dialog'
-export { TextField, SelectField, TextAreaField } from './form-fields'
+export { 
+  TextField, 
+  PasswordField,
+  SelectField, 
+  TextAreaField, 
+  CheckboxField 
+} from './form-fields'
 export { DataTable, Pager } from './data-table'
+export { Tip } from "./tooltip"

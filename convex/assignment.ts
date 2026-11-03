@@ -257,6 +257,25 @@ export const getAssignmentDetail = query({
   },
 });
 
+export const setAssignmentPublished = mutation({
+  args: { token: v.string(), assignmentId: v.string(), published: v.boolean() },
+  handler: async (ctx, { token, assignmentId, published }) => {
+    const user = await staff(ctx, token);
+    const a = await manageAssignment(ctx, user, assignmentId);
+
+    if (published && (await questionsOf(ctx, a.assignment_id)).length === 0) {
+      fail("Tambahkan minimal satu soal sebelum mempublikasikan tugas.");
+    }
+    if (a.is_published !== published) {
+      await ctx.db.patch(a._id, { is_published: published, updated_at: nowIso() });
+    }
+    return {
+      message: published ? "Tugas diterbitkan." : "Tugas dikembalikan ke Draft.",
+      is_published: published,
+    };
+  },
+});
+
 /* ==========================================
  * B. GURU / ADMIN - SOAL
  * ========================================== */

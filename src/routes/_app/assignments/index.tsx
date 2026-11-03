@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Inbox, ListChecks, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { classesQuery, assignmentsQuery, qk } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
@@ -26,6 +26,8 @@ import {
   SelectField,
   TextField,
   TextAreaField,
+  CheckboxField,
+  Tip
 } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
 
@@ -53,6 +55,14 @@ function AssignmentsPage() {
   }>({ open: false, item: null });
   const { confirm, dialog } = useConfirm();
 
+  const publish = useMutation({
+    mutationFn: (v: { id: string; published: boolean }) => api.setPublished(v.id, v.published),
+    onSuccess: (r) => {
+      toast.success(r.message);
+      void qc.invalidateQueries({ queryKey: qk.list });
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteAssignment(id),
     onSuccess: (r) => {
@@ -65,8 +75,14 @@ function AssignmentsPage() {
   const actions = useRef({
     edit: (_a: Assignment) => {},
     remove: (_a: Assignment) => {},
+    publish: (_a: Assignment) => {},
   });
   useLayoutEffect(() => {
+    actions.current.publish = (a) =>
+      publish.mutate({ 
+        id: a.assignment_id, 
+        published: !published(a.is_published) 
+      });
     actions.current.edit = (a) => setModal({ open: true, item: a });
     actions.current.remove = async (a) => {
       const extra =
@@ -136,37 +152,63 @@ function AssignmentsPage() {
           header: "Aksi",
           enableSorting: false,
           cell: ({ row }) => {
-            const id = row.original.assignment_id;
+            const a = row.original;
+            const id = a.assignment_id;
+            const isPub = published(a.is_published);
+            const noQuestions = a.question_count === 0;
             return (
-              <div className="whitespace-nowrap">
-                <Link
-                  to="/assignments/$assignmentId/questions"
-                  params={{ assignmentId: id }}
-                  className="btn btn-ghost btn-xs text-primary"
-                >
-                  Soal
-                </Link>
-                <Link
-                  to="/assignments/$assignmentId/submissions"
-                  params={{ assignmentId: id }}
-                  className="btn btn-ghost btn-xs text-primary"
-                >
-                  Pengumpulan
-                </Link>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs text-primary"
-                  onClick={() => actions.current.edit(row.original)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs text-error"
-                  onClick={() => actions.current.remove(row.original)}
-                >
-                  Hapus
-                </button>
+              <div className="flex items-center whitespace-nowrap">
+                <Tip tip="Soal">
+                  <Link
+                    to="/assignments/$assignmentId/questions"
+                    params={{ assignmentId: id }}
+                    aria-label="Soal"
+                    className="btn btn-ghost btn-xs btn-square text-primary"
+                  >
+                    <ListChecks className="size-4" />
+                  </Link>
+                </Tip>
+                <Tip tip="Pengumpulan">
+                  <Link
+                    to="/assignments/$assignmentId/submissions"
+                    params={{ assignmentId: id }}
+                    aria-label="Pengumpulan"
+                    className="btn btn-ghost btn-xs btn-square text-primary"
+                  >
+                    <Inbox className="size-4" />
+                  </Link>
+                <Tip>
+                <Tip tip={isPub ? "Tarik ke Draft" : noQuestions ? "Tambahkan soal dulu" : "Terbitkan"}>
+                  <button
+                    type="button"
+                    aria-label={isPub ? "Tarik ke Draft" : "Terbitkan"}
+                    className="btn btn-ghost btn-xs btn-square text-success"
+                    disabled={!isPub && noQuestions}
+                    onClick={() => actions.current.publish(a)}
+                  >
+                    {isPub ? <Undo2 className="size-4" /> : <Send className="size-4" />}
+                  </button>
+                </Tip>
+                <Tip tip="Edit">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-primary"
+                    aria-label="Edit"
+                    onClick={() => actions.current.edit(row.original)}
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                </Tip>
+                <Tip tip="Hapus">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-error"
+                    aria-label="Hapus"
+                    onClick={() => actions.current.remove(row.original)}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </Tip>
               </div>
             );
           },
@@ -372,37 +414,18 @@ function AssignmentForm({
       </div>
 
       <form.Field name="is_published">
-        {(f) => {
-          const msg = f.state.meta.isTouched
-            ? firstMessage(f.state.meta.errors)
-            : "";
-          return (
-            <div className="pt-1 min-w-0">
-              <label
-                className={`flex items-center gap-2 text-sm ${questionCount === 0 ? "opacity-60" : "cursor-pointer"}`}
-              >
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-sm checkbox-primary"
-                  checked={f.state.value}
-                  disabled={questionCount === 0}
-                  onChange={(e) => f.handleChange(e.target.checked)}
-                />
-                <span>Publikasikan ke siswa</span>
-              </label>
-              {questionCount === 0 ? (
-                <p className="label mt-1 [overflow-wrap:anywhere]">
-                  Tambahkan soal terlebih dahulu sebelum mempublikasikan.
-                </p>
-              ) : null}
-              {msg ? (
-                <p role="alert" className="mt-1 text-xs text-error">
-                  {msg}
-                </p>
-              ) : null}
-            </div>
-          );
-        }}
+        {(f) => (
+          <CheckboxField
+            label="Publikasikan ke siswa"
+            field={f}
+            disabled={questionCount === 0}
+            hint={
+              questionCount === 0
+                ? "Tambahkan soal terlebih dahulu sebelum mempublikasikan."
+                : undefined
+            }
+          />
+        )}
       </form.Field>
 
       <ErrorAlert message={save.error?.message} />

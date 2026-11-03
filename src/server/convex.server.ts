@@ -56,6 +56,10 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
   saveAssignment: mutationRoute(api.assignment.saveAssignment, ([data]) => ({ data })),
   deleteAssignment: mutationRoute(api.assignment.deleteAssignment, ([assignmentId]) => ({ assignmentId })),
   getAssignmentDetail: queryRoute(api.assignment.getAssignmentDetail, ([assignmentId]) => ({ assignmentId })),
+  setAssignmentPublished: mutationRoute(
+    api.assignment.setAssignmentPublished,
+    ([assignmentId, published]) => ({ assignmentId, published }),
+  ),
   saveQuestion: mutationRoute(api.assignment.saveQuestion, ([data]) => ({ data })),
   deleteQuestion: mutationRoute(api.assignment.deleteQuestion, ([questionId]) => ({ questionId })),
   listSubmissions: queryRoute(api.assignment.listSubmissions, ([assignmentId]) => ({ assignmentId })),

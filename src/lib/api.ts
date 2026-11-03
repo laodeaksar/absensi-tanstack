@@ -63,6 +63,8 @@ export const api = {
   list: () => rpc<{ data: Assignment[] }>('listAssignments').then((r) => r.data),
   saveAssignment: (d: AssignmentInput) => rpc<Msg & { assignment_id: string }>('saveAssignment', d),
   deleteAssignment: (id: string) => rpc<Msg>('deleteAssignment', id),
+  setPublished: (id: string, published: boolean) =>
+    rpc<Msg & { is_published: boolean }>('setAssignmentPublished', id, published),
   detail: (id: string) => rpc<AssignmentDetail>('getAssignmentDetail', id),
   saveQuestion: (d: QuestionInput) => rpc<Msg>('saveQuestion', d),
   deleteQuestion: (id: string) => rpc<Msg>('deleteQuestion', id),

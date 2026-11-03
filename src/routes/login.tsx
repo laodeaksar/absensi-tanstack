@@ -8,7 +8,7 @@ import { LOCK_MINUTES, isLockMessage, loginSchema } from '~/lib/login-schema'
 import { meQuery, publicSettingsQuery, qk } from '~/lib/queries'
 import { toast } from '~/lib/toast'
 import { loginFn } from '~/server/functions'
-import { ErrorAlert, TextField } from '~/components/ui'
+import { ErrorAlert, TextField, PasswordField } from '~/components/ui'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async ({ context }) => {
@@ -107,23 +107,12 @@ function LoginPage() {
 
             <form.Field name="password">
               {(field) => (
-                <TextField
+                <PasswordField
                   label="Password"
                   field={field}
-                  type={showPw ? 'text' : 'password'}
                   icon={<Lock className="size-4 opacity-50" />}
                   autoComplete="current-password"
                   placeholder="Masukkan password"
-                  trailing={
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((v) => !v)}
-                      aria-label={showPw ? 'Sembunyikan password' : 'Tampilkan password'}
-                      className="btn btn-circle btn-ghost btn-xs"
-                    >
-                      {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
-                  }
                 />
               )}
             </form.Field>
