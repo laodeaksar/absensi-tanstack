@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useForm, revalidateLogic } from '@tanstack/react-form'
-import { Eye, EyeOff, Lock, School, User } from 'lucide-react'
+import { Lock, School, User } from 'lucide-react'
 import { homeFor } from '~/lib/auth'
 import { LOCK_MINUTES, isLockMessage, loginSchema } from '~/lib/login-schema'
 import { meQuery, publicSettingsQuery, qk } from '~/lib/queries'
@@ -41,7 +41,6 @@ function LoginPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { data: pub } = useSuspenseQuery(publicSettingsQuery)
-  const [showPw, setShowPw] = useState(false)
   const [serverError, setServerError] = useState('')
   // Perkiraan waktu buka kunci dari server (dihitung sejak pesan kunci diterima)
   const [lockedUntil, setLockedUntil] = useState(0)

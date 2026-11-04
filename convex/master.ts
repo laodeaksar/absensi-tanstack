@@ -6,6 +6,7 @@ import {
   assertStrongPassword, 
   classById, 
   fail, 
+  flag,
   newHash, 
   nowIso,
   randomId, 
@@ -16,8 +17,38 @@ import {
   teacherOut,
   userById,
 } from "./lib";
+import { LIMITS } from "./limits"
 
-const flag = (x: unknown) => x === true || x === "true" || x === "TRUE";
+const classInput = v.object({
+  class_id: v.optional(v.string()),
+  class_name: v.string(),
+  grade_level: v.string(),
+  academic_year: v.string(),
+  homeroom_teacher: v.string(),
+});
+
+const studentInput = v.object({
+  student_id: v.optional(v.string()),
+  nis: v.optional(v.string()),
+  nisn: v.optional(v.string()),
+  full_name: v.optional(v.string()),
+  gender: v.optional(v.string()),
+  class_id: v.optional(v.string()), // hanya saat siswa baru
+  is_active: v.optional(v.boolean()),
+});
+
+// Semua opsional: tombol Aktif/Nonaktifkan hanya mengirim { user_id, is_active }
+const teacherInput = v.object({
+  user_id: v.optional(v.string()),
+  full_name: v.optional(v.string()),
+  nip: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  email: v.optional(v.string()),
+  username: v.optional(v.string()),
+  password: v.optional(v.string()),
+  assigned_classes: v.optional(v.array(v.string())),
+  is_active: v.optional(v.boolean()),
+});
 
 /* ---------- baca ---------- */
 
@@ -37,6 +68,7 @@ export const fetchMasterData = query({
       return { data: (await ctx.db.query("classes").collect()).map(strip) };
     }
     if (type === "students") {
+      if (user.role !== "admin") fail("FORBIDDEN");
       return { data: (await ctx.db.query("students").collect()).map(strip) };
     }
     return { data: [] };
@@ -100,14 +132,16 @@ async function syncStudentAccount(ctx: MutationCtx, studentId: string) {
 const STUDENT_FIELDS = ["nis", "nisn", "full_name", "gender", "birth_place", "birth_date", "address", "parent_name", "parent_phone"] as const;
 
 export const saveStudent = mutation({
-  args: { token: v.string(), data: v.any() },
+  args: { token: v.string(), data: studentInput },
   handler: async (ctx, { token, data }) => {
     await requireAuth(ctx, token, { admin: true });
-    if (!data || typeof data !== "object") fail("Data siswa tidak boleh kosong.");
+    if (!data) fail("Data siswa tidak boleh kosong.");
     const d = data as Record<string, unknown>;
 
     // Hanya field yang diizinkan yang diterima dari klien
     const clean: Record<string, string> = {};
+    if (clean.full_name !== undefined && !clean.full_name) fail("Nama lengkap wajib diisi.");
+    if (clean.gender && clean.gender !== "L" && clean.gender !== "P") fail("Jenis kelamin tidak valid.");
     for (const k of STUDENT_FIELDS) if (d[k] !== undefined && d[k] !== null) clean[k] = String(d[k]).trim();
 
     const id = String(d.student_id ?? "");
@@ -163,6 +197,54 @@ export const saveStudent = mutation({
       });
     }
     return { message: "Data siswa berhasil disimpan." };
+  },
+});
+
+/** Kelas aktif tiap siswa, diambil dari riwayat kelas yang belum ditutup. */
+export const listStudentClasses = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    await requireAuth(ctx, token, { admin: true });
+    const hist = await ctx.db.query("student_class_history").collect();
+    return hist
+      .filter((h) => h.is_active)
+      .map((h) => ({ student_id: h.student_id, class_id: h.class_id, academic_year: h.academic_year, start_date: h.start_date }));
+  },
+});
+
+export const moveStudent = mutation({
+  args: { token: v.string(), studentId: v.string(), classId: v.string() },
+  handler: async (ctx, { token, studentId, classId }) => {
+    await requireAuth(ctx, token, { admin: true });
+
+    const student = await studentById(ctx, studentId);
+    if (!student) fail("Data siswa tidak ditemukan.");
+    if (!student!.is_active) fail("Siswa nonaktif. Aktifkan dulu sebelum memindahkan kelas.");
+
+    const cls = await classById(ctx, classId);
+    if (!cls || !cls.is_active) fail("Kelas tujuan tidak valid.");
+
+    const hist = await ctx.db
+      .query("student_class_history")
+      .withIndex("by_student", (q) => q.eq("student_id", studentId))
+      .collect();
+    const active = hist.filter((h) => h.is_active);
+    if (active.some((h) => h.class_id === classId)) fail("Siswa sudah berada di kelas ini.");
+
+    // Tutup riwayat aktif (bisa lebih dari satu bila data lama tidak rapi), lalu buka yang baru
+    const now = nowIso();
+    for (const h of active) await ctx.db.patch(h._id, { is_active: false, end_date: now });
+    await ctx.db.insert("student_class_history", {
+      history_id: randomId("HST"),
+      student_id: studentId,
+      class_id: cls!.class_id,
+      academic_year: cls!.academic_year,
+      start_date: now,
+      end_date: "",
+      is_active: true,
+      created_at: now,
+    });
+    return { message: `${student!.full_name} dipindahkan ke ${cls!.class_name}.` };
   },
 });
 
@@ -229,6 +311,7 @@ export const resetStudentAccount = mutation({
         full_name: s.full_name || "Siswa", 
         is_active: true,
         hash_algo: "nisn", 
+        hash_iterations: undefined, // patch dengan undefined menghapus field
         password_hash: "", 
         password_salt: "",
         must_change_password: true, 
@@ -246,10 +329,10 @@ export const resetStudentAccount = mutation({
 /* ---------- kelas ---------- */
 
 export const saveClass = mutation({
-  args: { token: v.string(), data: v.any() },
+  args: { token: v.string(), data: classInput },
   handler: async (ctx, { token, data }) => {
     await requireAuth(ctx, token, { admin: true });
-    if (!data || typeof data !== "object") fail("Data kelas tidak boleh kosong.");
+    if (!data) fail("Data kelas tidak boleh kosong.");
     const d = data as Record<string, unknown>;
 
     const className = String(d.class_name ?? "").trim();
@@ -257,8 +340,9 @@ export const saveClass = mutation({
     const year = String(d.academic_year ?? "").trim();
     const homeroom = String(d.homeroom_teacher ?? "").trim();
     if (!className) fail("Nama kelas wajib diisi.");
-    if (className.length > 50) fail("Nama kelas maksimal 50 karakter.");
+    if (className.length > LIMITS.className) fail(`Nama kelas maksimal ${LIMITS.className} karakter.`);
     if (!grade) fail("Tingkat wajib diisi.");
+    if (grade.length > LIMITS.gradeLevel) fail(`Tingkat maksimal ${LIMITS.gradeLevel} karakter.`);
     const m = /^(\d{4})\/(\d{4})$/.exec(year);
     if (!m || Number(m[2]) !== Number(m[1]) + 1) fail("Tahun ajaran harus berformat 2025/2026.");
 
@@ -314,10 +398,10 @@ export const saveClass = mutation({
 /* ---------- guru ---------- */
 
 export const saveTeacher = mutation({
-  args: { token: v.string(), data: v.any() },
+  args: { token: v.string(), data: teacherInput },
   handler: async (ctx, { token, data }) => {
     await requireAuth(ctx, token, { admin: true });
-    if (!data || typeof data !== "object") fail("Data guru tidak boleh kosong.");
+    if (!data) fail("Data guru tidak boleh kosong.");
     const d = data as Record<string, unknown>;
 
     const id = String(d.user_id ?? "");
@@ -384,7 +468,7 @@ export const saveTeacher = mutation({
         email, 
         updated_at: now,
       };
-      if (pw) Object.assign(patch, await newHash(pw));
+      if (pw) Object.assign(patch, await newHash(pw), { must_change_password: true });
       await ctx.db.patch(existing._id, patch);
       await revokeSessions(ctx, existing.user_id); // paksa login ulang agar perubahan berlaku
     } else {
@@ -401,7 +485,7 @@ export const saveTeacher = mutation({
         phone, 
         email, 
         student_id: "", 
-        must_change_password: false,
+        must_change_password: true,
         created_at: now, 
         updated_at: now,
       });

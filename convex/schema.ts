@@ -16,6 +16,7 @@ export default defineSchema({
     hash_algo: v.union(v.literal("pbkdf2"), v.literal("sha256"), v.literal("nisn")),
     password_hash: v.string(),
     password_salt: v.string(),
+    hash_iterations: v.optional(v.number()), // jumlah iterasi pbkdf2; kosong = 100000 (hash lama)
     full_name: v.string(),
     role: v.union(v.literal("admin"), v.literal("guru"), v.literal("siswa")),
     assigned_classes: v.array(v.string()),
@@ -77,6 +78,7 @@ export default defineSchema({
     parent_name: v.string(),
     parent_phone: v.string(),
     is_active: v.boolean(),
+    type: v.union(v.literal("teachers"), v.literal("classes"), v.literal("students")),
     created_at: v.string(),
     updated_at: v.string(),
   })

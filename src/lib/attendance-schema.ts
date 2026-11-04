@@ -1,14 +1,8 @@
 import { z } from 'zod'
 import { isRealDate, shiftDays, todayStr } from './date'
+import { LIMITS, needsNotes } from "~/convex/limits"
 
 export const STATUS_VALUES = ['Hadir', 'Sakit', 'Izin', 'Alpa'] as const
-
-/** Status yang mewajibkan keterangan. Ubah di sini untuk mengatur aturan. */
-export const NOTES_REQUIRED: readonly string[] = ['Sakit', 'Izin']
-export const NOTES_MIN = 3
-export const NOTES_MAX = 200
-
-export const needsNotes = (status: string) => NOTES_REQUIRED.includes(status)
 
 /* ---------- filter (tanggal + kelas): aturan bergantung peran, kelas, dan pengaturan ---------- */
 
@@ -55,14 +49,14 @@ export const rowSchema = z
     full_name: z.string(),
     // '' = belum diisi (tidak disimpan)
     status: z.string().refine((v) => v === '' || (STATUS_VALUES as readonly string[]).includes(v), 'Status tidak valid'),
-    notes: z.string().max(NOTES_MAX, `Maksimal ${NOTES_MAX} karakter`),
+    notes: z.string().max(LIMITS.notesMax, `Maksimal ${LIMITS.notesMax} karakter`),
   })
   .superRefine((row, ctx) => {
-    if (needsNotes(row.status) && row.notes.trim().length < NOTES_MIN) {
+    if (needsNotes(row.status) && row.notes.trim().length < LIMITS.notesMin) {
       ctx.addIssue({
         code: 'custom',
         path: ['notes'],
-        message: `Keterangan wajib untuk status ${row.status} (min. ${NOTES_MIN} karakter)`,
+        message: `Keterangan wajib untuk status ${row.status} (min. ${LIMITS.notesMin} karakter)`,
       })
     }
   })

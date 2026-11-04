@@ -7,18 +7,23 @@ import {
 } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
-import { AlignLeft, ArrowLeft, ListChecks, Lock, Pencil, Plus, Trash2 } from "lucide-react";
+import { 
+  AlignLeft, 
+  ArrowLeft, 
+  ListChecks, 
+  Lock, 
+  Pencil, 
+  Plus,
+  Trash2, 
+  Inbox
+} from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 import { api } from "~/lib/api";
 import { assignmentDetailQuery, qk } from "~/lib/queries";
-import {
-  MAX_OPTIONS,
-  MIN_OPTIONS,
-  letter,
-  makeQuestionSchema,
-} from "~/lib/assignment-schema";
+import { letter, makeQuestionSchema } from "~/lib/assignment-schema";
+import { LIMITS } from "~/convex/limits"
 import type { Question, QuestionInput } from "~/lib/types";
 import { firstMessage } from "~/lib/validation";
 import {
@@ -26,11 +31,12 @@ import {
   DataTable,
   ErrorAlert,
   Modal,
-  SelectField,
   TextField,
   TextAreaField,
+  RadioField,
   Tip
 } from "~/components/ui";
+import { HeaderButton, PageHeader } from "~/components/status-icons";
 import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute(
@@ -195,8 +201,6 @@ function QuestionsPage() {
     onError: (e) => toast.error(e.message),
   });
 
-
-
   const columns = useMemo(
     () => createQuestionColumns({
       locked,
@@ -223,9 +227,9 @@ function QuestionsPage() {
         <Link to="/assignments" className="btn btn-ghost btn-xs mb-1 -ml-2">
           <ArrowLeft className="size-4" /> Kembali
         </Link>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-bold">{assignment.title}</h2>
+        <PageHeader
+          title={assignment.title}
+          subtitle={
             <p className="text-sm text-base-content/60">
               Kelas {assignment.class_name} - {questions.length} soal - total{" "}
               {max_score} poin
@@ -234,25 +238,24 @@ function QuestionsPage() {
                 ? " - Terbit"
                 : " - Draft"}
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Link
-              to="/assignments/$assignmentId/submissions"
-              params={{ assignmentId }}
-              className="btn btn-outline btn-sm"
-            >
-              Pengumpulan
-            </Link>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              disabled={locked}
-              onClick={() => setModal({ open: true, question: null })}
-            >
-              <Plus className="size-4" /> Tambah Soal
-            </button>
-          </div>
-        </div>
+          }
+        >
+          <Link
+            to="/assignments/$assignmentId/submissions"
+            params={{ assignmentId }}
+            aria-label="Pengumpulan"
+            className="btn btn-outline btn-sm max-sm:btn-square"
+          >
+            <Inbox className="size-4" />
+            <span className="hidden sm:inline">Pengumpulan</span>
+          </Link>
+          <HeaderButton 
+            label="Tambah Soal" 
+            icon={<Plus className="size-4" />} 
+            disabled={locked} 
+            onClick={() => setModal({ open: true, question: null })}
+          />
+        </PageHeader>
       </div>
 
       {locked ? (
@@ -360,10 +363,14 @@ function QuestionForm({
         <div className="col-span-2">
           <form.Field name="type">
             {(f) => (
-              <SelectField label="Tipe Soal" field={f}>
-                <option value="pilihan_ganda">Pilihan ganda</option>
-                <option value="esai">Esai</option>
-              </SelectField>
+              <RadioField
+                label="Tipe Soal" 
+                field={f}
+                options={[
+                  { value: "pilihan_ganda", label: "Pilihan ganda" },
+                  { value: "esai", label: "Esai" }
+                ]}
+              />
             )}
           </form.Field>
         </div>
@@ -434,7 +441,7 @@ function QuestionForm({
                           <button
                             type="button"
                             className="btn btn-ghost btn-sm mt-8"
-                            disabled={count <= MIN_OPTIONS}
+                            disabled={count <= LIMITS.optionsMin}
                             onClick={() => removeAt(i)}
                             aria-label={`Hapus pilihan ${letter(i)}`}
                           >
@@ -446,7 +453,7 @@ function QuestionForm({
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm w-fit text-primary"
-                      disabled={count >= MAX_OPTIONS}
+                      disabled={count >= LIMITS.optionsMax}
                       onClick={() => opts.pushValue("")}
                     >
                       <Plus className="size-4" /> Tambah pilihan

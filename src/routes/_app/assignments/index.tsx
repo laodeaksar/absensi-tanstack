@@ -16,7 +16,6 @@ import { api } from "~/lib/api";
 import { makeAssignmentSchema } from "~/lib/assignment-schema";
 import type { Assignment } from "~/lib/types";
 import { isActive, parseClassIds } from "~/lib/types";
-import { firstMessage } from "~/lib/validation";
 import {
   DataTable,
   ErrorAlert,
@@ -30,6 +29,8 @@ import {
   ActionMenu
 } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
+import { formatDateTime } from '~/lib/date'
+import { PublishStatusIcon, PageHeader, HeaderButton } from '~/components/status-icons'
 
 export const Route = createFileRoute("/_app/assignments/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
@@ -42,7 +43,6 @@ export const Route = createFileRoute("/_app/assignments/")({
 });
 
 const col = columnHelperFor<Assignment>();
-const fmtDue = (s: string) => (s ? s.replace("T", " ") : "-");
 const published = (v: unknown) => v === true || v === "TRUE" || v === "true";
 
 function AssignmentsPage() {
@@ -96,7 +96,7 @@ function AssignmentsPage() {
       )
         remove.mutate(a.assignment_id);
     };
-  }, [confirm, remove]);
+  }, [confirm, remove, publish]);
 
   const columns = useMemo(
     () =>
@@ -118,19 +118,13 @@ function AssignmentsPage() {
         col.accessor((r) => r.due_at, {
           id: "due",
           header: "Tenggat",
-          cell: (i) => fmtDue(i.getValue()),
+          cell: (i) => <span className="whitespace-nowrap">{formatDateTime(i.getValue())}</span>
         }),
         col.accessor("question_count", { header: "Soal" }),
         col.accessor((r) => (published(r.is_published) ? "Terbit" : "Draft"), {
           id: "status",
           header: "Status",
-          cell: (i) => (
-            <span
-              className={`badge badge-soft badge-sm ${i.getValue() === "Terbit" ? "badge-success" : "badge-ghost"}`}
-            >
-              {i.getValue()}
-            </span>
-          ),
+          cell: (i) => <PublishStatusIcon published={i.getValue() === "Terbit"} />
         }),
         col.display({
           id: "subs",
@@ -179,7 +173,6 @@ function AssignmentsPage() {
                     type="button"
                     disabled={cannotPublish}
                     title={cannotPublish ? "Tambahkan soal dulu" : undefined}
-                    disabled={!isPub && noQuestions}
                     onClick={() => actions.current.publish(a)}
                   >
                     {isPub ? <Undo2 className="size-4" /> : <Send className="size-4" />}
@@ -229,17 +222,14 @@ function AssignmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Tugas</h2>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          onClick={() => setModal({ open: true, item: null })}
-        >
-          <Plus className="size-4" /> Buat Tugas
-        </button>
-      </div>
-
+      <PageHeader title="Tugas">
+        <HeaderButton 
+          label="Buat Tugas" 
+          icon={<Plus className="size-4" />} 
+          onClick={() => setModal({ open: true, item: null })} 
+        />
+      </PageHeader>
+      
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
           <SearchBox
@@ -373,7 +363,7 @@ function AssignmentForm({
                 : undefined
             }
           >
-            <option disabled selected value="">
+            <option disabled value="">
               -- Pilih Kelas --
             </option>
             {options.map((c) => (
@@ -385,7 +375,7 @@ function AssignmentForm({
         )}
       </form.Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="due_at">
           {(f) => (
             <TextField

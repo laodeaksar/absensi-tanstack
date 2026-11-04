@@ -9,6 +9,7 @@ import { api } from '~/lib/api'
 import { reviewQuery, qk } from '~/lib/queries'
 import { letter, makeGradeSchema } from '~/lib/assignment-schema'
 import { ErrorAlert, TextField, TextAreaField, Tip } from '~/components/ui'
+import { formatDateTime } from '~/lib/date'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/review/$submissionId')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -79,7 +80,7 @@ function ReviewPage() {
         <p className="text-sm text-base-content/60">
           {student.full_name} (NIS {student.nis}) - Kelas {assignment.class_name} - dikumpulkan{' '}
           dikumpulkan{' '}
-          {submission.submitted_at ? new Date(Number(submission.submitted_at)).toLocaleString('id-ID') : '-'}
+          {submission.submitted_at ? formatDateTime(submission.submitted_at) : '-'}
         </p>
       </div>
 
@@ -116,7 +117,7 @@ function ReviewPage() {
                           className={`flex items-center gap-2 ${isKey ? 'font-semibold text-success' : ''}`}
                         >
                           <span className="w-5 shrink-0">{letter(i)}.</span>
-                          <span className='min-w-0 [overflow-wrap:anywhere]'>{o}</span>
+                          <span className='min-w-0 wrap-anywhere'>{o}</span>
                           {isChosen ? (
                             <Tip tip="Jawaban siswa" side="top">
                               <span 
@@ -151,12 +152,12 @@ function ReviewPage() {
             <div key={q.question_id} className="card border border-warning/40 bg-base-100">
               <div className="card-body gap-3 p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="whitespace-pre-line font-medium [overflow-wrap:anywhere]">{n + 1}. {q.text}</p>
+                  <p className="whitespace-pre-line font-medium wrap-anywhere">{n + 1}. {q.text}</p>
                   <span className="badge badge-warning badge-soft shrink-0">Esai - maks {q.points}</span>
                 </div>
                 <div>
                   <p className="mb-1 text-xs font-medium text-base-content/60">Jawaban siswa</p>
-                  <div className="whitespace-pre-wrap rounded-box bg-base-200 p-3 text-sm [overflow-wrap:anywhere]">
+                  <div className="whitespace-pre-wrap rounded-box bg-base-200 p-3 text-sm wrap-anywhere">
                     {a.answer.trim() ? a.answer : <span className="text-base-content/50">(tidak dijawab)</span>}
                   </div>
                 </div>

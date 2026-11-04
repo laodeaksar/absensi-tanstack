@@ -27,6 +27,7 @@ import {
   TextField,
   Tip
 } from "~/components/ui";
+import { PageHeader, HeaderButton } from "~/components/status-icons";
 
 export const Route = createFileRoute("/_app/classes")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
@@ -119,19 +120,14 @@ function ClassesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="max-w-0 text-xl font-bold sm:text-2xl">Master Data Kelas</h2>
-        <button
-          type="button"
-          aria-label="Tambah Kelas"
-          className="btn btn-primary btn-sm"
-          onClick={() => setModal({ open: true, cls: null })}
-        >
-          <Plus className="size-4" /> 
-          <span className="hidden sm:inline">Tambah Kelas</span>
-        </button>
-      </div>
-
+      <PageHeader title="Master Data Kelas">
+        <HeaderButton 
+          label="Tambah Kelas" 
+          icon={<Plus className="size-4" />} 
+          onClick={() => setModal({ open: true, cls: null })} 
+        />
+      </PageHeader>
+   
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
           <SearchBox

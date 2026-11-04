@@ -14,9 +14,8 @@ import { isActive, parseClassIds } from '~/lib/types'
 import type { Teacher, TeacherInput } from '~/lib/types'
 import { firstMessage } from '~/lib/validation'
 import { 
-  ActionMenu,
   ActiveStatusIcon,
-  ActiveBadge,
+  ActionMenu,
   DataTable, 
   ErrorAlert, 
   Modal, 
@@ -25,6 +24,7 @@ import {
   TextField,
   PasswordField
 } from '~/components/ui'
+import { PageHeader, HeaderButton } from '~/components/status-icons'
 import { PasswordStrength } from '~/components/password-strength'
 import { useConfirm } from '~/hooks/use-confirm'
 
@@ -44,7 +44,7 @@ function TeachersPage() {
   const { data: classes } = useSuspenseQuery(classesQuery)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<{ open: boolean; teacher: Teacher | null }>({ open: false, teacher: null })
-  const { confirm, dialog } = useConfirm()
+  const { confirm } = useConfirm()
 
   const toggle = useMutation({
     mutationFn: (v: { user_id: string; is_active: boolean }) => api.saveTeacher(v),
@@ -66,7 +66,7 @@ function TeachersPage() {
       )
       if (ok) toggle.mutate({ user_id: t.user_id, is_active: !t.active })
     }
-  }, [toggle]);
+  }, [confirm, toggle]);
 
   const columns = useMemo(
     () =>
@@ -114,7 +114,7 @@ function TeachersPage() {
         col.accessor((r) => (r.active ? 'Aktif' : 'Nonaktif'), {
           id: 'status',
           header: 'Status',
-          cell: (i) => <ActiveBadge active={i.getValue() === 'Aktif'} />,
+          cell: (i) => <ActiveStatusIcon active={i.getValue() === 'Aktif'} />,
         }),
         col.display({
           id: 'actions',
@@ -158,19 +158,14 @@ function TeachersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="max-w-0 text-xl font-bold sm:text-2xl">Manajemen Guru</h2>
-        <button 
-          type="button" 
-          aria-label="Tambah Guru"
-          className="btn btn-primary btn-sm" 
-          onClick={() => setModal({ open: true, teacher: null })}
-        >
-          <Plus className="size-4" /> 
-          <span className="hidden sm:inline">Tambah Guru</span>
-        </button>
-      </div>
-
+      <PageHeader title="Manajemen Guru">
+        <HeaderButton 
+          label="Tambah Guru" 
+          icon={<Plus className="size-4" />} 
+          onClick={() => setModal({ open: true, teacher: null })} 
+        />
+      </PageHeader>
+    
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
           <SearchBox value={search} onChange={(v) => { setSearch(v); table.setPageIndex(0) }} placeholder="Cari nama atau username..." />
@@ -267,7 +262,7 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
         {(f) => <TextField label="Nama Lengkap" field={f} />}
       </form.Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="nip">{
           (f) => <TextField label="NIP" field={f} inputMode="numeric" />}
         </form.Field>

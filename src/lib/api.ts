@@ -38,6 +38,8 @@ export const api = {
   teachers: () => rpc<{ data: Teacher[] }>('fetchMasterData', 'teachers').then((r) => r.data),
 
   saveStudent: (d: StudentInput) => rpc<Msg>('saveStudent', d),
+  studentClasses: () => rpc<StudentClass[]>('listStudentClasses'),
+  moveStudent: (studentId: string, classId: string) => rpc<Msg>('moveStudent', studentId, classId),
   saveClass: (d: ClassInput) => rpc<Msg>('saveClass', d),
   saveTeacher: (d: TeacherInput) => rpc<Msg>('saveTeacher', d),
   generateStudentAccounts: () => rpc<Msg>('generateStudentAccounts'),

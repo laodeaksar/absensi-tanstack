@@ -7,7 +7,8 @@ import {
 } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
-import { KeyRound, Plus, Pencil } from "lucide-react";
+import { KeyRound, Plus, Pencil, ArrowRightLeft } from "lucide-react";
+import { z } from "zod"
 import { allowRoles } from "~/lib/auth";
 import { api } from "~/lib/api";
 import { classesQuery, qk, studentsQuery } from "~/lib/queries";
@@ -17,7 +18,7 @@ import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
 import type { Student, StudentInput } from "~/lib/types";
 import {
-  ActiveBadge,
+  ActiveStatusIcon,
   DataTable,
   ErrorAlert,
   Modal,
@@ -25,8 +26,10 @@ import {
   SearchBox,
   SelectField,
   TextField,
-  ActionMenu
+  ActionMenu,
+  RadioField,
 } from "~/components/ui";
+import { PageHeader, HeaderButton } from "~/components/status-icons";
 import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute("/_app/students")({
@@ -34,16 +37,22 @@ export const Route = createFileRoute("/_app/students")({
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.query(studentsQuery),
+      context.queryClient.query(studentClassesQuery),
       context.queryClient.query(classesQuery),
     ]),
   component: StudentsPage,
 });
 
-const col = columnHelperFor<Student>();
+type StudentRow = Student & { current_class_id: string; class_name: string; class_year: string };
+const col = columnHelperFor<StudentRow>();
+// const col = columnHelperFor<Student>();
 
 function StudentsPage() {
   const qc = useQueryClient();
   const { data: students } = useSuspenseQuery(studentsQuery);
+  const { data: studentClasses } = useSuspenseQuery(studentClassesQuery);
+  const { data: classes } = useSuspenseQuery(classesQuery);
+  const [moving, setMoving] = useState<StudentRow | null>(null);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<{
     open: boolean;
@@ -66,6 +75,7 @@ function StudentsPage() {
   const actions = useRef({
     edit: (_s: Student) => {},
     reset: (_s: Student) => {},
+    move: (_s: StudentRow) => {},
   });
   useLayoutEffect(() => {
     actions.current.edit = (s) => setModal({ open: true, student: s });
@@ -75,6 +85,7 @@ function StudentsPage() {
       );
       if (ok) reset.mutate(s.student_id);
     };
+    actions.current.move = (s) => setMoving(s);
   }, [confirm, reset]);
 
   const columns = useMemo(
@@ -92,11 +103,15 @@ function StudentsPage() {
           header: "Nama Lengkap",
           cell: (i) => <span className="font-medium">{i.getValue()}</span>,
         }),
+        col.accessor("class_name", {
+          header: "Kelas",
+          cell: (i) => <span className="whitespace-nowrap">{i.getValue() || "-"}</span>,
+        }),
         col.accessor("gender", { header: "L/P" }),
         col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
           id: "status",
           header: "Status",
-          cell: (i) => <ActiveBadge active={i.getValue() === "Aktif"} />,
+          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
         }),
         col.display({
           id: "actions",
@@ -114,6 +129,15 @@ function StudentsPage() {
                   <KeyRound className="size-4" /> Reset Akun
                 </button>
               </li>
+              <li className={isActive(row.original.is_active) ? undefined : "menu-disabled"}>
+                <button
+                  type="button"
+                  disabled={!isActive(row.original.is_active)}
+                  onClick={() => actions.current.move(row.original)}
+                >
+                  <ArrowRightLeft className="size-4" /> Pindah Kelas
+                </button>
+              </li>
             </ActionMenu>
           ),
         }),
@@ -121,13 +145,26 @@ function StudentsPage() {
     [],
   );
 
+  const rows = useMemo<StudentRow[]>(() => {
+    const byId = new Map(classes.map((c) => [c.class_id, c]));
+    const latest = new Map<string, StudentClass>();
+    for (const h of studentClasses) {
+      const prev = latest.get(h.student_id);
+      if (!prev || h.start_date > prev.start_date) latest.set(h.student_id, h);
+    }
+    return students.map((s) => {
+      const c = byId.get(latest.get(s.student_id)?.class_id ?? "");
+      return { ...s, current_class_id: c?.class_id ?? "", class_name: c?.class_name ?? "", class_year: c?.academic_year ?? "" };
+    });
+  }, [students, classes, studentClasses]);
+
   const data = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return students;
-    return students.filter((s) =>
+    return rows.filter((s) =>
       `${s.full_name} ${s.nis} ${s.nisn}`.toLowerCase().includes(q),
     );
-  }, [students, search]);
+  }, [students, rows, search]);
 
   const table = useTable({
     features,
@@ -143,37 +180,18 @@ function StudentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="min-w-0 text-xl font-bold sm:text-2xl">Master Data Siswa</h2>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            aria-label="Buat Akun Siswa"
-            className="btn btn-outline btn-sm"
-            disabled={generate.isPending}
-            onClick={async () => {
-              if (
-                await confirm(
-                  "Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.",
-                )
-              )
-              generate.mutate();
-            }}
-          >
-            <KeyRound className="size-4" />
-            <span className="hidden sm:inline">Buat Akun Siswa</span>
-          </button>
-          <button
-            type="button"
-            aria-label="Tambah Siswa"
-            className="btn btn-primary btn-sm"
-            onClick={() => setModal({ open: true, student: null })}
-          >
-            <Plus className="size-4" /> 
-            <span className="hidden sm:inline">Tambah Siswa</span>
-          </button>
-        </div>
-      </div>
+      <PageHeader title="Master Data Siswa">
+        <HeaderButton
+          label="Buat Akun Siswa"
+          className="btn-outline"
+          icon={<KeyRound className="size-4" />}
+          disabled={generate.isPending}
+          onClick={async () => {
+            if (await confirm("Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.")) generate.mutate();
+          }}
+        />
+        <HeaderButton label="Tambah Siswa" icon={<Plus className="size-4" />} onClick={() => setModal({ open: true, student: null })} />
+      </PageHeader>
 
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
@@ -204,6 +222,16 @@ function StudentsPage() {
           }}
           onCancel={() => setModal((m) => ({ ...m, open: false }))}
         />
+      </Modal>
+      <Modal open={moving !== null} onClose={() => setMoving(null)} title="Pindah Kelas">
+        {moving ? (
+          <MoveStudentForm 
+            key={moving.student_id} 
+            student={moving} 
+            onDone={() => setMoving(null)} 
+            onCancel={() => setMoving(null)} 
+          />
+        ) : null}
       </Modal>
       {dialog}
     </div>
@@ -280,7 +308,7 @@ function StudentForm({
         void form.handleSubmit();
       }}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="nis">
           {(f) => <TextField label="NIS" field={f} />}
         </form.Field>
@@ -303,10 +331,14 @@ function StudentForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="gender">
           {(f) => (
-            <SelectField label="Jenis Kelamin" field={f}>
-              <option value="L">Laki-laki</option>
-              <option value="P">Perempuan</option>
-            </SelectField>
+            <RadioField 
+              label="Jenis Kelamin" 
+              field={f}
+              options={[
+                { value: "L", label: "Laki-laki" },
+                { value: "P", label: "Perempuan" }
+              ]}
+            />
           )}
         </form.Field>
 
@@ -314,9 +346,7 @@ function StudentForm({
           <form.Field name="class_id">
             {(f) => (
               <SelectField label="Kelas" field={f}>
-                <option disabled selected value="">
-                  -- Pilih Kelas --
-                </option>
+                <option disabled value="">-- Pilih Kelas --</option>
                 {activeClasses.map((c) => (
                   <option key={c.class_id} value={c.class_id}>
                     {c.class_name} ({c.academic_year || "-"})
@@ -344,6 +374,82 @@ function StudentForm({
             </button>
           )}
         </form.Subscribe>
+      </div>
+    </form>
+  );
+}
+
+const moveSchema = z.object({ class_id: z.string().min(1, "Pilih kelas tujuan") });
+
+function MoveStudentForm({ 
+  student, 
+  onDone, 
+  onCancel 
+}: Readonly<{
+  student: StudentRow; 
+  onDone: () => void; 
+  onCancel: () => void;
+}>) {
+  const qc = useQueryClient();
+  const { data: classes } = useSuspenseQuery(classesQuery);
+  const options = useMemo(
+    () => classes.filter((c) => isActive(c.is_active) && c.class_id !== student.current_class_id),
+    [classes, student.current_class_id],
+  );
+
+  const move = useMutation({
+    mutationFn: (classId: string) => api.moveStudent(student.student_id, classId),
+    onSuccess: async (r) => {
+      toast.success(r.message);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: qk.studentClasses }),
+        qc.invalidateQueries({ queryKey: qk.attendance }),
+        qc.invalidateQueries({ queryKey: qk.report }),
+        qc.invalidateQueries({ queryKey: qk.dashboard }),
+      ]);
+      onDone();
+    },
+  });
+
+  const form = useForm({
+    defaultValues: { class_id: "" },
+    validators: { onChange: moveSchema, onSubmit: moveSchema },
+    onSubmit: async ({ value }) => {
+      await move.mutateAsync(value.class_id).catch(() => {});
+    },
+  });
+
+  return (
+    <form
+      noValidate
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void form.handleSubmit();
+      }}
+    >
+      <p className="text-sm [overflow-wrap:anywhere]">
+        <span className="font-medium">{student.full_name}</span> saat ini di{" "}
+        {student.class_name ? `${student.class_name} (${student.class_year || "-"})` : "- (belum punya kelas)"}.
+      </p>
+      <form.Field name="class_id">
+        {(f) => (
+          <SelectField label="Kelas Tujuan" field={f}>
+            <option disabled value="">-- Pilih Kelas --</option>
+            {options.map((c) => (
+              <option key={c.class_id} value={c.class_id}>{c.class_name} ({c.academic_year || "-"})</option>
+            ))}
+          </SelectField>
+        )}
+      </form.Field>
+      <ErrorAlert message={move.error?.message} />
+      <div className="modal-action">
+        <button type="button" className="btn" onClick={onCancel}>Batal</button>
+        <button type="submit" className="btn btn-primary" disabled={move.isPending}>
+          {move.isPending ? <span className="loading loading-spinner loading-sm" /> : null}
+          Pindahkan
+        </button>
       </div>
     </form>
   );

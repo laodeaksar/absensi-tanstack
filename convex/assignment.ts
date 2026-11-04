@@ -15,11 +15,40 @@ import {
   round2, 
   studentById,
 } from "./lib";
+import { LIMITS } from "./limits"
 
 const GRACE_MS = 60_000; // toleransi keterlambatan jaringan saat kumpul
-const ESSAY_MAX = 5000;
+// const ESSAY_MAX = 5000;
 
 /* ---------- helper ---------- */
+
+const assignmentInput = v.object({
+  assignment_id: v.optional(v.string()), // "" untuk tugas baru
+  title: v.string(),
+  description: v.string(),
+  class_id: v.string(),
+  due_at: v.string(),
+  duration_minutes: v.number(),
+  is_published: v.boolean(),
+});
+
+const questionInput = v.object({
+  question_id: v.optional(v.string()), // "" untuk soal baru
+  assignment_id: v.string(),
+  type: v.union(v.literal("pilihan_ganda"), v.literal("esai")),
+  text: v.string(),
+  options: v.array(v.string()),
+  correct_index: v.union(v.number(), v.literal("")), // klien mengirim "" untuk esai
+  points: v.number(),
+});
+
+const gradeInput = v.object({
+  question_id: v.string(),
+  score: v.union(v.string(), v.number()),
+  feedback: v.optional(v.string()),
+});
+
+const answerInput = v.object({ question_id: v.string(), answer: v.string() });
 
 async function staff(ctx: QueryCtx, token: string) {
   return requireAuth(ctx, token); // siswa -> FORBIDDEN
@@ -147,17 +176,17 @@ export const listAssignments = query({
 });
 
 export const saveAssignment = mutation({
-  args: { token: v.string(), data: v.any() },
+  args: { token: v.string(), data: assignmentInput },
   handler: async (ctx, { token, data }) => {
     const user = await staff(ctx, token);
-    if (!data || typeof data !== "object") fail("Data tugas tidak boleh kosong.");
+    if (!data) fail("Data tugas tidak boleh kosong.");
     const d = data as Record<string, unknown>;
 
     const title = String(d.title ?? "").trim();
     const description = String(d.description ?? "").trim();
     if (!title) fail("Judul wajib diisi.");
-    if (title.length > 150) fail("Judul maksimal 150 karakter.");
-    if (description.length > 1000) fail("Deskripsi maksimal 1000 karakter.");
+    if (title.length > LIMITS.title) fail(`Judul maksimal ${LIMITS.title} karakter.`);
+    if (description.length > LIMITS.description) fail(`Deskripsi maksimal ${LIMITS.description} karakter.`);
 
     const classId = String(d.class_id ?? "");
     const cls = await classById(ctx, classId);
@@ -168,7 +197,7 @@ export const saveAssignment = mutation({
     if (dueAt && !dueMs(dueAt)) fail("Format tenggat tidak valid.");
 
     const duration = Math.floor(Number(d.duration_minutes ?? 0));
-    if (!Number.isFinite(duration) || duration < 0 || duration > 600) fail("Durasi harus 0 sampai 600 menit.");
+    if (!Number.isFinite(duration) || duration < 0 || duration > LIMITS.durationMinutes) fail(`Durasi harus 0 sampai ${LIMITS.durationMinutes} menit.`);
 
     const publish = d.is_published === true || d.is_published === "true";
     const existing = d.assignment_id ? await manageAssignment(ctx, user, String(d.assignment_id)) : null;
@@ -184,7 +213,13 @@ export const saveAssignment = mutation({
         fail("Kelas tidak dapat diubah karena tugas sudah dikerjakan siswa.");
       }
       await ctx.db.patch(existing._id, {
-        title, description, class_id: classId, due_at: dueAt, duration_minutes: duration, is_published: publish, updated_at: now,
+        title, 
+        description, 
+        class_id: classId, 
+        due_at: dueAt, 
+        duration_minutes: duration, 
+        is_published: publish, 
+        updated_at: now,
       });
       return { message: "Tugas diperbarui.", assignment_id: existing.assignment_id };
     }
@@ -283,10 +318,10 @@ export const setAssignmentPublished = mutation({
 const LOCKED_MSG = "Tugas sudah dikerjakan siswa, soal tidak dapat ditambah, diubah, atau dihapus.";
 
 export const saveQuestion = mutation({
-  args: { token: v.string(), data: v.any() },
+  args: { token: v.string(), data: questionInput },
   handler: async (ctx, { token, data }) => {
     const user = await staff(ctx, token);
-    if (!data || typeof data !== "object") fail("Data soal tidak boleh kosong.");
+    if (!data) fail("Data soal tidak boleh kosong.");
     const d = data as Record<string, unknown>;
 
     const a = await manageAssignment(ctx, user, String(d.assignment_id ?? ""));
@@ -465,7 +500,7 @@ export const getSubmissionForReview = query({
 
 /** grades: [{ question_id, score, feedback }] untuk SEMUA soal esai. Setelah ini status menjadi "dinilai". */
 export const gradeSubmission = mutation({
-  args: { token: v.string(), submissionId: v.string(), grades: v.array(v.any()) },
+  args: { token: v.string(), submissionId: v.string(), grades: v.array(gradeInput) },
   handler: async (ctx, { token, submissionId, grades }) => {
     const user = await staff(ctx, token);
     const sub = await findSubmission(ctx, submissionId);
@@ -486,7 +521,7 @@ export const gradeSubmission = mutation({
       const sc = Number(raw);
       if (!Number.isFinite(sc) || sc < 0 || sc > q.points) fail(`Nilai soal nomor ${no} harus 0 sampai ${q.points}.`);
       const fb = String(g!.feedback ?? "").trim();
-      if (fb.length > 500) fail("Komentar maksimal 500 karakter.");
+      if (fb.length > LIMITS.feedback) fail(`Komentar maksimal ${LIMITS.feedback} karakter.`);
       parsed.set(q.question_id, { score: round2(sc), feedback: fb });
     }
 
@@ -606,7 +641,7 @@ async function finalizeSubmission(
         answer_id: randomId("ANS"),
         submission_id: sub.submission_id,
         question_id: q.question_id,
-        answer: String(raw ?? "").slice(0, ESSAY_MAX), 
+        answer: String(raw ?? "").slice(0, LIMITS.essayAnswer), 
         is_correct: null, 
         score: null, 
         feedback: "",
@@ -696,7 +731,11 @@ export const startTask = mutation({
 });
 
 export const submitTask = mutation({
-  args: { token: v.string(), assignmentId: v.string(), answers: v.array(v.any()) },
+  args: { 
+    token: v.string(), 
+    assignmentId: v.string(), 
+    answers: v.array(answerInput)
+  },
   handler: async (ctx, { token, assignmentId, answers }) => {
     const user = await student(ctx, token);
     const a = await findAssignment(ctx, assignmentId);

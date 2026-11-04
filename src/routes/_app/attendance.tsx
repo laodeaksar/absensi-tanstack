@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useForm, useSelector } from '@tanstack/react-form'
-import type { AnyFieldApi } from '@tanstack/react-form'
+import type { AnyFormApi } from '@tanstack/react-form'
 import { useTable } from '@tanstack/react-table'
 import { MessageSquareText, Save } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
@@ -10,8 +10,7 @@ import { api } from '~/lib/api'
 import {
   NOTES_MIN, 
   STATUS_VALUES, 
-  earliestDate, 
-  firstMessage, 
+  earliestDate,  
   gridSchema, 
   makeFilterSchema, 
   needsNotes,
@@ -25,9 +24,11 @@ import type { AttendanceEntry } from '~/lib/types'
 import { 
   DataTable, 
   ErrorAlert, 
+  Modal,
   PageSpinner, 
   SelectField, 
-  TextField 
+  TextField,
+  TextAreaField
 } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/attendance')({
@@ -216,7 +217,7 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
   })
   
   const [noteRow, setNoteRow] = useState<number | null>(null)
-  const [tried, setTried] = useState(false)
+  const [_, setTried] = useState(false)
 
   const openNote = (i: number) => {
     setTried(false)

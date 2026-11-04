@@ -45,7 +45,11 @@ const SUBMISSION: Record<SubmissionStatus, StatusMeta> = {
   dinilai: { label: 'Sudah dinilai', cls: 'text-success', Icon: CircleCheck },
 }
 
-const LATE: StatusMeta = { label: 'Lewat tenggat', cls: 'text-error', Icon: CircleAlert }
+const LATE: StatusMeta = { 
+  label: 'Lewat tenggat', 
+  cls: 'text-error', 
+  Icon: CircleAlert 
+}
 
 export function SubmissionStatusIcon({
   status,
@@ -106,7 +110,7 @@ export function PageHeader({
   return (
     <div className={`flex items-center justify-between gap-2 ${className}`}>
       <div className="min-w-0">
-        <h2 className="text-xl font-bold sm:text-2xl [overflow-wrap:anywhere]">{title}</h2>
+        <h2 className="text-xl font-bold sm:text-2xl wrap-anywhere">{title}</h2>
         {subtitle}
       </div>
       {children ? <div className="flex shrink-0 items-center gap-2">{children}</div> : null}

@@ -210,7 +210,6 @@ function PasswordCard() {
             <PasswordField 
               label="Ulangi Password Baru" 
               field={f} 
-              type="password" 
               autoComplete="new-password" 
             />
           )}

@@ -4,19 +4,15 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTable } from '@tanstack/react-table'
 import { 
   ArrowLeft, 
-  CircleDashed, 
-  Hourglass, 
-  ClipboardList, 
-  CircleCheck,
   Eye,
   PenLine
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { columnHelperFor, features } from '~/lib/table'
 import { submissionsQuery } from '~/lib/queries'
 import type { SubmissionRow, SubmissionStatus } from '~/lib/types'
 import { DataTable, Pager, SearchBox, Tip } from '~/components/ui'
+import { SubmissionStatusIcon } from "~/components/status-icons"
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/submissions')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -28,45 +24,6 @@ const col = columnHelperFor<SubmissionRow>()
 
 function StudentNameCell({ name }: Readonly<{ name: string }>) {
   return <span className="font-medium">{name}</span>
-}
-
-const STATUS = {
-  belum: { 
-    label: 'Belum mengerjakan', 
-    cls: 'text-base-content/40', 
-    Icon: CircleDashed 
-  },
-  berlangsung: { 
-    label: 'Sedang mengerjakan', 
-    cls: 'text-info', 
-    Icon: Hourglass 
-  },
-  diserahkan: { 
-    label: 'Perlu dinilai', 
-    cls: 'text-warning',
-    Icon: ClipboardList 
-  },
-  dinilai: { 
-    label: 'Sudah dinilai', 
-    cls: 'text-success', 
-    Icon: CircleCheck 
-  },
-} satisfies Record<SubmissionStatus, { label: string; cls: string; Icon: LucideIcon }>
-
-function SubmissionStatusCell({ status }: Readonly<{ status: SubmissionStatus }>) {
-  const { label, cls, Icon } = STATUS[status]
-  return (
-    <Tip tip={label} side="right">
-      <span 
-        role="img" 
-        aria-label={label} 
-        tabIndex={0}
-        className={`inline-flex ${cls}`}
-      >
-        <Icon className="size-5" />
-      </span>
-    </Tip>
-  )
 }
 
 function SubmissionScoreCell({ row }: Readonly<{ row: SubmissionRow }>) {
@@ -130,7 +87,7 @@ function createSubmissionColumns(assignmentId: string) {
     col.accessor('full_name', { header: 'Nama Siswa', cell: (cell) => <StudentNameCell name={cell.getValue()} /> }),
     col.accessor('status', {
       header: 'Status',
-      cell: (cell) => <SubmissionStatusCell status={cell.getValue()} />,
+      cell: (cell) => <SubmissionStatusIcon status={cell.getValue()} />,
     }),
     col.display({
       id: 'score',

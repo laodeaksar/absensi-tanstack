@@ -39,6 +39,21 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
+@layer base {
+  input[type="date"],
+  input[type="datetime-local"] {
+    width: 100%;
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-width: 0;
+  }
+}
+
 @media print {
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }

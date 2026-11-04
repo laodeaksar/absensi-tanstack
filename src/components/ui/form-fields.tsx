@@ -7,7 +7,7 @@ import type {
 } from 'react'
 import { useState } from "react"
 import type { AnyFieldApi } from '@tanstack/react-form'
-import { Eye, EyeOff, Lock } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useValidity } from '~/hooks/use-validity'
 import { errorText } from '~/utils/form'
 
@@ -30,12 +30,12 @@ function FieldShell({
       {/* Harus berada tepat setelah elemen .validator */}
       <p
         role={message ? 'alert' : undefined}
-        className={`validator-hint ${message ? 'mt-0! block! visible! text-error [overflow-wrap:anywhere]' : 'hidden'}`}
+        className={`validator-hint ${message ? 'mt-0! block! visible! text-error wrap-anywhere' : 'hidden'}`}
       >
         {message}
       </p>
       {hint && !message ? (
-        <p className="label h-auto max-w-full whitespace-normal [overflow-wrap:anywhere]">{hint}</p>
+        <p className="label h-auto max-w-full whitespace-normal wrap-anywhere">{hint}</p>
       ) : null}
     </fieldset>
   )
@@ -93,7 +93,7 @@ export function TextField({
 
 export function PasswordField({
   ...props
-}: Omit<ComponentProps<typeof TextField>, 'type' | 'trailing'>) {
+}: ComponentProps<typeof TextField>) {
   const [show, setShow] = useState(false)
 
   return (
@@ -215,8 +215,71 @@ export function CheckboxField({
           aria-invalid={!!message}
           className={`checkbox checkbox-sm shrink-0 ${message ? 'checkbox-error' : 'checkbox-primary'}`}
         />
-        <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+        <span className="min-w-0 wrap-anywhere">{label}</span>
       </label>
+    </FieldShell>
+  )
+}
+
+export type RadioOption = { value: string; label: ReactNode; disabled?: boolean }
+
+export function RadioField({
+  label,
+  field,
+  options,
+  hint,
+  hideLabel = false,
+  variant = 'inline',
+  disabled,
+}: {
+  label: string
+  field: AnyFieldApi
+  options: RadioOption[]
+  hint?: string
+  /** Legenda disembunyikan, tapi tetap jadi nama grup untuk pembaca layar. */
+  hideLabel?: boolean
+  variant?: 'inline' | 'card'
+  disabled?: boolean
+}) {
+  const message = errorText(field)
+  const ref = useValidity<HTMLInputElement>(message)
+  const current = String(field.state.value ?? '')
+
+  return (
+    <FieldShell label={hideLabel ? undefined : label} hint={hint} message={message}>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        aria-invalid={!!message}
+        className={variant === 'card' ? 'space-y-2' : 'flex flex-wrap gap-x-6 gap-y-2 py-1'}
+      >
+        {options.map((o, i) => {
+          const on = current === o.value
+          const off = disabled || o.disabled
+          const wrapper =
+            variant === 'card'
+              ? `flex items-start gap-3 rounded-box border p-3 ${off ? 'opacity-60' : 'cursor-pointer'} ${
+                  on ? 'border-primary bg-primary/5' : message ? 'border-error' : 'border-base-300'
+                }`
+              : `flex items-center gap-2 text-sm ${off ? 'opacity-60' : 'cursor-pointer'}`
+          return (
+            <label key={o.value} className={wrapper}>
+              <input
+                type="radio"
+                ref={i === 0 ? ref : undefined}
+                name={field.name}
+                value={o.value}
+                checked={on}
+                disabled={off}
+                onBlur={field.handleBlur}
+                onChange={() => field.handleChange(o.value)}
+                className={`radio radio-sm shrink-0 ${message ? 'radio-error' : 'radio-primary'} ${variant === 'card' ? 'mt-0.5' : ''}`}
+              />
+              <span className="min-w-0 [overflow-wrap:anywhere]">{o.label}</span>
+            </label>
+          )
+        })}
+      </div>
     </FieldShell>
   )
 }

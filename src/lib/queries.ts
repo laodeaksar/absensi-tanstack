@@ -7,6 +7,7 @@ export const qk = {
   me: ['me'] as const,
   settings: ['settings'] as const,
   students: ['students'] as const,
+  studentClasses: ['student-classes'] as const,
   classes: ['classes'] as const,
   teachers: ['teachers'] as const,
   dashboard: ['dashboard'] as const,
@@ -42,6 +43,11 @@ export const settingsQuery = queryOptions({
 export const studentsQuery = queryOptions({ 
   queryKey: qk.students, 
   queryFn: api.students 
+})
+export const studentClassesQuery = queryOptions({
+  queryKey: qk.studentClasses,
+  queryFn: () => api.studentClasses(),
+  staleTime: 60_000,
 })
 export const classesQuery = queryOptions({ 
   queryKey: qk.classes, 

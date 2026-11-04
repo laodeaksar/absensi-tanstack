@@ -16,9 +16,10 @@ import {
   PageSpinner, 
   Pager, 
   SelectField, 
-  StatusBadge, 
   TextField 
 } from '~/components/ui'
+import { formatDate } from '~/lib/date'
+import { AttendanceStatusIcon, HeaderButton, PageHeader } from '~/components/status-icons'
 
 export const Route = createFileRoute('/_app/reports')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -38,12 +39,8 @@ const nowrap = (v: string) => <span className="whitespace-nowrap">{v}</span>
 
 const columns = col.columns([
   col.accessor('date', { 
-    header: 'Tanggal',
-    cell: (i) => (
-      <span className="whitespace-nowrap tabular-nums">
-        {i.getValue().replace(/^(\d{4}-\d{2}-\d{2})T.*$/, '$1')}
-      </span>
-    ),
+    header: 'Tanggal', 
+    cell: (i) => <span className="whitespace-nowrap tabular-nums">{formatDate(i.getValue())}</span> 
   }),
   col.accessor('nis', { 
     header: 'NIS', 
@@ -59,12 +56,12 @@ const columns = col.columns([
   }),
   col.accessor('status', { 
     header: 'Status', 
-    cell: (i) => <StatusBadge status={i.getValue()} /> 
+    cell: (i) => <AttendanceStatusIcon status={i.getValue()} /> 
   }),
   col.accessor('notes', { 
     header: 'Keterangan', 
     enableSorting: false,
-    cell: (i) => <span className="block min-w-40 [overflow-wrap:anywhere]">{i.getValue()}</span>,
+    cell: (i) => <span className="block min-w-40 wrap-anywhere">{i.getValue()}</span>,
   }),
 ])
 
@@ -162,6 +159,14 @@ function ReportsPage() {
 
   return (
     <div className="space-y-4">
+      <PageHeader title="Laporan Absensi" className="no-print">
+        <HeaderButton 
+          label="Cetak Laporan" 
+          className="btn-neutral"
+          icon={<Printer className="size-4" />}
+          onClick={print} disabled={data.length === 0} 
+        />
+      </PageHeader>
       <div className="no-print flex items-center justify-between">
         <h2 className="text-2xl font-bold">Laporan Absensi</h2>
         <button type="button" className="btn btn-neutral btn-sm" onClick={print} disabled={data.length === 0}>
@@ -188,7 +193,7 @@ function ReportsPage() {
           <form.Field name="classId">
             {(f) => (
               <SelectField label="Kelas" field={f}>
-                <option selected value="">Semua Kelas</option>
+                <option value="">Semua Kelas</option>
                 {options.map((c) => (
                   <option key={c.class_id} value={c.class_id}>{c.class_name}</option>
                 ))}

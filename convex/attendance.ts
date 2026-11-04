@@ -13,9 +13,25 @@ import {
   todayStr,
 } from "./lib";
 import { getSettingsMap } from "./settings";
+import { LIMITS, needsNotes } from "./limits"
 
 const STATUSES = ["Hadir", "Sakit", "Izin", "Alpa"];
 const MAX_REPORT_ROWS = 10_000;
+
+const attendanceRow = v.object({
+  student_id: v.string(),
+  status: v.string(),
+  notes: v.string(),
+});
+const reportFilters = v.object({
+  startDate: v.optional(v.string()),
+  endDate: v.optional(v.string()),
+  classId: v.optional(v.string()),
+});
+const myFilters = v.object({
+  startDate: v.optional(v.string()),
+  endDate: v.optional(v.string()),
+});
 
 /** Cerminan assertAttendanceEditable lama: format/nilai tanggal, tanggal masa depan, jendela edit guru. */
 async function assertAttendanceEditable(ctx: QueryCtx, user: Doc<"users">, date: string) {
@@ -47,20 +63,22 @@ export const getAttendanceForm = query({
     if (user.role === "guru" && !user.assigned_classes.includes(classId)) fail("Anda tidak memiliki akses ke kelas ini.");
 
     const ids = await activeMembers(ctx, classId);
-    const att = await ctx.db
-      .query("attendance")
-      .withIndex("by_class_date", (q) => q.eq("class_id", classId).eq("attendance_date", date))
-      .collect();
-    const attBy = new Map(att.map((a) => [a.student_id, a]));
-
+    
     const rows = [];
     for (const id of ids) {
       const s = await studentById(ctx, id);
       if (!s || !s.is_active) continue;
-      const a = attBy.get(id);
+      const a = await ctx.db
+        .query("attendance")
+        .withIndex("by_student", (q) => q.eq("student_id", id).eq("attendance_date", date))
+        .first();
       rows.push({
-        student_id: s.student_id, nis: s.nis || "-", full_name: s.full_name || "Tanpa Nama",
-        status: a ? a.status || "Belum Ada" : "Belum Ada", notes: a ? a.notes : "", attendance_id: a ? a.attendance_id : null,
+        student_id: s.student_id, 
+        nis: s.nis || "-", 
+        full_name: s.full_name || "Tanpa Nama",
+        status: a ? a.status || "Belum Ada" : "Belum Ada",
+        notes: a ? a.notes : "", 
+        attendance_id: a ? a.attendance_id : null,
       });
     }
     rows.sort((x, y) => x.full_name.localeCompare(y.full_name));
@@ -69,7 +87,11 @@ export const getAttendanceForm = query({
 });
 
 export const submitAttendanceBatch = mutation({
-  args: { token: v.string(), date: v.string(), classId: v.string(), rows: v.array(v.any()) },
+  args: { 
+    token: v.string(), 
+    date: v.string(), 
+    classId: v.string(), 
+    rows: v.array(attendanceRow) },
   handler: async (ctx, { token, date, classId, rows }) => {
     const user = await requireAuth(ctx, token);
     await assertAttendanceEditable(ctx, user, date);
@@ -77,11 +99,6 @@ export const submitAttendanceBatch = mutation({
     if (!(await classById(ctx, classId))) fail("Kelas tidak ditemukan.");
 
     const members = new Set(await activeMembers(ctx, classId));
-    const existing = await ctx.db
-      .query("attendance")
-      .withIndex("by_class_date", (q) => q.eq("class_id", classId).eq("attendance_date", date))
-      .collect();
-    const exBy = new Map(existing.map((a) => [a.student_id, a]));
 
     const now = nowIso();
     const seen = new Set<string>();
@@ -91,14 +108,31 @@ export const submitAttendanceBatch = mutation({
       const status = String(raw?.status ?? "");
       if (!sid || !members.has(sid) || !STATUSES.includes(status) || seen.has(sid)) { skipped++; continue; }
       seen.add(sid);
-      const notes = String(raw.notes ?? "").slice(0, 200);
-      const ex = exBy.get(sid);
+      const notes = String(raw.notes ?? "").trim().slice(0, LIMITS.notesMax);
+      if (needsNotes(status) && notes.length < LIMITS.notesMin) { skipped++; continue; }
+      const ex = await ctx.db
+        .query("attendance")
+        .withIndex("by_student", (q) => q.eq("student_id", sid).eq("attendance_date", date))
+        .first();
       if (ex) {
-        await ctx.db.patch(ex._id, { status, notes, recorded_by: user.user_id, updated_at: now });
+        await ctx.db.patch(ex._id, { 
+          status, 
+          notes, 
+          class_id: classId, 
+          recorded_by: user.user_id, 
+          updated_at: now 
+        });
       } else {
         await ctx.db.insert("attendance", {
-          attendance_id: randomId("ATT"), attendance_date: date, student_id: sid, class_id: classId,
-          status, notes, recorded_by: user.user_id, created_at: now, updated_at: now,
+          attendance_id: randomId("ATT"), 
+          attendance_date: date, 
+          student_id: sid, 
+          class_id: classId,
+          status,
+          notes, 
+          recorded_by: user.user_id, 
+          created_at: now, 
+          updated_at: now,
         });
       }
     }
@@ -163,7 +197,7 @@ export const getDashboardStats = query({
 /* ---------- laporan ---------- */
 
 export const getReportData = query({
-  args: { token: v.string(), filters: v.any() },
+  args: { token: v.string(), filters: reportFilters },
   handler: async (ctx, { token, filters }) => {
     const user = await requireAuth(ctx, token);
     const f = (filters ?? {}) as Record<string, unknown>;
@@ -211,7 +245,7 @@ export const getReportData = query({
 /* ---------- kehadiran siswa sendiri ---------- */
 
 export const getMyAttendance = query({
-  args: { token: v.string(), filters: v.any() },
+  args: { token: v.string(), filters: myFilters },
   handler: async (ctx, { token, filters }) => {
     const user = await requireAuth(ctx, token, { allowStudent: true });
     if (user.role !== "siswa" || !user.student_id) fail("FORBIDDEN");

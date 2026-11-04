@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import {
+  PBKDF2_ITERATIONS,
   assertStrongPassword, 
   fail, 
   newHash, 
@@ -16,6 +17,8 @@ import {
   sessionUser, 
   sha256Hex,
   studentById,
+  verifyPbkdf2,
+  needsRehash,
 } from "./lib";
 
 const MAX_FAILS = 5;
@@ -32,7 +35,7 @@ async function verifyPassword(ctx: QueryCtx, user: Doc<"users">, password: strin
   if (user.hash_algo === "sha256") {
     return safeEqual(await sha256Hex(password + user.password_salt), user.password_hash);
   }
-  return safeEqual(await pbkdf2Hex(password, user.password_salt), user.password_hash);
+  return verifyPbkdf2(user, password);
 }
 
 async function recordFailure(ctx: MutationCtx, key: string, now: number) {
@@ -81,7 +84,17 @@ export const login = mutation({
       .query("users")
       .withIndex("by_username_lc", (q) => q.eq("username_lc", key))
       .unique();
-    const valid = !!user && user.is_active && (await verifyPassword(ctx, user, password));
+    //const valid = !!user && user.is_active && (await verifyPassword(ctx, user, password));
+    let valid = false;
+    if (user && user.is_active) valid = await verifyPassword(ctx, user, password);
+    else await pbkdf2Hex(password, "waktu-respons-palsu", PBKDF2_ITERATIONS); // tambahkan PBKDF2_ITERATIONS ke impor
+    if (!valid || !user) {
+      await recordFailure(ctx, key, now);
+      return { 
+        ok: false as const, 
+        message: "Username atau password salah." 
+      };
+    }
     if (!valid || !user) {
       await recordFailure(ctx, key, now);
       return { 
@@ -92,11 +105,13 @@ export const login = mutation({
 
     if (attempt) await ctx.db.delete(attempt._id);
 
-    // Upgrade hash lama (sha256 hasil migrasi) ke pbkdf2 saat berhasil login
-    if (user.hash_algo === "sha256") await ctx.db.patch(user._id, { 
-      ...(await newHash(password)), 
-      updated_at: nowIso() 
-    });
+    // Upgrade hash lama (sha256 hasil migrasi, atau pbkdf2 di bawah target iterasi) saat berhasil login
+    if (user.hash_algo === "sha256" || needsRehash(user)) {
+      await ctx.db.patch(user._id, { 
+        ...(await newHash(password)),
+        updated_at: nowIso() 
+      });
+    }
 
     // Akun lama dengan password yang belum memenuhi kebijakan kuat: wajib ganti password mulai login ini.
     // (Akun dengan password awal NISN sudah otomatis wajib ganti.)

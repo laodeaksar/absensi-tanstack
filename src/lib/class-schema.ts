@@ -1,8 +1,7 @@
 import { z } from 'zod'
+import { isActive } from './types'
+import { LIMITS } from '~/convex/limits'
 import type { ClassRow } from './types'
-
-export const CLASS_NAME_MAX = 50
-export const GRADE_MAX = 20
 
 /** 2025/2026: dua tahun berurutan. */
 export function isAcademicYear(v: string) {
@@ -10,7 +9,6 @@ export function isAcademicYear(v: string) {
   return !!m && Number(m[2]) === Number(m[1]) + 1
 }
 
-const isActiveFlag = (v: unknown) => v === true || v === 'TRUE' || v === 'true'
 
 export interface ClassRules {
   /** Semua kelas yang ada (untuk cek duplikat) */
@@ -39,12 +37,12 @@ export function makeClassSchema(rules: ClassRules) {
         .string()
         .trim()
         .min(1, 'Nama kelas wajib diisi')
-        .max(CLASS_NAME_MAX, `Maksimal ${CLASS_NAME_MAX} karakter`),
+        .max(LIMITS.className, `Maksimal ${LIMITS.className} karakter`),
       grade_level: z
         .string()
         .trim()
         .min(1, 'Tingkat wajib diisi')
-        .max(GRADE_MAX, `Maksimal ${GRADE_MAX} karakter`),
+        .max(LIMITS.gradeLevel, `Maksimal ${LIMITS.gradeLevel} karakter`),
       academic_year: z
         .string()
         .trim()
@@ -72,7 +70,7 @@ export function makeClassSchema(rules: ClassRules) {
       const teacher = v.homeroom_teacher
       if (teacher && (teacher !== rules.original?.homeroom_teacher || year !== rules.original?.academic_year)) {
         const other = rules.classes.find(
-          (c) => isActiveFlag(c.is_active) && c.class_id !== rules.editingId && c.homeroom_teacher === teacher && c.academic_year === year,
+          (c) => isActive(c.is_active) && c.class_id !== rules.editingId && c.homeroom_teacher === teacher && c.academic_year === year,
         )
         if (other) {
           ctx.addIssue({

@@ -22,6 +22,13 @@ export interface Student {
   is_active: Flag
 }
 
+export interface StudentClass { 
+  student_id: string; 
+  class_id: string; 
+  academic_year: string; 
+  start_date: string 
+}
+
 export interface ClassRow {
   class_id: string
   class_name: string

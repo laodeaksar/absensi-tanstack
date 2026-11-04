@@ -11,19 +11,12 @@ import { ArrowLeft, Clock, Hourglass, Send } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { toast } from "~/lib/toast";
 import { api } from "~/lib/api";
+import { formatDateTime } from "~/lib/date";
 import { myResultQuery, myTasksQuery, qk } from "~/lib/queries";
-import {
-  ESSAY_MAX,
-  letter,
-  makeTakeSchema,
-  nowLocalInput,
-} from "~/lib/assignment-schema";
+import { letter, makeTakeSchema, nowLocalInput } from "~/lib/assignment-schema";
+import { LIMITS } from "~/convex/limits"
 import type { AnswerInput, TaskSession } from "~/lib/types";
-import {
-  ErrorAlert,
-  PageSpinner,
-  TextAreaField,
-} from "~/components/ui";
+import { ErrorAlert, PageSpinner, TextAreaField, RadioField } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
 
 export const Route = createFileRoute("/_app/tasks/$assignmentId")({
@@ -147,7 +140,7 @@ function TaskPage() {
             <li>
               <span className="text-base-content/60">Tenggat</span>
               <br />
-              <b>{task.due_at ? task.due_at.replace("T", " ") : "-"}</b>
+              <b>{task.due_at ? formatDateTime(task.due_at) : "-"}</b>
             </li>
           </ul>
           <div role="alert" className="alert alert-info alert-soft text-sm">
@@ -292,7 +285,7 @@ function TaskForm({
       toast.success(r.message);
       await Promise.all([
         qc.invalidateQueries({ queryKey: qk.myTasks }),
-        qc.invalidateQueries({ queryKey: ["my-result"] })
+        qc.invalidateQueries({ queryKey: qk.result(id) })
       ])
       onFinished();
     },
@@ -414,7 +407,7 @@ function TaskForm({
           >
             <div className="card-body gap-3 p-5">
               <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 whitespace-pre-line font-medium [overflow-wrap:anywhere]">
+                <p className="min-w-0 whitespace-pre-line font-medium wrap-anywhere">
                   {i + 1}. {q.text}
                 </p>
                 <span className="badge badge-ghost shrink-0">
@@ -425,32 +418,20 @@ function TaskForm({
               {q.type === "pilihan_ganda" ? (
                 <form.Field name={`answers[${i}].answer` as const}>
                   {(f) => (
-                    <div
-                      className="space-y-2"
-                      role="radiogroup"
-                      aria-label={`Soal ${i + 1}`}
-                    >
-                      {q.options.map((o, oi) => {
-                        const on = f.state.value === String(oi);
-                        return (
-                          <label
-                            key={oi}
-                            className={`flex cursor-pointer items-start gap-3 rounded-box border p-3 ${on ? "border-primary bg-primary/5" : "border-base-300"}`}
-                          >
-                            <input
-                              type="radio"
-                              name={`q-${q.question_id}`}
-                              className="radio radio-primary radio-sm mt-0.5"
-                              checked={on}
-                              onChange={() => f.handleChange(String(oi))}
-                            />
-                            <span className="min-w-0 [overflow-wrap:anywhere]">
-                              <b>{letter(oi)}.</b> {o}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                    <RadioField
+                      label={`Soal ${i + 1}`}
+                      hideLabel
+                      variant="card"
+                      field={f}
+                      options={q.options.map((o, oi) => ({
+                        value: String(oi),
+                        label: ( 
+                          <>
+                            <b>{letter(oi)}.</b> {o}
+                          </>
+                        )
+                      }))}
+                    />
                   )}
                 </form.Field>
               ) : (
@@ -460,7 +441,7 @@ function TaskForm({
                       label="Jawaban Anda"
                       field={f}
                       rows={6}
-                      hint={`${f.state.value.length}/${ESSAY_MAX} karakter`}
+                      hint={`${f.state.value.length}/${LIMITS.essayAnswer} karakter`}
                     />
                   )}
                 </form.Field>
