@@ -27,7 +27,7 @@ import {
   TextField,
   TextAreaField,
   CheckboxField,
-  Tip
+  ActionMenu
 } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
 
@@ -155,61 +155,55 @@ function AssignmentsPage() {
             const a = row.original;
             const id = a.assignment_id;
             const isPub = published(a.is_published);
-            const noQuestions = a.question_count === 0;
+            const cannotPublish = !isPub && a.question_count === 0;
             return (
-              <div className="flex items-center whitespace-nowrap">
-                <Tip tip="Soal">
+              <ActionMenu>
+                <li>
                   <Link
                     to="/assignments/$assignmentId/questions"
                     params={{ assignmentId: id }}
-                    aria-label="Soal"
-                    className="btn btn-ghost btn-xs btn-square text-primary"
                   >
-                    <ListChecks className="size-4" />
+                    <ListChecks className="size-4" /> Soal
                   </Link>
-                </Tip>
-                <Tip tip="Pengumpulan">
+                </li>
+                <li>
                   <Link
                     to="/assignments/$assignmentId/submissions"
                     params={{ assignmentId: id }}
-                    aria-label="Pengumpulan"
-                    className="btn btn-ghost btn-xs btn-square text-primary"
                   >
-                    <Inbox className="size-4" />
+                    <Inbox className="size-4" /> Pengumpulan
                   </Link>
-                <Tip>
-                <Tip tip={isPub ? "Tarik ke Draft" : noQuestions ? "Tambahkan soal dulu" : "Terbitkan"}>
+                </li>
+                <li>
                   <button
                     type="button"
-                    aria-label={isPub ? "Tarik ke Draft" : "Terbitkan"}
-                    className="btn btn-ghost btn-xs btn-square text-success"
+                    disabled={cannotPublish}
+                    title={cannotPublish ? "Tambahkan soal dulu" : undefined}
                     disabled={!isPub && noQuestions}
                     onClick={() => actions.current.publish(a)}
                   >
                     {isPub ? <Undo2 className="size-4" /> : <Send className="size-4" />}
+                    {isPub ? "Tarik ke Draft" : "Terbitkan"}
                   </button>
-                </Tip>
-                <Tip tip="Edit">
+                </li>
+                <li>
                   <button
                     type="button"
-                    className="btn btn-ghost btn-xs text-primary"
-                    aria-label="Edit"
                     onClick={() => actions.current.edit(row.original)}
                   >
-                    <Pencil className="size-4" />
+                    <Pencil className="size-4" /> Edit
                   </button>
-                </Tip>
-                <Tip tip="Hapus">
+                </li>
+                <li>
                   <button
                     type="button"
-                    className="btn btn-ghost btn-xs text-error"
-                    aria-label="Hapus"
+                    className="text-error"
                     onClick={() => actions.current.remove(row.original)}
                   >
                     <Trash2 className="size-4" />
                   </button>
-                </Tip>
-              </div>
+                </li>
+              </ActionMenu>
             );
           },
         }),

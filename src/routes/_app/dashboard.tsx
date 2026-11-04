@@ -12,6 +12,12 @@ export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
+// Satu desimal, tanpa nol di belakang koma (93.3, 100, 0)
+const fmtPct = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? `${Math.round(n * 10) / 10}%` : "-";
+};
+
 function StatCard({
   title,
   value,
@@ -46,7 +52,7 @@ function DashboardPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dashboard Overview</h2>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
           title="Total Siswa"
           value={stats.totalStudents}
@@ -66,15 +72,21 @@ function DashboardPage() {
           icon={<Thermometer className="size-6" />}
         />
         <StatCard
-          title="Persentase Kehadiran"
-          value={`${stats.persentase}%`}
+          title="Alpa Hari Ini"
+          value={stats.alpa}
           tone="text-error"
+          icon={<UserX className="size-6" />}
+        />
+        <StatCard
+          title="Persentase Kehadiran"
+          value={fmtPct(stats.persentase)}
+          tone="text-info"
           icon={<UserX className="size-6" />}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="card border border-base-300 bg-base-100">
+        <div className="card min-w-0 border border-base-300 bg-base-100">
           <div className="card-body">
             <h3 className="card-title text-base">
               Tren Kehadiran (7 Hari Terakhir)

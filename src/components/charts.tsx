@@ -6,7 +6,7 @@ import { tooltip } from '@tanstack/charts/tooltip'
 import { pie, polar, radialArc } from '@tanstack/charts/polar'
 import { Chart } from '@tanstack/charts/react'
 
-const C_HADIR = '#3b82f6'
+const C_HADIR = '#10b981'
 const C_TIDAK = '#f87171'
 
 function Legend({ items }: { items: { label: string; color: string }[] }) {
@@ -20,6 +20,11 @@ function Legend({ items }: { items: { label: string; color: string }[] }) {
       ))}
     </ul>
   )
+}
+
+const shortDate = (v: unknown) => {
+  const m = /^\d{4}-(\d{2})-(\d{2})/.exec(String(v))
+  return m ? `${m[2]}/${m[1]}` : String(v)
 }
 
 export function TrendChart({ 
@@ -50,7 +55,7 @@ export function TrendChart({
       scales: {
         x: {
           scale: () => scaleBand().padding(0.2),
-          axis: { ticks: { format: (v) => String(v).slice(5) } },
+          axis: { ticks: { format: shortDate } },
         },
         y: {
           scale: scaleLinear,
@@ -63,8 +68,9 @@ export function TrendChart({
     })
   }, [labels, hadir, tidakHadir])
 
-  if (labels.length === 0) {
-    return <p className="py-10 text-center text-sm text-base-content/60">Belum ada data 7 hari terakhir.</p>
+  const allZero = hadir.every((v) => !v) && tidakHadir.every((v) => !v)
+  if (labels.length === 0 || allZero) {
+    return <p className="py-10 text-center text-sm text-base-content/60">Belum ada data absensi dalam 7 hari terakhir.</p>
   }
   return (
     <>
@@ -75,10 +81,10 @@ export function TrendChart({
 }
 
 const STATUS_COLORS = { 
-  Hadir: '#10b981', 
+  Hadir: C_HADIR, 
   Sakit: '#f59e0b', 
-  Izin: '#3b82f6', 
-  Alpa: '#ef4444' 
+  Izin: '#3b82f6',
+  Alpa: '#ef4444'
 } as const
 
 export function StatusDonut({ 
@@ -125,7 +131,7 @@ export function StatusDonut({
   }
   return (
     <>
-      <div className="mx-auto" style={{ width: 250 }}>
+      <div className="mx-auto w-full max-w-[250px]">
         <Chart definition={definition} height={250} ariaLabel="Ringkasan kehadiran hari ini" />
       </div>
       <Legend items={Object.entries(STATUS_COLORS).map(([label, color]) => ({ label, color }))} />

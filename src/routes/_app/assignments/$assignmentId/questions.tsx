@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
-import { ArrowLeft, Lock, Plus, Trash2 } from "lucide-react";
+import { AlignLeft, ArrowLeft, ListChecks, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
@@ -22,12 +22,14 @@ import {
 import type { Question, QuestionInput } from "~/lib/types";
 import { firstMessage } from "~/lib/validation";
 import {
+  ActionMenu,
   DataTable,
   ErrorAlert,
   Modal,
   SelectField,
   TextField,
   TextAreaField,
+  Tip
 } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
 
@@ -66,11 +68,19 @@ function QuestionTextCell({ question }: Readonly<{ question: Question }>) {
   );
 }
 
+const TYPE_META = {
+  pilihan_ganda: { label: "Pilihan ganda", cls: "text-info", Icon: ListChecks },
+  esai: { label: "Esai", cls: "text-warning", Icon: AlignLeft },
+} as const;
+
 function QuestionTypeCell({ type }: Readonly<{ type: Question["type"] }>) {
+  const { label, cls, Icon } = TYPE_META[type];
   return (
-    <span className={`badge badge-soft badge-sm ${type === "esai" ? "badge-warning" : "badge-info"}`}>
-      {type === "esai" ? "Esai" : "Pilihan ganda"}
-    </span>
+    <Tip tip={label} side="right">
+      <span role="img" aria-label={label} tabIndex={0} className={`inline-flex ${cls}`}>
+        <Icon className="size-5" />
+      </span>
+    </Tip>
   );
 }
 
@@ -79,21 +89,39 @@ function QuestionActionsCell({
   locked,
   onEdit,
   onRemove,
-}: Readonly<{ 
-  question: Question; 
-  locked: boolean; 
-  onEdit: (question: Question) => void; 
-  onRemove: (question: Question) => void
+}: Readonly<{
+  question: Question;
+  locked: boolean;
+  onEdit: (question: Question) => void;
+  onRemove: (question: Question) => void;
 }>) {
+  if (locked) {
+    return (
+      <Tip tip="Sudah ada siswa yang mengerjakan">
+        <span 
+          role="img" 
+          aria-label="Soal terkunci" 
+          tabIndex={0} 
+          className="inline-flex text-base-content/40"
+        >
+          <Lock className="size-4" />
+        </span>
+      </Tip>
+    );
+  }
   return (
-    <div className="whitespace-nowrap">
-      <button type="button" className="btn btn-ghost btn-xs text-primary" disabled={locked} onClick={() => onEdit(question)}>
-        Edit
-      </button>
-      <button type="button" className="btn btn-ghost btn-xs text-error" disabled={locked} onClick={() => onRemove(question)}>
-        Hapus
-      </button>
-    </div>
+    <ActionMenu>
+      <li>
+        <button type="button" onClick={() => onEdit(question)}>
+          <Pencil className="size-4" /> Edit
+        </button>
+      </li>
+      <li>
+        <button type="button" className="text-error" onClick={() => onRemove(question)}>
+          <Trash2 className="size-4" /> Hapus
+        </button>
+      </li>
+    </ActionMenu>
   );
 }
 

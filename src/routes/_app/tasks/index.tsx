@@ -2,12 +2,24 @@ import { useMemo } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTable } from '@tanstack/react-table'
+import { 
+  CircleAlert, 
+  CircleCheck, 
+  CircleDashed, 
+  ClipboardCheck, 
+  ClipboardList, 
+  Eye, 
+  Hourglass, 
+  Play, 
+  StepForward
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { columnHelperFor, features } from '~/lib/table'
 import { myTasksQuery } from '~/lib/queries'
 import { nowLocalInput } from '~/lib/assignment-schema'
 import type { MyTask, SubmissionStatus } from '~/lib/types'
-import { DataTable, Pager } from '~/components/ui'
+import { DataTable, Pager, Tip } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/tasks/')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['siswa']),
@@ -15,11 +27,50 @@ export const Route = createFileRoute('/_app/tasks/')({
   component: TasksPage,
 })
 
-const STATUS: Record<SubmissionStatus, { label: string; cls: string }> = {
-  belum: { label: 'Belum dikerjakan', cls: 'badge-ghost' },
-  berlangsung: { label: 'Sedang dikerjakan', cls: 'badge-info' },
-  diserahkan: { label: 'Menunggu penilaian', cls: 'badge-warning' },
-  dinilai: { label: 'Sudah dinilai', cls: 'badge-success' },
+const STATUS = {
+  belum: { label: 'Belum dikerjakan', cls: 'text-base-content/40', Icon: CircleDashed },
+  berlangsung: { label: 'Sedang dikerjakan', cls: 'text-info', Icon: Hourglass },
+  diserahkan: { label: 'Menunggu penilaian', cls: 'text-warning', Icon: ClipboardList },
+  dinilai: { label: 'Sudah dinilai', cls: 'text-success', Icon: CircleCheck },
+} satisfies Record<SubmissionStatus, { label: string; cls: string; Icon: LucideIcon }>
+
+const LATE = { label: 'Lewat tenggat', cls: 'text-error', Icon: CircleAlert }
+
+const ACTION = {
+  belum: { label: 'Kerjakan', cls: 'btn-primary', Icon: Play },
+  berlangsung: { label: 'Lanjutkan', cls: 'btn-primary', Icon: StepForward },
+  diserahkan: { label: 'Lihat status', cls: 'btn-ghost text-primary', Icon: Eye },
+  dinilai: { label: 'Lihat hasil', cls: 'btn-ghost text-primary', Icon: ClipboardCheck },
+} satisfies Record<SubmissionStatus, { label: string; cls: string; Icon: LucideIcon }>
+
+const isLate = (r: MyTask) => r.status === 'belum' && r.due_at !== '' && r.due_at <= nowLocalInput()
+
+function TaskStatusCell({ task }: Readonly<{ task: MyTask }>) {
+  const { label, cls, Icon } = isLate(task) ? LATE : STATUS[task.status]
+  return (
+    <Tip tip={label} side="right">
+      <span role="img" aria-label={label} tabIndex={0} className={`inline-flex ${cls}`}>
+        <Icon className="size-5" />
+      </span>
+    </Tip>
+  )
+}
+
+function TaskActionCell({ task }: Readonly<{ task: MyTask }>) {
+  if (isLate(task)) return null
+  const { label, cls, Icon } = ACTION[task.status]
+  return (
+    <Tip tip={label}>
+      <Link
+        to="/tasks/$assignmentId"
+        params={{ assignmentId: task.assignment_id }}
+        aria-label={label}
+        className={`btn btn-xs ${cls}`}
+      >
+        <Icon className="size-4" />
+      </Link>
+    </Tip>
+  )
 }
 
 const col = columnHelperFor<MyTask>()
@@ -54,15 +105,7 @@ function TasksPage() {
         }),
         col.accessor('status', {
           header: 'Status',
-          cell: (i) => {
-            const r = i.row.original
-            const late = r.status === 'belum' && r.due_at !== '' && r.due_at <= nowLocalInput()
-            return late ? (
-              <span className="badge badge-soft badge-error badge-sm">Lewat tenggat</span>
-            ) : (
-              <span className={`badge badge-soft badge-sm ${STATUS[i.getValue()].cls}`}>{STATUS[i.getValue()].label}</span>
-            )
-          },
+          cell: (i) => <TaskStatusCell task={i.row.original} />,
         }),
         // Nilai hanya ada setelah status "dinilai" (esai sudah direview)
         col.display({
@@ -80,18 +123,7 @@ function TasksPage() {
           id: 'actions',
           header: 'Aksi',
           enableSorting: false,
-          cell: ({ row }) => {
-            const r = row.original
-            const late = r.status === 'belum' && r.due_at !== '' && r.due_at <= nowLocalInput()
-            if (late) return null
-            const label =
-              r.status === 'belum' ? 'Kerjakan' : r.status === 'berlangsung' ? 'Lanjutkan' : r.status === 'dinilai' ? 'Lihat hasil' : 'Lihat status'
-            return (
-              <Link to="/tasks/$assignmentId" params={{ assignmentId: r.assignment_id }} className="btn btn-primary btn-xs">
-                {label}
-              </Link>
-            )
-          },
+          cell: ({ row }) => <TaskActionCell task={row.original} />,
         }),
       ]),
     [],

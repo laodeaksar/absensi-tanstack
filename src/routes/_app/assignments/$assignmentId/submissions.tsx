@@ -2,12 +2,21 @@ import { useMemo, useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTable } from '@tanstack/react-table'
-import { ArrowLeft } from 'lucide-react'
+import { 
+  ArrowLeft, 
+  CircleDashed, 
+  Hourglass, 
+  ClipboardList, 
+  CircleCheck,
+  Eye,
+  PenLine
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { columnHelperFor, features } from '~/lib/table'
 import { submissionsQuery } from '~/lib/queries'
 import type { SubmissionRow, SubmissionStatus } from '~/lib/types'
-import { DataTable, Pager, SearchBox } from '~/components/ui'
+import { DataTable, Pager, SearchBox, Tip } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/submissions')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -15,54 +24,103 @@ export const Route = createFileRoute('/_app/assignments/$assignmentId/submission
   component: SubmissionsPage,
 })
 
-const STATUS: Record<SubmissionStatus, { label: string; cls: string }> = {
-  belum: { label: 'Belum mengerjakan', cls: 'badge-ghost' },
-  berlangsung: { label: 'Sedang mengerjakan', cls: 'badge-info' },
-  diserahkan: { label: 'Perlu dinilai', cls: 'badge-warning' },
-  dinilai: { label: 'Sudah dinilai', cls: 'badge-success' },
-}
-
 const col = columnHelperFor<SubmissionRow>()
 
 function StudentNameCell({ name }: Readonly<{ name: string }>) {
   return <span className="font-medium">{name}</span>
 }
 
+const STATUS = {
+  belum: { 
+    label: 'Belum mengerjakan', 
+    cls: 'text-base-content/40', 
+    Icon: CircleDashed 
+  },
+  berlangsung: { 
+    label: 'Sedang mengerjakan', 
+    cls: 'text-info', 
+    Icon: Hourglass 
+  },
+  diserahkan: { 
+    label: 'Perlu dinilai', 
+    cls: 'text-warning',
+    Icon: ClipboardList 
+  },
+  dinilai: { 
+    label: 'Sudah dinilai', 
+    cls: 'text-success', 
+    Icon: CircleCheck 
+  },
+} satisfies Record<SubmissionStatus, { label: string; cls: string; Icon: LucideIcon }>
+
 function SubmissionStatusCell({ status }: Readonly<{ status: SubmissionStatus }>) {
-  const value = STATUS[status]
-  return <span className={`badge badge-soft badge-sm ${value.cls}`}>{value.label}</span>
+  const { label, cls, Icon } = STATUS[status]
+  return (
+    <Tip tip={label} side="right">
+      <span 
+        role="img" 
+        aria-label={label} 
+        tabIndex={0}
+        className={`inline-flex ${cls}`}
+      >
+        <Icon className="size-5" />
+      </span>
+    </Tip>
+  )
 }
 
 function SubmissionScoreCell({ row }: Readonly<{ row: SubmissionRow }>) {
   if (row.status === 'dinilai') {
-    return <span className="font-medium">{row.nilai}<span className="text-xs text-base-content/60">({row.score}/{row.max_score})</span></span>
+    return (
+      <span className="whitespace-nowrap font-medium">
+        {row.nilai}
+        <span className="ml-1 text-xs font-normal text-base-content/60">
+          ({row.score}/{row.max_score})
+        </span>
+      </span>
+    )
   }
   if (row.status === 'diserahkan') {
-    return <span className="text-xs text-base-content/60">Pilihan ganda: {row.score}</span>
+    return (
+      <Tip tip="Skor pilihan ganda, esai belum dinilai" side="top">
+        <span tabIndex={0} className="text-sm text-base-content/60">{row.score}</span>
+      </Tip>
+    )
   }
   return <span className="text-base-content/40">-</span>
 }
 
+const submittedFmt = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+
 function SubmittedAtCell({ value }: Readonly<{ value: number | '' }>) {
-  return <>{value === '' ? '-' : new Date(Number(value)).toLocaleString('id-ID')}</>
+  return (
+    <span className="whitespace-nowrap">
+      {value === '' ? '-' : submittedFmt.format(new Date(Number(value)))}
+    </span>
+  )
 }
 
 function SubmissionActionCell({ 
   row, 
   assignmentId 
 }: Readonly<{ 
-  row: SubmissionRow; 
-  assignmentId: string 
+  row: SubmissionRow;
+  assignmentId: string
 }>) {
   if (row.status !== 'diserahkan' && row.status !== 'dinilai') return null
+  const graded = row.status === 'dinilai'
+  const label = graded ? 'Lihat / Ubah' : 'Nilai'
   return (
-    <Link
-      to="/assignments/$assignmentId/review/$submissionId"
-      params={{ assignmentId, submissionId: row.submission_id }}
-      className="btn btn-ghost btn-xs text-primary"
-    >
-      {row.status === 'diserahkan' ? 'Nilai' : 'Lihat / Ubah'}
-    </Link>
+    <Tip tip={label}>
+      <Link
+        to="/assignments/$assignmentId/review/$submissionId"
+        params={{ assignmentId, submissionId: row.submission_id }}
+        aria-label={label}
+        className="btn btn-ghost btn-xs text-primary"
+      >
+        {graded ? <Eye className="size-4" /> : <PenLine className="size-4" />}
+      </Link>
+    </Tip>
   )
 }
 
@@ -80,10 +138,11 @@ function createSubmissionColumns(assignmentId: string) {
       enableSorting: false,
       cell: ({ row }) => <SubmissionScoreCell row={row.original} />,
     }),
-    col.accessor((row) => row.submitted_at, {
+    col.accessor((row) => (row.submitted_at === '' ? undefined : Number(row.submitted_at)), {
       id: 'submitted',
       header: 'Dikumpulkan',
-      cell: (cell) => <SubmittedAtCell value={cell.getValue()} />,
+      sortUndefined: 'last', // jika opsi ini ada di versi tabel Anda
+      cell: (cell) => <SubmittedAtCell value={cell.getValue() ?? ""} />,
     }),
     col.display({
       id: 'actions',

@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
-import { KeyRound, Plus } from "lucide-react";
+import { KeyRound, Plus, Pencil } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { api } from "~/lib/api";
 import { classesQuery, qk, studentsQuery } from "~/lib/queries";
@@ -25,6 +25,7 @@ import {
   SearchBox,
   SelectField,
   TextField,
+  ActionMenu
 } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
 
@@ -80,8 +81,12 @@ function StudentsPage() {
     () =>
       col.columns([
         col.accessor("nis", {
-          header: "NIS/NISN",
-          cell: (i) => `${i.getValue() || "-"} / ${i.row.original.nisn || "-"}`,
+          header: "NIS",
+          cell: (i) => `${i.getValue() || "-"}`,
+        }),
+        col.accessor("nisn", {
+          header: "NISN",
+          cell: (i) => `${i.getValue() || "-"}`,
         }),
         col.accessor("full_name", {
           header: "Nama Lengkap",
@@ -98,22 +103,18 @@ function StudentsPage() {
           header: "Aksi",
           enableSorting: false,
           cell: ({ row }) => (
-            <div className="whitespace-nowrap">
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs text-primary"
-                onClick={() => actions.current.edit(row.original)}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs text-primary"
-                onClick={() => actions.current.reset(row.original)}
-              >
-                Reset Akun
-              </button>
-            </div>
+            <ActionMenu>
+              <li>
+                <button type="button" onClick={() => actions.current.edit(row.original)}>
+                  <Pencil className="size-4" /> Edit
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => actions.current.reset(row.original)}>
+                  <KeyRound className="size-4" /> Reset Akun
+                </button>
+              </li>
+            </ActionMenu>
           ),
         }),
       ]),
@@ -143,10 +144,11 @@ function StudentsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-2xl font-bold">Master Data Siswa</h2>
+        <h2 className="min-w-0 text-xl font-bold sm:text-2xl">Master Data Siswa</h2>
         <div className="flex gap-2">
           <button
             type="button"
+            aria-label="Buat Akun Siswa"
             className="btn btn-outline btn-sm"
             disabled={generate.isPending}
             onClick={async () => {
@@ -158,14 +160,17 @@ function StudentsPage() {
               generate.mutate();
             }}
           >
-            <KeyRound className="size-4" /> Buat Akun Siswa
+            <KeyRound className="size-4" />
+            <span className="hidden sm:inline">Buat Akun Siswa</span>
           </button>
           <button
             type="button"
+            aria-label="Tambah Siswa"
             className="btn btn-primary btn-sm"
             onClick={() => setModal({ open: true, student: null })}
           >
-            <Plus className="size-4" /> Tambah Siswa
+            <Plus className="size-4" /> 
+            <span className="hidden sm:inline">Tambah Siswa</span>
           </button>
         </div>
       </div>
@@ -295,7 +300,7 @@ function StudentForm({
         {(f) => <TextField label="Nama Lengkap" field={f} />}
       </form.Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="gender">
           {(f) => (
             <SelectField label="Jenis Kelamin" field={f}>

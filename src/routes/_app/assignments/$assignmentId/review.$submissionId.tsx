@@ -2,13 +2,13 @@ import { useMemo } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
-import { ArrowLeft, Check, X } from 'lucide-react'
+import { ArrowLeft, Check, KeyRound, UserCheck, X } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { toast } from '~/lib/toast'
 import { api } from '~/lib/api'
 import { reviewQuery, qk } from '~/lib/queries'
 import { letter, makeGradeSchema } from '~/lib/assignment-schema'
-import { ErrorAlert, TextField, TextAreaField } from '~/components/ui'
+import { ErrorAlert, TextField, TextAreaField, Tip } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/assignments/$assignmentId/review/$submissionId')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
@@ -78,7 +78,8 @@ function ReviewPage() {
         <h2 className="text-2xl font-bold">{assignment.title}</h2>
         <p className="text-sm text-base-content/60">
           {student.full_name} (NIS {student.nis}) - Kelas {assignment.class_name} - dikumpulkan{' '}
-          {new Date(submission.submitted_at).toLocaleString('id-ID')}
+          dikumpulkan{' '}
+          {submission.submitted_at ? new Date(Number(submission.submitted_at)).toLocaleString('id-ID') : '-'}
         </p>
       </div>
 
@@ -106,14 +107,38 @@ function ReviewPage() {
                     </span>
                   </div>
                   <ul className="space-y-1 text-sm">
-                    {q.options.map((o, i) => (
-                      <li key={`${q.question_id}-${o}`} className={`flex items-center gap-2 ${i === Number(q.correct_index) ? 'font-semibold text-success' : ''}`}>
-                        <span className="w-5">{letter(i)}.</span>
-                        <span>{o}</span>
-                        {i === chosen ? <span className="badge badge-ghost badge-sm">jawaban siswa</span> : null}
-                        {i === Number(q.correct_index) ? <span className="badge badge-success badge-soft badge-sm">kunci</span> : null}
-                      </li>
-                    ))}
+                    {q.options.map((o, i) => {
+                      const isKey = i === Number(q.correct_index)
+                      const isChosen = i === chosen
+                      return (
+                        <li 
+                          key={`${q.question_id}-${i}`} 
+                          className={`flex items-center gap-2 ${isKey ? 'font-semibold text-success' : ''}`}
+                        >
+                          <span className="w-5 shrink-0">{letter(i)}.</span>
+                          <span className='min-w-0 [overflow-wrap:anywhere]'>{o}</span>
+                          {isChosen ? (
+                            <Tip tip="Jawaban siswa" side="top">
+                              <span 
+                                role="img"
+                                aria-label="Jawaban siswa"
+                                tabIndex={0}
+                                className={`inline-flex shrink-0 ${isKey ? 'text-success' : 'text-error'}`}
+                              >
+                                <UserCheck className="size-4" />
+                              </span> 
+                            </Tip>
+                          ) : null}
+                          {isKey ? (
+                            <Tip tip="Kunci jawaban" side="top">
+                              <span role="img" aria-label="Kunci jawaban" tabIndex={0} className="inline-flex shrink-0 text-success">
+                                <KeyRound className="size-4" />
+                              </span>
+                            </Tip>
+                          ) : null}
+                        </li>
+                      )
+                    })}
                   </ul>
                   {chosen === -1 ? <p className="text-xs text-base-content/60">Siswa tidak menjawab.</p> : null}
                 </div>
@@ -126,12 +151,12 @@ function ReviewPage() {
             <div key={q.question_id} className="card border border-warning/40 bg-base-100">
               <div className="card-body gap-3 p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="whitespace-pre-line font-medium">{n + 1}. {q.text}</p>
+                  <p className="whitespace-pre-line font-medium [overflow-wrap:anywhere]">{n + 1}. {q.text}</p>
                   <span className="badge badge-warning badge-soft shrink-0">Esai - maks {q.points}</span>
                 </div>
                 <div>
                   <p className="mb-1 text-xs font-medium text-base-content/60">Jawaban siswa</p>
-                  <div className="whitespace-pre-wrap rounded-box bg-base-200 p-3 text-sm">
+                  <div className="whitespace-pre-wrap rounded-box bg-base-200 p-3 text-sm [overflow-wrap:anywhere]">
                     {a.answer.trim() ? a.answer : <span className="text-base-content/50">(tidak dijawab)</span>}
                   </div>
                 </div>
@@ -165,7 +190,7 @@ function ReviewPage() {
                   <p className="text-sm">
                     Pilihan ganda <b>{submission.auto_score}</b> + esai <b>{Math.round(manual * 100) / 100}</b> = <b>{Math.round(total * 100) / 100}</b> / {submission.max_score}
                     <span className="ml-1 text-base-content/60">
-                      ({submission.max_score > 0 ? Math.round((total / submission.max_score) * 1000) / 10 : 0})
+                      ({submission.max_score > 0 ? Math.round((total / submission.max_score) * 1000) / 10 : 0}%)
                     </span>
                   </p>
                 )

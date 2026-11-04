@@ -34,14 +34,38 @@ export const Route = createFileRoute('/_app/reports')({
 })
 
 const col = columnHelperFor<ReportRow>()
+const nowrap = (v: string) => <span className="whitespace-nowrap">{v}</span>
 
 const columns = col.columns([
-  col.accessor('date', { header: 'Tanggal' }),
-  col.accessor('nis', { header: 'NIS' }),
-  col.accessor('student_name', { header: 'Nama Siswa', cell: (i) => <span className="font-medium">{i.getValue()}</span> }),
-  col.accessor('class_name', { header: 'Kelas' }),
-  col.accessor('status', { header: 'Status', cell: (i) => <StatusBadge status={i.getValue()} /> }),
-  col.accessor('notes', { header: 'Keterangan', enableSorting: false }),
+  col.accessor('date', { 
+    header: 'Tanggal',
+    cell: (i) => (
+      <span className="whitespace-nowrap tabular-nums">
+        {i.getValue().replace(/^(\d{4}-\d{2}-\d{2})T.*$/, '$1')}
+      </span>
+    ),
+  }),
+  col.accessor('nis', { 
+    header: 'NIS', 
+    cell: (i) => nowrap(i.getValue())
+  }),
+  col.accessor('student_name', { 
+    header: 'Nama Siswa', 
+    cell: (i) => <span className="font-medium">{i.getValue()}</span> 
+  }),
+  col.accessor('class_name', { 
+    header: 'Kelas',
+    cell: (i) => nowrap(i.getValue())
+  }),
+  col.accessor('status', { 
+    header: 'Status', 
+    cell: (i) => <StatusBadge status={i.getValue()} /> 
+  }),
+  col.accessor('notes', { 
+    header: 'Keterangan', 
+    enableSorting: false,
+    cell: (i) => <span className="block min-w-40 [overflow-wrap:anywhere]">{i.getValue()}</span>,
+  }),
 ])
 
 function ReportsPage() {
@@ -63,12 +87,20 @@ function ReportsPage() {
   const urlCheck = useMemo(
     () =>
       search.go
-        ? schema.safeParse({ startDate: search.startDate ?? '', endDate: search.endDate ?? '', classId: search.classId ?? '' })
+        ? schema.safeParse({ 
+          startDate: search.startDate ?? '', 
+          endDate: search.endDate ?? '',
+          classId: search.classId ?? ''
+        })
         : null,
     [schema, search.go, search.startDate, search.endDate, search.classId],
   )
 
-  const filters = { startDate: search.startDate, endDate: search.endDate, classId: search.classId }
+  const filters = { 
+    startDate: search.startDate, 
+    endDate: search.endDate, 
+    classId: search.classId 
+  }
   const report = useQuery({ ...reportQuery(filters), enabled: !!urlCheck?.success })
   const data = useMemo(() => report.data ?? [], [report.data])
 

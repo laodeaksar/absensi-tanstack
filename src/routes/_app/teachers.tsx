@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
 import { useTable } from '@tanstack/react-table'
-import { Plus } from 'lucide-react'
+import { Pencil, Plus, UserCheck, UserX } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { api } from '~/lib/api'
 import { classesQuery, qk, teachersQuery } from '~/lib/queries'
@@ -14,15 +14,19 @@ import { isActive, parseClassIds } from '~/lib/types'
 import type { Teacher, TeacherInput } from '~/lib/types'
 import { firstMessage } from '~/lib/validation'
 import { 
+  ActionMenu,
+  ActiveStatusIcon,
   ActiveBadge,
   DataTable, 
   ErrorAlert, 
   Modal, 
   Pager, 
   SearchBox, 
-  TextField 
+  TextField,
+  PasswordField
 } from '~/components/ui'
 import { PasswordStrength } from '~/components/password-strength'
+import { useConfirm } from '~/hooks/use-confirm'
 
 export const Route = createFileRoute('/_app/teachers')({
   beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
@@ -40,6 +44,7 @@ function TeachersPage() {
   const { data: classes } = useSuspenseQuery(classesQuery)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<{ open: boolean; teacher: Teacher | null }>({ open: false, teacher: null })
+  const { confirm, dialog } = useConfirm()
 
   const toggle = useMutation({
     mutationFn: (v: { user_id: string; is_active: boolean }) => api.saveTeacher(v),
@@ -53,7 +58,14 @@ function TeachersPage() {
   const actions = useRef({ edit: (_t: Teacher) => {}, toggle: (_t: Row) => {} })
   useLayoutEffect(() => {
     actions.current.edit = (t) => setModal({ open: true, teacher: t });
-    actions.current.toggle = (t) => toggle.mutate({ user_id: t.user_id, is_active: !t.active });
+    actions.current.toggle = async (t) => {
+      const ok = await confirm(
+        t.active
+          ? `Nonaktifkan akun ${t.full_name}?\nGuru tidak dapat login sampai diaktifkan kembali.`
+          : `Aktifkan kembali akun ${t.full_name}?`,
+      )
+      if (ok) toggle.mutate({ user_id: t.user_id, is_active: !t.active })
+    }
   }, [toggle]);
 
   const columns = useMemo(
@@ -108,18 +120,23 @@ function TeachersPage() {
           id: 'actions',
           header: 'Aksi',
           enableSorting: false,
-          cell: ({ row }) => (
-            <div className="whitespace-nowrap">
-              <button type="button" className="btn btn-ghost btn-xs text-primary" onClick={() => actions.current.edit(row.original)}>Edit</button>
-              <button
-                type="button"
-                className={`btn btn-ghost btn-xs ${row.original.active ? 'text-error' : 'text-success'}`}
-                onClick={() => actions.current.toggle(row.original)}
-              >
-                {row.original.active ? 'Nonaktifkan' : 'Aktifkan'}
-              </button>
-            </div>
-          ),
+          cell: ({ row }) => {
+            const t = row.original
+            return (
+            <ActionMenu>
+              <li>
+                <button type="button" onClick={() => actions.current.edit(row.original)}>
+                  <Pencil className="size-4" /> Edit
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => actions.current.toggle(row.original)}>
+                  {t.active ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
+                  {t.active ? 'Nonaktifkan' : 'Aktifkan'}
+                </button>
+              </li>
+            </ActionMenu>
+          )},
         }),
       ]),
     [],
@@ -142,9 +159,15 @@ function TeachersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Manajemen Guru</h2>
-        <button type="button" className="btn btn-primary btn-sm" onClick={() => setModal({ open: true, teacher: null })}>
-          <Plus className="size-4" /> Tambah Guru
+        <h2 className="max-w-0 text-xl font-bold sm:text-2xl">Manajemen Guru</h2>
+        <button 
+          type="button" 
+          aria-label="Tambah Guru"
+          className="btn btn-primary btn-sm" 
+          onClick={() => setModal({ open: true, teacher: null })}
+        >
+          <Plus className="size-4" /> 
+          <span className="hidden sm:inline">Tambah Guru</span>
         </button>
       </div>
 
@@ -257,17 +280,19 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
         {(f) => <TextField label="Email" field={f} type="email" />}
       </form.Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="username">
           {(f) => <TextField label="Username" field={f} autoComplete="off" />}
         </form.Field>
         <form.Field name="password">
           {(f) => (
-            <TextField
+            <PasswordField
               label="Password"
               field={f}
-              type="password"
-              autoComplete="new-password"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
               placeholder={isNew ? 'Minimal 8 karakter' : 'Kosongkan jika tidak diubah'}
             />
           )}

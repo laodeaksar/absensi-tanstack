@@ -30,7 +30,7 @@ function FieldShell({
       {/* Harus berada tepat setelah elemen .validator */}
       <p
         role={message ? 'alert' : undefined}
-        className={`validator-hint ${message ? 'block! visible! text-error [overflow-wrap:anywhere]' : 'hidden'}`}
+        className={`validator-hint ${message ? 'mt-0! block! visible! text-error [overflow-wrap:anywhere]' : 'hidden'}`}
       >
         {message}
       </p>

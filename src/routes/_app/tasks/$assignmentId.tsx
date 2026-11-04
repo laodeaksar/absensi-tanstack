@@ -290,8 +290,10 @@ function TaskForm({
     onSuccess: async (r) => {
       sessionStorage.removeItem(draftKey);
       toast.success(r.message);
-      void qc.invalidateQueries({ queryKey: qk.myTasks });
-      void qc.invalidateQueries({ queryKey: ["my-result"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: qk.myTasks }),
+        qc.invalidateQueries({ queryKey: ["my-result"] })
+      ])
       onFinished();
     },
     onError: async (e) => {
@@ -302,6 +304,8 @@ function TaskForm({
       }
     },
   });
+
+  const auto = useRef(false);
 
   const form = useForm({
     defaultValues: { answers: initial },
@@ -315,7 +319,7 @@ function TaskForm({
           ? `Masih ada ${blank} soal yang belum dijawab. Kumpulkan sekarang?\nJawaban tidak dapat diubah setelah dikumpulkan.`
           : "Kumpulkan jawaban sekarang?\nJawaban tidak dapat diubah setelah dikumpulkan.",
       );
-      if (!ok) return;
+      if (!ok || auto.current) return;
       await submit.mutateAsync(value.answers).catch(() => {});
     },
   });
@@ -342,12 +346,11 @@ function TaskForm({
     if (!session.deadline) return;
     const tick = () => setLeft(session.deadline - (Date.now() + offset));
     tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
   }, [session.deadline, offset]);
  
   // Waktu habis: kumpulkan otomatis apa adanya (tanpa dialog)
-  const auto = useRef(false);
   useEffect(() => {
     if (left <= 0 && !auto.current) {
       auto.current = true;
@@ -373,7 +376,7 @@ function TaskForm({
             {hasTimer ? (
               <span
                 className={`badge badge-lg gap-1 ${left < 60_000 ? "badge-error" : "badge-neutral"}`}
-                aria-live="polite"
+                role="timer"
               >
                 <Clock className="size-4" /> {mmss(left)}
               </span>
@@ -401,7 +404,7 @@ function TaskForm({
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          form.handleSubmit();
+          void form.handleSubmit();
         }}
       >
         {session.questions.map((q, i) => (
@@ -411,7 +414,7 @@ function TaskForm({
           >
             <div className="card-body gap-3 p-5">
               <div className="flex items-start justify-between gap-2">
-                <p className="whitespace-pre-line font-medium">
+                <p className="min-w-0 whitespace-pre-line font-medium [overflow-wrap:anywhere]">
                   {i + 1}. {q.text}
                 </p>
                 <span className="badge badge-ghost shrink-0">
@@ -441,7 +444,7 @@ function TaskForm({
                               checked={on}
                               onChange={() => f.handleChange(String(oi))}
                             />
-                            <span>
+                            <span className="min-w-0 [overflow-wrap:anywhere]">
                               <b>{letter(oi)}.</b> {o}
                             </span>
                           </label>

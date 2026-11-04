@@ -188,7 +188,6 @@ function PasswordCard() {
             <PasswordField
               label="Password Lama" 
               field={f} 
-              type="password" 
               autoComplete="current-password" 
             />
           )}
@@ -198,7 +197,6 @@ function PasswordCard() {
             <PasswordField
               label="Password Baru"
               field={f} 
-              type="password" 
               autoComplete="new-password" 
               placeholder="Minimal 8 karakter" 
             />

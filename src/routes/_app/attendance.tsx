@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tansta
 import { useForm, useSelector } from '@tanstack/react-form'
 import type { AnyFieldApi } from '@tanstack/react-form'
 import { useTable } from '@tanstack/react-table'
-import { Save } from 'lucide-react'
+import { MessageSquareText, Save } from 'lucide-react'
 import { allowRoles } from '~/lib/auth'
 import { api } from '~/lib/api'
 import {
@@ -146,22 +146,32 @@ const STATUS_STYLE = {
   Alpa: { tone: 'checkbox-error', text: 'text-error' },
 } as const
 
-/** Kolom keterangan: pesan error muncul setelah disentuh atau setelah percobaan simpan. */
-function NotesCell({ field }: Readonly<{ field: AnyFieldApi }>) {
-  const attempts = useSelector(field.form.store, (s) => s.submissionAttempts)
-  const msg = field.state.meta.isTouched || attempts > 0 ? firstMessage(field.state.meta.errors) : ''
+/** Tombol keterangan per baris: hanya muncul untuk status yang butuh keterangan. */
+function NotesButton({ 
+  form, 
+  index, 
+  onOpen
+}: Readonly<{ 
+  form: AnyFormApi; 
+  index: number; 
+  onOpen: (i: number) => void 
+}>) {
+  const row = useSelector(form.store, (s) => s.values.rows[index])
+  const attempts = useSelector(form.store, (s) => s.submissionAttempts)
+  if (!row || !needsNotes(row.status)) return null
+
+  const filled = row.notes.trim().length >= NOTES_MIN
+  const tone = filled ? 'text-success' : attempts > 0 ? 'text-error' : 'text-warning'
   return (
-    <div className="min-w-48">
-      <input
-        type="text"
-        className={`input input-sm w-full ${msg ? 'input-error' : ''}`}
-        value={field.state.value}
-        aria-invalid={!!msg}
-        onBlur={field.handleBlur}
-        onChange={(e) => field.handleChange(e.target.value)}
-      />
-      {msg ? <p role="alert" className="mt-1 text-xs text-error">{msg}</p> : null}
-    </div>
+    <button
+      type="button"
+      className={`btn btn-ghost btn-xs ${tone}`}
+      aria-label={filled ? 'Ubah keterangan' : 'Isi keterangan'}
+      title={row.notes || 'Isi keterangan'}
+      onClick={() => onOpen(index)}
+    >
+      <MessageSquareText className="size-4" />
+    </button>
   )
 }
 
@@ -204,6 +214,25 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
       await save.mutateAsync(payload).catch(() => {})
     },
   })
+  
+  const [noteRow, setNoteRow] = useState<number | null>(null)
+  const [tried, setTried] = useState(false)
+
+  const openNote = (i: number) => {
+    setTried(false)
+    setNoteRow(i)
+  }
+
+  // Batal/tutup tanpa keterangan yang cukup: pilihan status dibatalkan
+  const closeNote = () => {
+    if (noteRow !== null) {
+      const r = form.state.values.rows[noteRow]
+      if (r && needsNotes(r.status) && r.notes.trim().length < NOTES_MIN) {
+        form.setFieldValue(`rows[${noteRow}].status` as const, '')
+      }
+    }
+    setNoteRow(null)
+  }
 
   const markAll = (status: string) => {
     rows.forEach((_, i) => form.setFieldValue(`rows[${i}].status` as const, status))
@@ -219,7 +248,11 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
           col.display({
             id: s,
             header: () => (
-              <button type="button" title={`Tandai semua ${s}`} onClick={() => markAll(s)} className={`btn btn-ghost btn-xs ${STATUS_STYLE[s].text}`}>
+              <button 
+                type="button" 
+                title={`Tandai semua ${s}`} onClick={() => markAll(s)} 
+                className={`btn btn-ghost btn-xs ${STATUS_STYLE[s].text}`}
+              >
                 {s}
               </button>
             ),
@@ -232,7 +265,11 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
                       aria-label={s}
                       className={`checkbox checkbox-sm ${STATUS_STYLE[s].tone}`}
                       checked={f.state.value === s}
-                      onChange={(e) => f.handleChange(e.target.checked ? s : '')}
+                      onChange={(e) => {
+                        const next = e.target.checked ? s : ''
+                        f.handleChange(next)
+                        if (next && needsNotes(next)) openNote(row.index)
+                      }}
                     />
                   </div>
                 )}
@@ -242,10 +279,8 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
         ),
         col.display({
           id: 'notes',
-          header: 'Keterangan',
-          cell: ({ row }) => (
-            <form.Field name={`rows[${row.index}].notes` as const}>{(f) => <NotesCell field={f} />}</form.Field>
-          ),
+          header: 'Ket.',
+          cell: ({ row }) => <NotesButton form={form} index={row.index} onOpen={openNote} />,
         }),
       ]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -301,6 +336,47 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
           )}
         </form.Subscribe>
       </div>
+      
+      <Modal open={noteRow !== null} onClose={closeNote} title="Keterangan Absensi">
+        {noteRow !== null ? (
+          <div className="space-y-3">
+            <form.Subscribe selector={(s) => s.values.rows[noteRow]}>
+              {(r) => (
+                <p className="text-sm">
+                  <span className="font-medium">{r?.full_name}</span> · {r?.status}
+                </p>
+              )}
+            </form.Subscribe>
+
+            <form.Field name={`rows[${noteRow}].notes` as const}>
+              {(f) => (
+                <TextAreaField
+                  autoFocus
+                  label="Keterangan"
+                  field={f}
+                  rows={3}
+                  hint="Minimal {NOTES_MIN} karakter."
+                />
+              )}
+            </form.Field>
+
+            <div className="modal-action">
+              <button type="button" className="btn" onClick={closeNote}>Batal</button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setTried(true)
+                  const r = form.state.values.rows[noteRow]
+                  if (r && r.notes.trim().length >= NOTES_MIN) setNoteRow(null)
+                }}
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </form>
   )
 }

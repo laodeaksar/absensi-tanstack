@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTable } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { allowRoles } from "~/lib/auth";
 import { api } from "~/lib/api";
 import { makeClassSchema } from "~/lib/class-schema";
@@ -17,7 +17,7 @@ import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
 import type { ClassInput, ClassRow } from "~/lib/types";
 import {
-  ActiveBadge,
+  ActiveStatusIcon,
   DataTable,
   ErrorAlert,
   Modal,
@@ -25,6 +25,7 @@ import {
   SearchBox,
   SelectField,
   TextField,
+  Tip
 } from "~/components/ui";
 
 export const Route = createFileRoute("/_app/classes")({
@@ -69,20 +70,23 @@ function ClassesPage() {
         col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
           id: "status",
           header: "Status",
-          cell: (i) => <ActiveBadge active={i.getValue() === "Aktif"} />,
+          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
         }),
         col.display({
           id: "actions",
           header: "Aksi",
           enableSorting: false,
           cell: ({ row }) => (
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs text-primary"
-              onClick={() => actions.current.edit(row.original)}
-            >
-              Edit
-            </button>
+            <Tip tip="Edit">
+              <button
+                type="button"
+                aria-label="Edit"
+                className="btn btn-ghost btn-xs text-primary"
+                onClick={() => actions.current.edit(row.original)}
+              >
+                <Pencil className="size-4" />
+              </button>
+            </Tip>
           ),
         }),
       ]),
@@ -116,13 +120,15 @@ function ClassesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Master Data Kelas</h2>
+        <h2 className="max-w-0 text-xl font-bold sm:text-2xl">Master Data Kelas</h2>
         <button
           type="button"
+          aria-label="Tambah Kelas"
           className="btn btn-primary btn-sm"
           onClick={() => setModal({ open: true, cls: null })}
         >
-          <Plus className="size-4" /> Tambah Kelas
+          <Plus className="size-4" /> 
+          <span className="hidden sm:inline">Tambah Kelas</span>
         </button>
       </div>
 
@@ -255,9 +261,7 @@ function ClassForm({
       <form.Field name="homeroom_teacher">
         {(f) => (
           <SelectField label="Wali Kelas" field={f}>
-            <option disabled selected value="">
-              -- Tanpa Wali Kelas --
-            </option>
+            <option value="">-- Tanpa Wali Kelas --</option>
             {teacherOptions.map((t) => (
               <option key={t.user_id} value={t.user_id}>
                 {t.full_name}
@@ -268,7 +272,7 @@ function ClassForm({
         )}
       </form.Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="grade_level">
           {(f) => (
             <TextField
