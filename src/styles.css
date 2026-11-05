@@ -36,7 +36,7 @@
 }
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -55,17 +55,35 @@
 }
 
 @media print {
-  body * { visibility: hidden; }
-  #print-area, #print-area * { visibility: visible; }
-  #print-area { 
-    position: absolute; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    padding: 0 !important; 
-    background: white; 
-    overflow: visible !important; 
+  html,
+  body,
+  .drawer,
+  .drawer-content,
+  #print-area {
+    height: auto !important;
+    overflow: visible !important;
   }
-  .no-print { display: none !important; }
-  .print-only { display: block !important; }
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
+    background: white;
+    overflow: visible !important;
+  }
+  .drawer-side,
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
 }

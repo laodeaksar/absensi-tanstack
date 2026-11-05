@@ -6,9 +6,10 @@ See https://docs.convex.dev/functions for more.
 A query function that takes two arguments looks like:
 
 ```ts
+import { v } from "convex/values";
+
 // convex/myFunctions.ts
 import { query } from "./_generated/server";
-import { v } from "convex/values";
 
 export const myQueryFunction = query({
   // Validators for arguments.
@@ -45,9 +46,10 @@ const data = useQuery(api.myFunctions.myQueryFunction, {
 A mutation function looks like:
 
 ```ts
+import { v } from "convex/values";
+
 // convex/myFunctions.ts
 import { mutation } from "./_generated/server";
-import { v } from "convex/values";
 
 export const myMutationFunction = mutation({
   // Validators for arguments.
@@ -61,7 +63,10 @@ export const myMutationFunction = mutation({
     // Insert or modify documents in the database here.
     // Mutations can also read from the database like queries.
     // See https://docs.convex.dev/database/writing-data.
-    const message = { body: args.first, author: args.second };
+    const message = {
+      body: args.first,
+      author: args.second,
+    };
     const id = await ctx.db.insert("messages", message);
 
     // Optionally, return a value from your mutation.
@@ -79,9 +84,10 @@ function handleButtonPress() {
   mutation({ first: "Hello!", second: "me" });
   // OR
   // use the result once the mutation has completed
-  mutation({ first: "Hello!", second: "me" }).then((result) =>
-    console.log(result),
-  );
+  mutation({
+    first: "Hello!",
+    second: "me",
+  }).then((result) => console.log(result));
 }
 ```
 

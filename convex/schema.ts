@@ -13,7 +13,11 @@ export default defineSchema({
     username_lc: v.string(),
     // "pbkdf2": hash normal | "sha256": hash lama dari Apps Script (di-upgrade saat login)
     // "nisn": password awal siswa = NISN pada data siswa (belum diganti)
-    hash_algo: v.union(v.literal("pbkdf2"), v.literal("sha256"), v.literal("nisn")),
+    hash_algo: v.union(
+      v.literal("pbkdf2"),
+      v.literal("sha256"),
+      v.literal("nisn"),
+    ),
     password_hash: v.string(),
     password_salt: v.string(),
     hash_iterations: v.optional(v.number()), // jumlah iterasi pbkdf2; kosong = 100000 (hash lama)
@@ -64,7 +68,10 @@ export default defineSchema({
     is_active: v.boolean(),
     created_at: v.string(),
     updated_at: v.string(),
-  }).index("by_class_id", ["class_id"]),
+  })
+    .index("by_class_id", ["class_id"])
+    .index("by_class_active", ["class_id", "is_active"])
+    .index("by_active", ["is_active"]),
 
   students: defineTable({
     student_id: v.string(),
@@ -78,7 +85,7 @@ export default defineSchema({
     parent_name: v.string(),
     parent_phone: v.string(),
     is_active: v.boolean(),
-    type: v.union(v.literal("teachers"), v.literal("classes"), v.literal("students")),
+    // type: v.union(v.literal("teachers"),v.literal("classes"),v.literal("students"),),
     created_at: v.string(),
     updated_at: v.string(),
   })
@@ -156,7 +163,11 @@ export default defineSchema({
     submission_id: v.string(),
     assignment_id: v.string(),
     student_id: v.string(),
-    status: v.union(v.literal("berlangsung"), v.literal("diserahkan"), v.literal("dinilai")),
+    status: v.union(
+      v.literal("berlangsung"),
+      v.literal("diserahkan"),
+      v.literal("dinilai"),
+    ),
     started_at: v.number(),
     submitted_at: v.union(v.number(), v.null()),
     auto_score: v.union(v.number(), v.null()),

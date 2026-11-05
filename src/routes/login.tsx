@@ -1,75 +1,111 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useForm, revalidateLogic } from '@tanstack/react-form'
-import { Lock, School, User } from 'lucide-react'
-import { homeFor } from '~/lib/auth'
-import { LOCK_MINUTES, isLockMessage, loginSchema } from '~/lib/login-schema'
-import { meQuery, publicSettingsQuery, qk } from '~/lib/queries'
-import { toast } from '~/lib/toast'
-import { loginFn } from '~/server/functions'
-import { ErrorAlert, TextField, PasswordField } from '~/components/ui'
+import { useForm, revalidateLogic } from "@tanstack/react-form";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Lock, School, User } from "lucide-react";
+import { useEffect, useState } from "react";
 
-export const Route = createFileRoute('/login')({
+import { ErrorAlert, TextField, PasswordField } from "~/components/ui";
+import { homeFor } from "~/lib/auth";
+import { isLockMessage, loginSchema } from "~/lib/login-schema";
+import { meQuery, publicSettingsQuery, qk } from "~/lib/queries";
+import { toast } from "~/lib/toast";
+import { loginFn } from "~/server/functions";
+
+export const Route = createFileRoute("/login")({
   beforeLoad: async ({ context }) => {
-    const me = await context.queryClient.query(meQuery)
-    if (me) throw redirect({ to: homeFor(me) })
+    const me = await context.queryClient.query(meQuery);
+    if (me) throw redirect({ to: homeFor(me) });
   },
   loader: ({ context }) => context.queryClient.query(publicSettingsQuery),
   component: LoginPage,
-})
+});
+
+/** Kegagalan login. `retryAfterMs` > 0 berarti akun terkunci; nilainya dihitung server (bebas dari selisih jam perangkat). */
+class LoginError extends Error {
+  retryAfterMs: number;
+  constructor(message: string, retryAfterMs: number) {
+    super(message);
+    this.retryAfterMs = retryAfterMs;
+  }
+}
 
 /** Sisa detik sampai `until` (epoch ms); berhenti sendiri saat selesai. */
 function useCountdown(until: number) {
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (until <= Date.now()) return
+    // Segarkan `now` dulu: nilai lama (mis. sejak halaman dibuka) membuat hitungan mundur terlalu besar sesaat
+    setNow(Date.now());
+    if (until <= Date.now()) return;
 
     const id = setInterval(() => {
-      setNow(Date.now())
-      if (Date.now() >= until) clearInterval(id)
-    }, 1000)
-    
-    return () => clearInterval(id)
-  }, [until])
-  return Math.max(0, Math.ceil((until - now) / 1000))
+      setNow(Date.now());
+      if (Date.now() >= until) clearInterval(id);
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [until]);
+  return Math.max(0, Math.ceil((until - now) / 1000));
 }
 
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+const mmss = (s: number) =>
+  `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 function LoginPage() {
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const { data: pub } = useSuspenseQuery(publicSettingsQuery)
-  const [serverError, setServerError] = useState('')
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { data: pub } = useSuspenseQuery(publicSettingsQuery);
+  const [serverError, setServerError] = useState("");
   // Perkiraan waktu buka kunci dari server (dihitung sejak pesan kunci diterima)
-  const [lockedUntil, setLockedUntil] = useState(0)
-  const lockLeft = useCountdown(lockedUntil)
-  const locked = lockLeft > 0
+  const [lockedUntil, setLockedUntil] = useState(0);
+  const lockLeft = useCountdown(lockedUntil);
+  const locked = lockLeft > 0;
+
+  // Kunci berakhir: hapus pesan "terlalu banyak percobaan" supaya tidak menggantung
+  useEffect(() => {
+    if (lockedUntil > 0 && lockLeft === 0) {
+      setLockedUntil(0);
+      setServerError((m) => (isLockMessage(m) ? "" : m));
+    }
+  }, [lockedUntil, lockLeft]);
 
   const login = useMutation({
-    mutationFn: (v: { username: string; password: string }) => loginFn({ data: v }),
+    mutationFn: async (v: { username: string; password: string }) => {
+      const r = await loginFn({ data: v });
+      if (!r.ok) throw new LoginError(r.message, r.retry_after_ms);
+      return r.user;
+    },
     onSuccess: (user) => {
-      qc.setQueryData(qk.me, user)
-      toast.success('Login berhasil')
-      navigate({ to: user.must_change_password ? '/settings' : homeFor(user) })
+      qc.setQueryData(qk.me, user);
+      toast.success("Login berhasil");
+      navigate({
+        to: user.must_change_password ? "/settings" : homeFor(user),
+      });
     },
     onError: (e) => {
-      setServerError(e.message)
-      if (isLockMessage(e.message)) setLockedUntil(Date.now() + LOCK_MINUTES * 60_000)
+      setServerError(e.message);
+      if (e instanceof LoginError && e.retryAfterMs > 0)
+        setLockedUntil(Date.now() + e.retryAfterMs);
     },
-  })
+  });
 
   const form = useForm({
-    defaultValues: { username: '', password: '' },
+    defaultValues: { username: "", password: "" },
     validationLogic: revalidateLogic(),
     validators: { onDynamic: loginSchema },
-      //onChange: loginSchema, onSubmit: loginSchema },
     onSubmit: async ({ value }) => {
-      setServerError('')
-      await login.mutateAsync({ username: value.username.trim(), password: value.password }).catch(() => {})
+      setServerError("");
+      await login
+        .mutateAsync({
+          username: value.username.trim(),
+          password: value.password,
+        })
+        .catch(() => {});
     },
-  })
+  });
 
   return (
     <div className="flex h-full w-full items-center justify-center overflow-y-auto bg-base-200 p-4">
@@ -80,16 +116,18 @@ function LoginPage() {
               <School className="size-8" />
             </div>
             <h1 className="text-2xl font-bold">{pub.school_name}</h1>
-            <p className="mt-1 text-sm text-base-content/60">Sistem Manajemen Kehadiran Siswa</p>
+            <p className="mt-1 text-sm text-base-content/60">
+              Sistem Manajemen Kehadiran Siswa
+            </p>
           </div>
 
           <form
             noValidate
             className="space-y-3"
             onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              form.handleSubmit()
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
             }}
           >
             <form.Field name="username">
@@ -116,13 +154,25 @@ function LoginPage() {
               )}
             </form.Field>
 
-            <ErrorAlert message={locked ? `${serverError} Coba lagi sekitar ${mmss(lockLeft)}.` : serverError} />
+            <ErrorAlert
+              message={
+                locked
+                  ? `${serverError} Coba lagi sekitar ${mmss(lockLeft)}.`
+                  : serverError
+              }
+            />
 
             <form.Subscribe selector={(s) => s.isSubmitting}>
               {(isSubmitting) => (
-                <button type="submit" className="btn btn-primary w-full" disabled={isSubmitting || locked}>
-                  {isSubmitting ? <span className="loading loading-spinner loading-sm" /> : null}
-                  {locked ? `Terkunci (${mmss(lockLeft)})` : 'Masuk'}
+                <button
+                  type="submit"
+                  className="btn btn-primary w-full"
+                  disabled={isSubmitting || locked}
+                >
+                  {isSubmitting ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : null}
+                  {locked ? `Terkunci (${mmss(lockLeft)})` : "Masuk"}
                 </button>
               )}
             </form.Subscribe>
@@ -130,5 +180,5 @@ function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

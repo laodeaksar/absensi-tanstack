@@ -1,57 +1,77 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import type { MutationCtx, QueryCtx } from "./_generated/server";
+
 import type { Doc } from "./_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
+
+import { mutation, query } from "./_generated/server";
 import {
   PBKDF2_ITERATIONS,
-  assertStrongPassword, 
-  fail, 
-  newHash, 
-  nowIso, 
-  passwordIssue, 
-  pbkdf2Hex, 
-  randomToken, 
-  requireAuth, 
+  assertStrongPassword,
+  fail,
+  newHash,
+  nowIso,
+  pbkdf2Hex,
+  randomToken,
+  requireAuth,
   revokeSessions,
-  safeEqual, 
-  sessionUser, 
+  safeEqual,
+  sessionUser,
   sha256Hex,
   studentById,
   verifyPbkdf2,
   needsRehash,
 } from "./lib";
+import { LIMITS } from "./limits";
+import { passwordIssue } from "./rules"
 
 const MAX_FAILS = 5;
-const LOCK_MS = 15 * 60_000;
+const LOCK_MS = LIMITS.loginLockMs;
 const SESSION_MS = 6 * 60 * 60_000;
 
 /** Cocokkan password dengan data pengguna sesuai jenis hash-nya. */
-async function verifyPassword(ctx: QueryCtx, user: Doc<"users">, password: string): Promise<boolean> {
+async function verifyPassword(
+  ctx: QueryCtx,
+  user: Doc<"users">,
+  password: string,
+): Promise<boolean> {
   if (user.hash_algo === "nisn") {
     // Password awal siswa = NISN pada data siswa (belum pernah diganti)
     const st = user.student_id ? await studentById(ctx, user.student_id) : null;
     return !!st && st.nisn.length >= 6 && safeEqual(st.nisn, password);
   }
   if (user.hash_algo === "sha256") {
-    return safeEqual(await sha256Hex(password + user.password_salt), user.password_hash);
+    return safeEqual(
+      await sha256Hex(password + user.password_salt),
+      user.password_hash,
+    );
   }
   return verifyPbkdf2(user, password);
 }
 
-async function recordFailure(ctx: MutationCtx, key: string, now: number) {
+/** Catat gagal login. Mengembalikan waktu (epoch ms) akun terkunci, atau 0 bila belum terkunci. */
+async function recordFailure(
+  ctx: MutationCtx,
+  key: string,
+  now: number,
+): Promise<number> {
   const row = await ctx.db
     .query("login_attempts")
     .withIndex("by_key", (q) => q.eq("key", key))
     .unique();
   // Hitungan direset bila kegagalan terakhir sudah lewat 15 menit
   const fails = row && now - row.last_fail <= LOCK_MS ? row.fails + 1 : 1;
-  const patch = { 
-    fails, 
-    last_fail: now, 
-    locked_until: fails >= MAX_FAILS ? now + LOCK_MS : 0 
+  const patch = {
+    fails,
+    last_fail: now,
+    locked_until: fails >= MAX_FAILS ? now + LOCK_MS : 0,
   };
   if (row) await ctx.db.patch(row._id, patch);
-  else await ctx.db.insert("login_attempts", { key, ...patch });
+  else
+    await ctx.db.insert("login_attempts", {
+      key,
+      ...patch,
+    });
+  return patch.locked_until;
 }
 
 /**
@@ -59,25 +79,31 @@ async function recordFailure(ctx: MutationCtx, key: string, now: number) {
  * mutation yang melempar error akan membatalkan semua perubahannya.
  */
 export const login = mutation({
-  args: { username: v.string(), password: v.string() },
+  args: {
+    username: v.string(),
+    password: v.string(),
+  },
   handler: async (ctx, { username, password }) => {
+    const denied = (message: string, retryAfterMs = 0) => ({
+      ok: false as const,
+      message,
+      retry_after_ms: retryAfterMs,
+    });
     const key = username.trim().toLowerCase();
     const now = Date.now();
-    if (!key || key.length > 100 || password.length > 200) {
-      return { 
-        ok: false as const, 
-        message: "Username atau password salah." };
-    }
+    if (!key || key.length > 100 || password.length > 200)
+      return denied("Username atau password salah.");
 
     const attempt = await ctx.db
       .query("login_attempts")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
+
     if (attempt && attempt.locked_until > now) {
-      return { 
-        ok: false as const, 
-        message: "Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit."
-      };
+      return denied(
+        "Terlalu banyak percobaan gagal.",
+        attempt.locked_until - now,
+      );
     }
 
     const user = await ctx.db
@@ -86,41 +112,43 @@ export const login = mutation({
       .unique();
     //const valid = !!user && user.is_active && (await verifyPassword(ctx, user, password));
     let valid = false;
-    if (user && user.is_active) valid = await verifyPassword(ctx, user, password);
+    if (user && user.is_active)
+      valid = await verifyPassword(ctx, user, password);
     else await pbkdf2Hex(password, "waktu-respons-palsu", PBKDF2_ITERATIONS); // tambahkan PBKDF2_ITERATIONS ke impor
     if (!valid || !user) {
-      await recordFailure(ctx, key, now);
-      return { 
-        ok: false as const, 
-        message: "Username atau password salah." 
-      };
-    }
-    if (!valid || !user) {
-      await recordFailure(ctx, key, now);
-      return { 
-        ok: false as const, 
-        message: "Username atau password salah." 
-      };
+      const lockedUntil = await recordFailure(ctx, key, now);
+      return lockedUntil > now
+        ? denied("Terlalu banyak percobaan gagal.", lockedUntil - now)
+        : denied("Username atau password salah.");
     }
 
     if (attempt) await ctx.db.delete(attempt._id);
 
     // Upgrade hash lama (sha256 hasil migrasi, atau pbkdf2 di bawah target iterasi) saat berhasil login
     if (user.hash_algo === "sha256" || needsRehash(user)) {
-      await ctx.db.patch(user._id, { 
+      await ctx.db.patch(user._id, {
         ...(await newHash(password)),
-        updated_at: nowIso() 
+        updated_at: nowIso(),
       });
     }
 
     // Akun lama dengan password yang belum memenuhi kebijakan kuat: wajib ganti password mulai login ini.
     // (Akun dengan password awal NISN sudah otomatis wajib ganti.)
     let mustChange = user.must_change_password;
-    if (!mustChange && user.hash_algo !== "nisn" && passwordIssue(password, [user.username, user.full_name, user.nip, user.phone])) {
+    if (
+      !mustChange &&
+      user.hash_algo !== "nisn" &&
+      passwordIssue(password, [
+        user.username,
+        user.full_name,
+        user.nip,
+        user.phone,
+      ])
+    ) {
       mustChange = true;
-      await ctx.db.patch(user._id, { 
-        must_change_password: true, 
-        updated_at: nowIso() 
+      await ctx.db.patch(user._id, {
+        must_change_password: true,
+        updated_at: nowIso(),
       });
     }
 
@@ -131,13 +159,13 @@ export const login = mutation({
       expires_at: now + SESSION_MS,
       created_at: now,
     });
-    return { 
-      ok: true as const, 
-      token, 
-      user: { 
-        ...sessionUser(user), 
-        must_change_password: mustChange 
-      }
+    return {
+      ok: true as const,
+      token,
+      user: {
+        ...sessionUser(user),
+        must_change_password: mustChange,
+      },
     };
   },
 });
@@ -159,31 +187,46 @@ export const logout = mutation({
 export const getMe = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
-    const user = await requireAuth(ctx, token, { allowStudent: true, allowPending: true });
+    const user = await requireAuth(ctx, token, {
+      allowStudent: true,
+      allowPending: true,
+    });
     return { user: sessionUser(user) };
   },
 });
 
 export const changePassword = mutation({
-  args: { 
-    token: v.string(), 
-    oldPassword: v.string(), 
-    newPassword: v.string() 
+  args: {
+    token: v.string(),
+    oldPassword: v.string(),
+    newPassword: v.string(),
   },
   handler: async (ctx, { token, oldPassword, newPassword }) => {
-    const user = await requireAuth(ctx, token, { allowStudent: true, allowPending: true });
+    const user = await requireAuth(ctx, token, {
+      allowStudent: true,
+      allowPending: true,
+    });
     if (!oldPassword) fail("Password lama wajib diisi.");
-    if (newPassword === oldPassword) fail("Password baru harus berbeda dari password lama.");
-    assertStrongPassword(newPassword, [user.username, user.full_name]);
+    if (newPassword === oldPassword)
+      fail("Password baru harus berbeda dari password lama.");
+    assertStrongPassword(newPassword, [
+      user.username,
+      user.full_name,
+      user.nip,
+      user.phone,
+    ]); // sama dengan daftar di login(), agar tidak dipaksa ganti lagi
 
-    if (!(await verifyPassword(ctx, user, oldPassword))) fail("Password lama tidak sesuai.");
+    if (!(await verifyPassword(ctx, user, oldPassword)))
+      fail("Password lama tidak sesuai.");
 
-    await ctx.db.patch(user._id, { 
-      ...(await newHash(newPassword)), 
-      must_change_password: false, 
-      updated_at: nowIso() 
+    await ctx.db.patch(user._id, {
+      ...(await newHash(newPassword)),
+      must_change_password: false,
+      updated_at: nowIso(),
     });
     await revokeSessions(ctx, user.user_id); // semua sesi (termasuk ini) berakhir; login ulang
-    return { message: "Password berhasil diubah." };
+    return {
+      message: "Password berhasil diubah.",
+    };
   },
 });

@@ -1,21 +1,29 @@
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Inbox, ListChecks, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
-import { allowRoles } from "~/lib/auth";
-import { classesQuery, assignmentsQuery, qk } from "~/lib/queries";
-import { columnHelperFor, features } from "~/lib/table";
-import { toast } from "~/lib/toast";
-import { api } from "~/lib/api";
-import { makeAssignmentSchema } from "~/lib/assignment-schema";
+import {
+  Inbox,
+  ListChecks,
+  Pencil,
+  Plus,
+  Send,
+  Trash2,
+  Undo2,
+} from "lucide-react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
+
 import type { Assignment } from "~/lib/types";
-import { isActive, parseClassIds } from "~/lib/types";
+
+import {
+  PublishStatusIcon,
+  PageHeader,
+  HeaderButton,
+} from "~/components/status-icons";
 import {
   DataTable,
   ErrorAlert,
@@ -26,11 +34,17 @@ import {
   TextField,
   TextAreaField,
   CheckboxField,
-  ActionMenu
+  ActionMenu,
 } from "~/components/ui";
 import { useConfirm } from "~/hooks/use-confirm";
-import { formatDateTime } from '~/lib/date'
-import { PublishStatusIcon, PageHeader, HeaderButton } from '~/components/status-icons'
+import { api } from "~/lib/api";
+import { makeAssignmentSchema } from "~/lib/assignment-schema";
+import { allowRoles } from "~/lib/auth";
+import { formatDateTime } from "~/lib/date";
+import { classesQuery, assignmentsQuery, qk } from "~/lib/queries";
+import { columnHelperFor, features } from "~/lib/table";
+import { toast } from "~/lib/toast";
+import { isActive } from "~/lib/types";
 
 export const Route = createFileRoute("/_app/assignments/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
@@ -56,10 +70,13 @@ function AssignmentsPage() {
   const { confirm, dialog } = useConfirm();
 
   const publish = useMutation({
-    mutationFn: (v: { id: string; published: boolean }) => api.setPublished(v.id, v.published),
+    mutationFn: (v: { id: string; published: boolean }) =>
+      api.setPublished(v.id, v.published),
     onSuccess: (r) => {
       toast.success(r.message);
-      void qc.invalidateQueries({ queryKey: qk.list });
+      void qc.invalidateQueries({
+        queryKey: qk.list,
+      });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -67,7 +84,9 @@ function AssignmentsPage() {
     mutationFn: (id: string) => api.deleteAssignment(id),
     onSuccess: (r) => {
       toast.success(r.message);
-      void qc.invalidateQueries({ queryKey: qk.list });
+      void qc.invalidateQueries({
+        queryKey: qk.list,
+      });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -79,9 +98,9 @@ function AssignmentsPage() {
   });
   useLayoutEffect(() => {
     actions.current.publish = (a) =>
-      publish.mutate({ 
-        id: a.assignment_id, 
-        published: !published(a.is_published) 
+      publish.mutate({
+        id: a.assignment_id,
+        published: !published(a.is_published),
       });
     actions.current.edit = (a) => setModal({ open: true, item: a });
     actions.current.remove = async (a) => {
@@ -114,17 +133,27 @@ function AssignmentsPage() {
             </>
           ),
         }),
-        col.accessor("class_name", { header: "Kelas" }),
+        col.accessor("class_name", {
+          header: "Kelas",
+        }),
         col.accessor((r) => r.due_at, {
           id: "due",
           header: "Tenggat",
-          cell: (i) => <span className="whitespace-nowrap">{formatDateTime(i.getValue())}</span>
+          cell: (i) => (
+            <span className="whitespace-nowrap">
+              {formatDateTime(i.getValue())}
+            </span>
+          ),
         }),
-        col.accessor("question_count", { header: "Soal" }),
+        col.accessor("question_count", {
+          header: "Soal",
+        }),
         col.accessor((r) => (published(r.is_published) ? "Terbit" : "Draft"), {
           id: "status",
           header: "Status",
-          cell: (i) => <PublishStatusIcon published={i.getValue() === "Terbit"} />
+          cell: (i) => (
+            <PublishStatusIcon published={i.getValue() === "Terbit"} />
+          ),
         }),
         col.display({
           id: "subs",
@@ -175,7 +204,11 @@ function AssignmentsPage() {
                     title={cannotPublish ? "Tambahkan soal dulu" : undefined}
                     onClick={() => actions.current.publish(a)}
                   >
-                    {isPub ? <Undo2 className="size-4" /> : <Send className="size-4" />}
+                    {isPub ? (
+                      <Undo2 className="size-4" />
+                    ) : (
+                      <Send className="size-4" />
+                    )}
                     {isPub ? "Tarik ke Draft" : "Terbitkan"}
                   </button>
                 </li>
@@ -217,19 +250,21 @@ function AssignmentsPage() {
     features,
     columns,
     data,
-    initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 10 },
+    },
   });
 
   return (
     <div className="space-y-4">
       <PageHeader title="Tugas">
-        <HeaderButton 
-          label="Buat Tugas" 
-          icon={<Plus className="size-4" />} 
-          onClick={() => setModal({ open: true, item: null })} 
+        <HeaderButton
+          label="Buat Tugas"
+          icon={<Plus className="size-4" />}
+          onClick={() => setModal({ open: true, item: null })}
         />
       </PageHeader>
-      
+
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
           <SearchBox
@@ -241,7 +276,10 @@ function AssignmentsPage() {
             placeholder="Cari judul atau kelas..."
           />
         </div>
-        <DataTable table={table} emptyText="Belum ada tugas." />
+        <DataTable
+          table={table}
+          emptyText="Belum ada tugas."
+        />
         <Pager table={table} />
       </div>
 
@@ -254,9 +292,16 @@ function AssignmentsPage() {
           item={modal.item}
           onDone={() => {
             setModal({ open: false, item: null });
-            void qc.invalidateQueries({ queryKey: qk.list });
+            void qc.invalidateQueries({
+              queryKey: qk.list,
+            });
           }}
-          onCancel={() => setModal((m) => ({ ...m, open: false }))}
+          onCancel={() =>
+            setModal((m) => ({
+              ...m,
+              open: false,
+            }))
+          }
         />
       </Modal>
       {dialog}
@@ -279,7 +324,7 @@ function AssignmentForm({
 
   // Guru hanya boleh memilih kelas yang diampu
   const options = useMemo(() => {
-    const mine = me.role === "guru" ? parseClassIds(me.assigned_classes) : null;
+    const mine = me.role === "guru" ? me.assigned_classes : null;
     return classes.filter(
       (c) =>
         (isActive(c.is_active) && (!mine || mine.includes(c.class_id))) ||
@@ -315,7 +360,10 @@ function AssignmentForm({
       duration_minutes: String(item?.duration_minutes ?? 0),
       is_published: item ? published(item.is_published) : false,
     },
-    validators: { onChange: schema, onSubmit: schema },
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
@@ -344,11 +392,21 @@ function AssignmentForm({
       }}
     >
       <form.Field name="title">
-        {(f) => <TextField label="Judul Tugas" field={f} maxLength={150} />}
+        {(f) => (
+          <TextField
+            label="Judul Tugas"
+            field={f}
+            maxLength={150}
+          />
+        )}
       </form.Field>
       <form.Field name="description">
         {(f) => (
-          <TextAreaField label="Deskripsi / Petunjuk" field={f} rows={3} />
+          <TextAreaField
+            label="Deskripsi / Petunjuk"
+            field={f}
+            rows={3}
+          />
         )}
       </form.Field>
 
@@ -363,11 +421,17 @@ function AssignmentForm({
                 : undefined
             }
           >
-            <option disabled value="">
+            <option
+              disabled
+              value=""
+            >
               -- Pilih Kelas --
             </option>
             {options.map((c) => (
-              <option key={c.class_id} value={c.class_id}>
+              <option
+                key={c.class_id}
+                value={c.class_id}
+              >
                 {c.class_name}
               </option>
             ))}
@@ -415,12 +479,20 @@ function AssignmentForm({
       <ErrorAlert message={save.error?.message} />
 
       <div className="modal-action">
-        <button type="button" className="btn" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn"
+          onClick={onCancel}
+        >
           Batal
         </button>
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <button type="submit" className="btn btn-primary" disabled={busy}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy}
+            >
               {busy ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : null}

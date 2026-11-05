@@ -1,22 +1,18 @@
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { KeyRound, Plus, Pencil, ArrowRightLeft } from "lucide-react";
-import { z } from "zod"
-import { allowRoles } from "~/lib/auth";
-import { api } from "~/lib/api";
-import { classesQuery, qk, studentsQuery } from "~/lib/queries";
-import { makeStudentSchema } from "~/lib/student-schema";
-import { columnHelperFor, features } from "~/lib/table";
-import { toast } from "~/lib/toast";
-import { isActive } from "~/lib/types";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
+import { z } from "zod";
+
 import type { Student, StudentInput } from "~/lib/types";
+
+import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
   ActiveStatusIcon,
   DataTable,
@@ -29,8 +25,14 @@ import {
   ActionMenu,
   RadioField,
 } from "~/components/ui";
-import { PageHeader, HeaderButton } from "~/components/status-icons";
 import { useConfirm } from "~/hooks/use-confirm";
+import { api } from "~/lib/api";
+import { allowRoles } from "~/lib/auth";
+import { classesQuery, qk, studentsQuery } from "~/lib/queries";
+import { makeStudentSchema } from "~/lib/student-schema";
+import { columnHelperFor, features } from "~/lib/table";
+import { toast } from "~/lib/toast";
+import { isActive } from "~/lib/types";
 
 export const Route = createFileRoute("/_app/students")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
@@ -43,7 +45,11 @@ export const Route = createFileRoute("/_app/students")({
   component: StudentsPage,
 });
 
-type StudentRow = Student & { current_class_id: string; class_name: string; class_year: string };
+type StudentRow = Student & {
+  current_class_id: string;
+  class_name: string;
+  class_year: string;
+};
 const col = columnHelperFor<StudentRow>();
 // const col = columnHelperFor<Student>();
 
@@ -105,7 +111,9 @@ function StudentsPage() {
         }),
         col.accessor("class_name", {
           header: "Kelas",
-          cell: (i) => <span className="whitespace-nowrap">{i.getValue() || "-"}</span>,
+          cell: (i) => (
+            <span className="whitespace-nowrap">{i.getValue() || "-"}</span>
+          ),
         }),
         col.accessor("gender", { header: "L/P" }),
         col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
@@ -120,16 +128,26 @@ function StudentsPage() {
           cell: ({ row }) => (
             <ActionMenu>
               <li>
-                <button type="button" onClick={() => actions.current.edit(row.original)}>
+                <button
+                  type="button"
+                  onClick={() => actions.current.edit(row.original)}
+                >
                   <Pencil className="size-4" /> Edit
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => actions.current.reset(row.original)}>
+                <button
+                  type="button"
+                  onClick={() => actions.current.reset(row.original)}
+                >
                   <KeyRound className="size-4" /> Reset Akun
                 </button>
               </li>
-              <li className={isActive(row.original.is_active) ? undefined : "menu-disabled"}>
+              <li
+                className={
+                  isActive(row.original.is_active) ? undefined : "menu-disabled"
+                }
+              >
                 <button
                   type="button"
                   disabled={!isActive(row.original.is_active)}
@@ -154,7 +172,12 @@ function StudentsPage() {
     }
     return students.map((s) => {
       const c = byId.get(latest.get(s.student_id)?.class_id ?? "");
-      return { ...s, current_class_id: c?.class_id ?? "", class_name: c?.class_name ?? "", class_year: c?.academic_year ?? "" };
+      return {
+        ...s,
+        current_class_id: c?.class_id ?? "",
+        class_name: c?.class_name ?? "",
+        class_year: c?.academic_year ?? "",
+      };
     });
   }, [students, classes, studentClasses]);
 
@@ -170,11 +193,11 @@ function StudentsPage() {
     features,
     columns,
     data,
-    initialState: { 
-      pagination: { 
-        pageIndex: 0, 
-        pageSize: 10 
-      } 
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 10,
+      },
     },
   });
 
@@ -187,10 +210,24 @@ function StudentsPage() {
           icon={<KeyRound className="size-4" />}
           disabled={generate.isPending}
           onClick={async () => {
-            if (await confirm("Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.")) generate.mutate();
+            if (
+              await confirm(
+                "Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.",
+              )
+            )
+              generate.mutate();
           }}
         />
-        <HeaderButton label="Tambah Siswa" icon={<Plus className="size-4" />} onClick={() => setModal({ open: true, student: null })} />
+        <HeaderButton
+          label="Tambah Siswa"
+          icon={<Plus className="size-4" />}
+          onClick={() =>
+            setModal({
+              open: true,
+              student: null,
+            })
+          }
+        />
       </PageHeader>
 
       <div className="card overflow-hidden border border-base-300 bg-base-100">
@@ -204,7 +241,10 @@ function StudentsPage() {
             placeholder="Cari nama atau NIS..."
           />
         </div>
-        <DataTable table={table} emptyText="Tidak ada data siswa." />
+        <DataTable
+          table={table}
+          emptyText="Tidak ada data siswa."
+        />
         <Pager table={table} />
       </div>
 
@@ -216,20 +256,36 @@ function StudentsPage() {
         <StudentForm
           student={modal.student}
           onDone={() => {
-            setModal({ open: false, student: null });
-            void qc.invalidateQueries({ queryKey: qk.students });
-            void qc.invalidateQueries({ queryKey: qk.dashboard });
+            setModal({
+              open: false,
+              student: null,
+            });
+            void qc.invalidateQueries({
+              queryKey: qk.students,
+            });
+            void qc.invalidateQueries({
+              queryKey: qk.dashboard,
+            });
           }}
-          onCancel={() => setModal((m) => ({ ...m, open: false }))}
+          onCancel={() =>
+            setModal((m) => ({
+              ...m,
+              open: false,
+            }))
+          }
         />
       </Modal>
-      <Modal open={moving !== null} onClose={() => setMoving(null)} title="Pindah Kelas">
+      <Modal
+        open={moving !== null}
+        onClose={() => setMoving(null)}
+        title="Pindah Kelas"
+      >
         {moving ? (
-          <MoveStudentForm 
-            key={moving.student_id} 
-            student={moving} 
-            onDone={() => setMoving(null)} 
-            onCancel={() => setMoving(null)} 
+          <MoveStudentForm
+            key={moving.student_id}
+            student={moving}
+            onDone={() => setMoving(null)}
+            onCancel={() => setMoving(null)}
           />
         ) : null}
       </Modal>
@@ -282,7 +338,10 @@ function StudentForm({
       gender: student?.gender || "L",
       class_id: "",
     },
-    validators: { onChange: schema, onSubmit: schema },
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
@@ -310,7 +369,12 @@ function StudentForm({
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="nis">
-          {(f) => <TextField label="NIS" field={f} />}
+          {(f) => (
+            <TextField
+              label="NIS"
+              field={f}
+            />
+          )}
         </form.Field>
         <form.Field name="nisn">
           {(f) => (
@@ -325,18 +389,29 @@ function StudentForm({
       </div>
 
       <form.Field name="full_name">
-        {(f) => <TextField label="Nama Lengkap" field={f} />}
+        {(f) => (
+          <TextField
+            label="Nama Lengkap"
+            field={f}
+          />
+        )}
       </form.Field>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="gender">
           {(f) => (
-            <RadioField 
-              label="Jenis Kelamin" 
+            <RadioField
+              label="Jenis Kelamin"
               field={f}
               options={[
-                { value: "L", label: "Laki-laki" },
-                { value: "P", label: "Perempuan" }
+                {
+                  value: "L",
+                  label: "Laki-laki",
+                },
+                {
+                  value: "P",
+                  label: "Perempuan",
+                },
               ]}
             />
           )}
@@ -345,10 +420,21 @@ function StudentForm({
         {isNew ? (
           <form.Field name="class_id">
             {(f) => (
-              <SelectField label="Kelas" field={f}>
-                <option disabled value="">-- Pilih Kelas --</option>
+              <SelectField
+                label="Kelas"
+                field={f}
+              >
+                <option
+                  disabled
+                  value=""
+                >
+                  -- Pilih Kelas --
+                </option>
                 {activeClasses.map((c) => (
-                  <option key={c.class_id} value={c.class_id}>
+                  <option
+                    key={c.class_id}
+                    value={c.class_id}
+                  >
                     {c.class_name} ({c.academic_year || "-"})
                   </option>
                 ))}
@@ -361,12 +447,20 @@ function StudentForm({
       <ErrorAlert message={save.error?.message} />
 
       <div className="modal-action">
-        <button type="button" className="btn" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn"
+          onClick={onCancel}
+        >
           Batal
         </button>
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <button type="submit" className="btn btn-primary" disabled={busy}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy}
+            >
               {busy ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : null}
@@ -379,33 +473,47 @@ function StudentForm({
   );
 }
 
-const moveSchema = z.object({ class_id: z.string().min(1, "Pilih kelas tujuan") });
+const moveSchema = z.object({
+  class_id: z.string().min(1, "Pilih kelas tujuan"),
+});
 
-function MoveStudentForm({ 
-  student, 
-  onDone, 
-  onCancel 
+function MoveStudentForm({
+  student,
+  onDone,
+  onCancel,
 }: Readonly<{
-  student: StudentRow; 
-  onDone: () => void; 
+  student: StudentRow;
+  onDone: () => void;
   onCancel: () => void;
 }>) {
   const qc = useQueryClient();
   const { data: classes } = useSuspenseQuery(classesQuery);
   const options = useMemo(
-    () => classes.filter((c) => isActive(c.is_active) && c.class_id !== student.current_class_id),
+    () =>
+      classes.filter(
+        (c) => isActive(c.is_active) && c.class_id !== student.current_class_id,
+      ),
     [classes, student.current_class_id],
   );
 
   const move = useMutation({
-    mutationFn: (classId: string) => api.moveStudent(student.student_id, classId),
+    mutationFn: (classId: string) =>
+      api.moveStudent(student.student_id, classId),
     onSuccess: async (r) => {
       toast.success(r.message);
       await Promise.all([
-        qc.invalidateQueries({ queryKey: qk.studentClasses }),
-        qc.invalidateQueries({ queryKey: qk.attendance }),
-        qc.invalidateQueries({ queryKey: qk.report }),
-        qc.invalidateQueries({ queryKey: qk.dashboard }),
+        qc.invalidateQueries({
+          queryKey: qk.studentClasses,
+        }),
+        qc.invalidateQueries({
+          queryKey: qk.attendance,
+        }),
+        qc.invalidateQueries({
+          queryKey: qk.report,
+        }),
+        qc.invalidateQueries({
+          queryKey: qk.dashboard,
+        }),
       ]);
       onDone();
     },
@@ -413,7 +521,10 @@ function MoveStudentForm({
 
   const form = useForm({
     defaultValues: { class_id: "" },
-    validators: { onChange: moveSchema, onSubmit: moveSchema },
+    validators: {
+      onChange: moveSchema,
+      onSubmit: moveSchema,
+    },
     onSubmit: async ({ value }) => {
       await move.mutateAsync(value.class_id).catch(() => {});
     },
@@ -431,23 +542,51 @@ function MoveStudentForm({
     >
       <p className="text-sm [overflow-wrap:anywhere]">
         <span className="font-medium">{student.full_name}</span> saat ini di{" "}
-        {student.class_name ? `${student.class_name} (${student.class_year || "-"})` : "- (belum punya kelas)"}.
+        {student.class_name
+          ? `${student.class_name} (${student.class_year || "-"})`
+          : "- (belum punya kelas)"}
+        .
       </p>
       <form.Field name="class_id">
         {(f) => (
-          <SelectField label="Kelas Tujuan" field={f}>
-            <option disabled value="">-- Pilih Kelas --</option>
+          <SelectField
+            label="Kelas Tujuan"
+            field={f}
+          >
+            <option
+              disabled
+              value=""
+            >
+              -- Pilih Kelas --
+            </option>
             {options.map((c) => (
-              <option key={c.class_id} value={c.class_id}>{c.class_name} ({c.academic_year || "-"})</option>
+              <option
+                key={c.class_id}
+                value={c.class_id}
+              >
+                {c.class_name} ({c.academic_year || "-"})
+              </option>
             ))}
           </SelectField>
         )}
       </form.Field>
       <ErrorAlert message={move.error?.message} />
       <div className="modal-action">
-        <button type="button" className="btn" onClick={onCancel}>Batal</button>
-        <button type="submit" className="btn btn-primary" disabled={move.isPending}>
-          {move.isPending ? <span className="loading loading-spinner loading-sm" /> : null}
+        <button
+          type="button"
+          className="btn"
+          onClick={onCancel}
+        >
+          Batal
+        </button>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={move.isPending}
+        >
+          {move.isPending ? (
+            <span className="loading loading-spinner loading-sm" />
+          ) : null}
           Pindahkan
         </button>
       </div>

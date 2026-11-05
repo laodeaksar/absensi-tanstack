@@ -1,21 +1,17 @@
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Pencil, Plus } from "lucide-react";
-import { allowRoles } from "~/lib/auth";
-import { api } from "~/lib/api";
-import { makeClassSchema } from "~/lib/class-schema";
-import { classesQuery, qk, settingsQuery, teachersQuery } from "~/lib/queries";
-import { columnHelperFor, features } from "~/lib/table";
-import { toast } from "~/lib/toast";
-import { isActive } from "~/lib/types";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
+
 import type { ClassInput, ClassRow } from "~/lib/types";
+
+import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
   ActiveStatusIcon,
   DataTable,
@@ -25,9 +21,15 @@ import {
   SearchBox,
   SelectField,
   TextField,
-  Tip
+  Tip,
 } from "~/components/ui";
-import { PageHeader, HeaderButton } from "~/components/status-icons";
+import { api } from "~/lib/api";
+import { allowRoles } from "~/lib/auth";
+import { makeClassSchema } from "~/lib/class-schema";
+import { classesQuery, qk, settingsQuery, teachersQuery } from "~/lib/queries";
+import { columnHelperFor, features } from "~/lib/table";
+import { toast } from "~/lib/toast";
+import { isActive } from "~/lib/types";
 
 export const Route = createFileRoute("/_app/classes")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
@@ -48,12 +50,17 @@ function ClassesPage() {
   const { data: classes } = useSuspenseQuery(classesQuery);
   const { data: teachers } = useSuspenseQuery(teachersQuery);
   const [search, setSearch] = useState("");
-  const [modal, setModal] = useState<{ open: boolean; cls: ClassRow | null }>({
+  const [modal, setModal] = useState<{
+    open: boolean;
+    cls: ClassRow | null;
+  }>({
     open: false,
     cls: null,
   });
 
-  const actions = useRef({ edit: (_c: ClassRow) => {} });
+  const actions = useRef({
+    edit: (_c: ClassRow) => {},
+  });
   useLayoutEffect(() => {
     actions.current.edit = (c) => setModal({ open: true, cls: c });
   }, []);
@@ -65,9 +72,15 @@ function ClassesPage() {
           header: "Nama Kelas",
           cell: (i) => <span className="font-medium">{i.getValue()}</span>,
         }),
-        col.accessor("grade_level", { header: "Tingkat" }),
-        col.accessor("academic_year", { header: "Tahun Ajaran" }),
-        col.accessor("homeroom_name", { header: "Wali Kelas" }),
+        col.accessor("grade_level", {
+          header: "Tingkat",
+        }),
+        col.accessor("academic_year", {
+          header: "Tahun Ajaran",
+        }),
+        col.accessor("homeroom_name", {
+          header: "Wali Kelas",
+        }),
         col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
           id: "status",
           header: "Status",
@@ -115,19 +128,21 @@ function ClassesPage() {
     features,
     columns,
     data,
-    initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 10 },
+    },
   });
 
   return (
     <div className="space-y-4">
       <PageHeader title="Master Data Kelas">
-        <HeaderButton 
-          label="Tambah Kelas" 
-          icon={<Plus className="size-4" />} 
-          onClick={() => setModal({ open: true, cls: null })} 
+        <HeaderButton
+          label="Tambah Kelas"
+          icon={<Plus className="size-4" />}
+          onClick={() => setModal({ open: true, cls: null })}
         />
       </PageHeader>
-   
+
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
           <SearchBox
@@ -139,7 +154,10 @@ function ClassesPage() {
             placeholder="Cari kelas..."
           />
         </div>
-        <DataTable table={table} emptyText="Tidak ada data kelas." />
+        <DataTable
+          table={table}
+          emptyText="Tidak ada data kelas."
+        />
         <Pager table={table} />
       </div>
 
@@ -152,9 +170,16 @@ function ClassesPage() {
           cls={modal.cls}
           onDone={() => {
             setModal({ open: false, cls: null });
-            void qc.invalidateQueries({ queryKey: qk.classes });
+            void qc.invalidateQueries({
+              queryKey: qk.classes,
+            });
           }}
-          onCancel={() => setModal((m) => ({ ...m, open: false }))}
+          onCancel={() =>
+            setModal((m) => ({
+              ...m,
+              open: false,
+            }))
+          }
         />
       </Modal>
     </div>
@@ -190,8 +215,15 @@ function ClassForm({
         classes,
         editingId: cls?.class_id,
         teacherIds: teacherOptions.map((t) => t.user_id),
-        teacherNames: Object.fromEntries(teachers.map((t) => [t.user_id, t.full_name])),
-        original: cls ? { homeroom_teacher: cls.homeroom_teacher, academic_year: cls.academic_year } : undefined,
+        teacherNames: Object.fromEntries(
+          teachers.map((t) => [t.user_id, t.full_name]),
+        ),
+        original: cls
+          ? {
+              homeroom_teacher: cls.homeroom_teacher,
+              academic_year: cls.academic_year,
+            }
+          : undefined,
       }),
     [classes, teachers, cls, teacherOptions],
   );
@@ -218,7 +250,10 @@ function ClassForm({
       grade_level: cls?.grade_level ?? "",
       academic_year: cls?.academic_year ?? settings.active_academic_year ?? "",
     },
-    validators: { onChange: schema, onSubmit: schema },
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
@@ -256,10 +291,16 @@ function ClassForm({
 
       <form.Field name="homeroom_teacher">
         {(f) => (
-          <SelectField label="Wali Kelas" field={f}>
+          <SelectField
+            label="Wali Kelas"
+            field={f}
+          >
             <option value="">-- Tanpa Wali Kelas --</option>
             {teacherOptions.map((t) => (
-              <option key={t.user_id} value={t.user_id}>
+              <option
+                key={t.user_id}
+                value={t.user_id}
+              >
                 {t.full_name}
                 {isActive(t.is_active) ? "" : " (nonaktif)"}
               </option>
@@ -297,19 +338,30 @@ function ClassForm({
       </div>
       <datalist id="grade-levels">
         {gradeSuggestions.map((g) => (
-          <option key={g} value={g} />
+          <option
+            key={g}
+            value={g}
+          />
         ))}
       </datalist>
 
       <ErrorAlert message={save.error?.message} />
 
       <div className="modal-action">
-        <button type="button" className="btn" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn"
+          onClick={onCancel}
+        >
           Batal
         </button>
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <button type="submit" className="btn btn-primary" disabled={busy}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy}
+            >
               {busy ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : null}

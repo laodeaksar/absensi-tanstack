@@ -12,7 +12,10 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "types": ["vite/client", "node"],
-    "paths": { "~/*": ["./src/*"], "~/convex/*": ["./convex/*"] }
+    "paths": {
+      "~/*": ["./src/*"],
+      "~/convex/*": ["./convex/*"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

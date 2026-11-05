@@ -1,31 +1,26 @@
-import { useMemo, useState } from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { 
-  AlignLeft, 
-  ArrowLeft, 
-  ListChecks, 
-  Lock, 
-  Pencil, 
+import {
+  AlignLeft,
+  ArrowLeft,
+  ListChecks,
+  Lock,
+  Pencil,
   Plus,
-  Trash2, 
-  Inbox
+  Trash2,
+  Inbox,
 } from "lucide-react";
-import { allowRoles } from "~/lib/auth";
-import { columnHelperFor, features } from "~/lib/table";
-import { toast } from "~/lib/toast";
-import { api } from "~/lib/api";
-import { assignmentDetailQuery, qk } from "~/lib/queries";
-import { letter, makeQuestionSchema } from "~/lib/assignment-schema";
-import { LIMITS } from "~/convex/limits"
+import { useMemo, useState, useRef } from "react";
+
 import type { Question, QuestionInput } from "~/lib/types";
-import { firstMessage } from "~/lib/validation";
+
+import { HeaderButton, PageHeader } from "~/components/status-icons";
 import {
   ActionMenu,
   DataTable,
@@ -34,19 +29,24 @@ import {
   TextField,
   TextAreaField,
   RadioField,
-  Tip
+  Tip,
 } from "~/components/ui";
-import { HeaderButton, PageHeader } from "~/components/status-icons";
+import { LIMITS } from "~/convex/limits";
 import { useConfirm } from "~/hooks/use-confirm";
+import { api } from "~/lib/api";
+import { letter, makeQuestionSchema } from "~/lib/assignment-schema";
+import { allowRoles } from "~/lib/auth";
+import { assignmentDetailQuery, qk } from "~/lib/queries";
+import { columnHelperFor, features } from "~/lib/table";
+import { toast } from "~/lib/toast";
+import { firstMessage } from "~/lib/validation";
 
 export const Route = createFileRoute(
   "/_app/assignments/$assignmentId/questions",
 )({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
   loader: ({ context, params }) =>
-    context.queryClient.query(
-      assignmentDetailQuery(params.assignmentId),
-    ),
+    context.queryClient.query(assignmentDetailQuery(params.assignmentId)),
   component: QuestionsPage,
 });
 
@@ -61,29 +61,51 @@ function QuestionTextCell({ question }: Readonly<{ question: Question }>) {
           {question.options.map((option, index) => (
             <li
               key={`${question.question_id}-${option}`}
-              className={index === Number(question.correct_index) ? "font-semibold text-success" : ""}
+              className={
+                index === Number(question.correct_index)
+                  ? "font-semibold text-success"
+                  : ""
+              }
             >
               {option}
             </li>
           ))}
         </ol>
       ) : (
-        <p className="mt-1 text-xs text-base-content/60">Dinilai manual oleh guru/admin.</p>
+        <p className="mt-1 text-xs text-base-content/60">
+          Dinilai manual oleh guru/admin.
+        </p>
       )}
     </div>
   );
 }
 
 const TYPE_META = {
-  pilihan_ganda: { label: "Pilihan ganda", cls: "text-info", Icon: ListChecks },
-  esai: { label: "Esai", cls: "text-warning", Icon: AlignLeft },
+  pilihan_ganda: {
+    label: "Pilihan ganda",
+    cls: "text-info",
+    Icon: ListChecks,
+  },
+  esai: {
+    label: "Esai",
+    cls: "text-warning",
+    Icon: AlignLeft,
+  },
 } as const;
 
 function QuestionTypeCell({ type }: Readonly<{ type: Question["type"] }>) {
   const { label, cls, Icon } = TYPE_META[type];
   return (
-    <Tip tip={label} side="right">
-      <span role="img" aria-label={label} tabIndex={0} className={`inline-flex ${cls}`}>
+    <Tip
+      tip={label}
+      side="right"
+    >
+      <span
+        role="img"
+        aria-label={label}
+        tabIndex={0}
+        className={`inline-flex ${cls}`}
+      >
         <Icon className="size-5" />
       </span>
     </Tip>
@@ -104,10 +126,10 @@ function QuestionActionsCell({
   if (locked) {
     return (
       <Tip tip="Sudah ada siswa yang mengerjakan">
-        <span 
-          role="img" 
-          aria-label="Soal terkunci" 
-          tabIndex={0} 
+        <span
+          role="img"
+          aria-label="Soal terkunci"
+          tabIndex={0}
           className="inline-flex text-base-content/40"
         >
           <Lock className="size-4" />
@@ -118,12 +140,19 @@ function QuestionActionsCell({
   return (
     <ActionMenu>
       <li>
-        <button type="button" onClick={() => onEdit(question)}>
+        <button
+          type="button"
+          onClick={() => onEdit(question)}
+        >
           <Pencil className="size-4" /> Edit
         </button>
       </li>
       <li>
-        <button type="button" className="text-error" onClick={() => onRemove(question)}>
+        <button
+          type="button"
+          className="text-error"
+          onClick={() => onRemove(question)}
+        >
           <Trash2 className="size-4" /> Hapus
         </button>
       </li>
@@ -135,32 +164,54 @@ function createQuestionColumns({
   locked,
   onEdit,
   onRemove,
-}: Readonly<{ 
-  locked: boolean; 
-  onEdit: (question: Question) => void; 
-  onRemove: (question: Question) => void
+}: Readonly<{
+  locked: boolean;
+  onEdit: (question: Question) => void;
+  onRemove: (question: Question) => void;
 }>) {
   return col.columns([
-    col.display({ id: "no", header: "No", cell: ({ row }) => row.index + 1 }),
-    col.display({ id: "q", header: "Soal", cell: ({ row }) => <QuestionTextCell question={row.original} /> }),
-    col.display({ id: "type", header: "Tipe", cell: ({ row }) => <QuestionTypeCell type={row.original.type} /> }),
-    col.accessor("points", { header: "Poin", enableSorting: false }),
+    col.display({
+      id: "no",
+      header: "No",
+      cell: ({ row }) => row.index + 1,
+    }),
+    col.display({
+      id: "q",
+      header: "Soal",
+      cell: ({ row }) => <QuestionTextCell question={row.original} />,
+    }),
+    col.display({
+      id: "type",
+      header: "Tipe",
+      cell: ({ row }) => <QuestionTypeCell type={row.original.type} />,
+    }),
+    col.accessor("points", {
+      header: "Poin",
+      enableSorting: false,
+    }),
     col.display({
       id: "actions",
       header: "Aksi",
-      cell: ({ row }) => <QuestionActionsCell question={row.original} locked={locked} onEdit={onEdit} onRemove={onRemove} />,
+      cell: ({ row }) => (
+        <QuestionActionsCell
+          question={row.original}
+          locked={locked}
+          onEdit={onEdit}
+          onRemove={onRemove}
+        />
+      ),
     }),
   ]);
 }
 
-function CorrectOptionRadio({ 
-  index, 
+function CorrectOptionRadio({
+  index,
   checked,
-  onSelect 
-}: Readonly<{ 
-  index: number; 
-  checked: boolean; 
-  onSelect: (value: string) => void 
+  onSelect,
+}: Readonly<{
+  index: number;
+  checked: boolean;
+  onSelect: (value: string) => void;
 }>) {
   return (
     <input
@@ -187,7 +238,9 @@ function QuestionsPage() {
 
   const refresh = () => {
     void Promise.all([
-      qc.invalidateQueries({ queryKey: qk.detail(assignmentId) }),
+      qc.invalidateQueries({
+        queryKey: qk.detail(assignmentId),
+      }),
       qc.invalidateQueries({ queryKey: qk.list }),
     ]);
   };
@@ -202,15 +255,16 @@ function QuestionsPage() {
   });
 
   const columns = useMemo(
-    () => createQuestionColumns({
-      locked,
-      onEdit: (question) => setModal({ open: true, question }),
-      onRemove: (question) => {
-        void confirm("Hapus soal ini?").then((confirmed) => {
-          if (confirmed) remove.mutate(question.question_id);
-        });
-      },
-    }),
+    () =>
+      createQuestionColumns({
+        locked,
+        onEdit: (question) => setModal({ open: true, question }),
+        onRemove: (question) => {
+          void confirm("Hapus soal ini?").then((confirmed) => {
+            if (confirmed) remove.mutate(question.question_id);
+          });
+        },
+      }),
     [locked, confirm, remove],
   );
 
@@ -218,13 +272,21 @@ function QuestionsPage() {
     features,
     columns,
     data: questions,
-    initialState: { pagination: { pageIndex: 0, pageSize: 1000 } },
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 1000,
+      },
+    },
   });
 
   return (
     <div className="space-y-4">
       <div>
-        <Link to="/assignments" className="btn btn-ghost btn-xs mb-1 -ml-2">
+        <Link
+          to="/assignments"
+          className="btn btn-ghost btn-xs mb-1 -ml-2"
+        >
           <ArrowLeft className="size-4" /> Kembali
         </Link>
         <PageHeader
@@ -249,17 +311,25 @@ function QuestionsPage() {
             <Inbox className="size-4" />
             <span className="hidden sm:inline">Pengumpulan</span>
           </Link>
-          <HeaderButton 
-            label="Tambah Soal" 
-            icon={<Plus className="size-4" />} 
-            disabled={locked} 
-            onClick={() => setModal({ open: true, question: null })}
+          <HeaderButton
+            label="Tambah Soal"
+            icon={<Plus className="size-4" />}
+            disabled={locked}
+            onClick={() =>
+              setModal({
+                open: true,
+                question: null,
+              })
+            }
           />
         </PageHeader>
       </div>
 
       {locked ? (
-        <div role="alert" className="alert alert-warning alert-soft text-sm">
+        <div
+          role="alert"
+          className="alert alert-warning alert-soft text-sm"
+        >
           <Lock className="size-4 shrink-0" />
           <span>
             Sudah ada siswa yang mengerjakan, jadi soal terkunci (tidak bisa
@@ -284,16 +354,26 @@ function QuestionsPage() {
           assignmentId={assignmentId}
           question={modal.question}
           onDone={() => {
-            setModal({ open: false, question: null });
+            setModal({
+              open: false,
+              question: null,
+            });
             refresh();
           }}
-          onCancel={() => setModal((m) => ({ ...m, open: false }))}
+          onCancel={() =>
+            setModal((m) => ({
+              ...m,
+              open: false,
+            }))
+          }
         />
       </Modal>
       {dialog}
     </div>
   );
 }
+
+const newKey = () => Math.random().toString(36).slice(2);
 
 function QuestionForm({
   assignmentId,
@@ -307,6 +387,8 @@ function QuestionForm({
   onCancel: () => void;
 }>) {
   const schema = useMemo(() => makeQuestionSchema(), []);
+
+  const optionKeys = useRef<string[]>([]); // di QuestionForm
 
   const save = useMutation({
     mutationFn: (v: QuestionInput) => api.saveQuestion(v),
@@ -330,7 +412,10 @@ function QuestionForm({
           : "",
       points: String(question?.points ?? 10),
     },
-    validators: { onChange: schema, onSubmit: schema },
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
@@ -364,18 +449,30 @@ function QuestionForm({
           <form.Field name="type">
             {(f) => (
               <RadioField
-                label="Tipe Soal" 
+                label="Tipe Soal"
                 field={f}
                 options={[
-                  { value: "pilihan_ganda", label: "Pilihan ganda" },
-                  { value: "esai", label: "Esai" }
+                  {
+                    value: "pilihan_ganda",
+                    label: "Pilihan ganda",
+                  },
+                  {
+                    value: "esai",
+                    label: "Esai",
+                  },
                 ]}
               />
             )}
           </form.Field>
         </div>
         <form.Field name="points">
-          {(f) => <TextField label="Poin" field={f} inputMode="numeric" />}
+          {(f) => (
+            <TextField
+              label="Poin"
+              field={f}
+              inputMode="numeric"
+            />
+          )}
         </form.Field>
       </div>
 
@@ -394,13 +491,19 @@ function QuestionForm({
       <form.Subscribe selector={(s) => s.values.type}>
         {(type) =>
           type === "pilihan_ganda" ? (
-            <form.Field name="options" mode="array">
+            <form.Field
+              name="options"
+              mode="array"
+            >
               {(opts) => {
                 const count = opts.state.value.length;
+                while (optionKeys.current.length < count)
+                  optionKeys.current.push(newKey());
                 const listMsg = opts.state.meta.isTouched
                   ? firstMessage(opts.state.meta.errors)
                   : "";
                 const removeAt = (i: number) => {
+                  optionKeys.current.splice(i, 1);
                   opts.removeValue(i);
                   const ci = form.getFieldValue("correct_index");
                   if (ci !== "") {
@@ -417,7 +520,10 @@ function QuestionForm({
                     </legend>
                     <div className="space-y-1">
                       {opts.state.value.map((_, i) => (
-                        <div key={opts.state.value[i] || `new-option-${i}`} className="flex items-start gap-2">
+                        <div
+                          key={opts.state.value[i] || `new-option-${i}`}
+                          className="flex items-start gap-2"
+                        >
                           <form.Field name="correct_index">
                             {(cf) => (
                               <CorrectOptionRadio
@@ -454,12 +560,18 @@ function QuestionForm({
                       type="button"
                       className="btn btn-ghost btn-sm w-fit text-primary"
                       disabled={count >= LIMITS.optionsMax}
-                      onClick={() => opts.pushValue("")}
+                      onClick={() => {
+                        optionKeys.current.push(newKey());
+                        opts.pushValue("");
+                      }}
                     >
                       <Plus className="size-4" /> Tambah pilihan
                     </button>
                     {listMsg ? (
-                      <p role="alert" className="text-xs text-error">
+                      <p
+                        role="alert"
+                        className="text-xs text-error"
+                      >
                         {listMsg}
                       </p>
                     ) : null}
@@ -469,7 +581,10 @@ function QuestionForm({
                           ? firstMessage(cf.state.meta.errors)
                           : "";
                         return m ? (
-                          <p role="alert" className="text-xs text-error">
+                          <p
+                            role="alert"
+                            className="text-xs text-error"
+                          >
                             {m}
                           </p>
                         ) : null;
@@ -491,12 +606,20 @@ function QuestionForm({
       <ErrorAlert message={save.error?.message} />
 
       <div className="modal-action">
-        <button type="button" className="btn" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn"
+          onClick={onCancel}
+        >
           Batal
         </button>
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <button type="submit" className="btn btn-primary" disabled={busy}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy}
+            >
               {busy ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : null}

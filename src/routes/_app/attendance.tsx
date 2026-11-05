@@ -1,87 +1,127 @@
-import { useMemo, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useForm, useSelector } from '@tanstack/react-form'
-import type { AnyFormApi } from '@tanstack/react-form'
-import { useTable } from '@tanstack/react-table'
-import { MessageSquareText, Save } from 'lucide-react'
-import { allowRoles } from '~/lib/auth'
-import { api } from '~/lib/api'
-import {
-  NOTES_MIN, 
-  STATUS_VALUES, 
-  earliestDate,  
-  gridSchema, 
-  makeFilterSchema, 
-  needsNotes,
-} from '~/lib/attendance-schema'
-import { todayStr } from '~/lib/date'
-import { attendanceFormQuery, classesQuery, qk, settingsQuery } from '~/lib/queries'
-import { columnHelperFor, features } from '~/lib/table'
-import { toast } from '~/lib/toast'
-import { isActive, parseClassIds } from '~/lib/types'
-import type { AttendanceEntry } from '~/lib/types'
-import { 
-  DataTable, 
-  ErrorAlert, 
-  Modal,
-  PageSpinner, 
-  SelectField, 
-  TextField,
-  TextAreaField
-} from '~/components/ui'
+import type { AnyFormApi } from "@tanstack/react-form";
 
-export const Route = createFileRoute('/_app/attendance')({
-  beforeLoad: ({ context }) => allowRoles(context.me, ['admin', 'guru']),
+import { useForm, useSelector } from "@tanstack/react-form";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useTable } from "@tanstack/react-table";
+import { MessageSquareText, Save } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import type { AttendanceEntry } from "~/lib/types";
+
+import {
+  DataTable,
+  ErrorAlert,
+  Modal,
+  PageSpinner,
+  SelectField,
+  TextField,
+  TextAreaField,
+} from "~/components/ui";
+import { api } from "~/lib/api";
+import {
+  NOTES_MIN,
+  STATUS_VALUES,
+  earliestDate,
+  gridSchema,
+  makeFilterSchema,
+  needsNotes,
+} from "~/lib/attendance-schema";
+import { allowRoles } from "~/lib/auth";
+import { todayStr } from "~/lib/date";
+import {
+  attendanceFormQuery,
+  classesQuery,
+  qk,
+  settingsQuery,
+} from "~/lib/queries";
+import { columnHelperFor, features } from "~/lib/table";
+import { toast } from "~/lib/toast";
+import { isActive } from "~/lib/types";
+
+export const Route = createFileRoute("/_app/attendance")({
+  beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    date: typeof s.date === 'string' ? s.date : undefined,
-    classId: typeof s.classId === 'string' ? s.classId : undefined,
+    date: typeof s.date === "string" ? s.date : undefined,
+    classId: typeof s.classId === "string" ? s.classId : undefined,
   }),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.query(classesQuery), context.queryClient.query(settingsQuery)]),
+    Promise.all([
+      context.queryClient.query(classesQuery),
+      context.queryClient.query(settingsQuery),
+    ]),
   component: AttendancePage,
-})
+});
 
 function AttendancePage() {
-  const { me } = Route.useRouteContext()
-  const search = Route.useSearch()
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const { data: classes } = useSuspenseQuery(classesQuery)
-  const { data: settings } = useSuspenseQuery(settingsQuery)
+  const { me } = Route.useRouteContext();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { data: classes } = useSuspenseQuery(classesQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
 
   // Aturan dinamis: bergantung peran, kelas yang diampu, dan pengaturan jendela edit
-  const restricted = me.role !== 'admin'
-  const editWindowDays = Number(settings.edit_window_days) || 0
+  const restricted = me.role !== "admin";
+  const editWindowDays = Number(settings.edit_window_days) || 0;
 
   const options = useMemo(() => {
-    const mine = me.role === 'guru' ? parseClassIds(me.assigned_classes) : null
-    return classes.filter((c) => isActive(c.is_active) && (!mine || mine.includes(c.class_id)))
-  }, [classes, me.role, me.assigned_classes])
+    const mine = me.role === "guru" ? me.assigned_classes : null;
+    return classes.filter(
+      (c) => isActive(c.is_active) && (!mine || mine.includes(c.class_id)),
+    );
+  }, [classes, me.role, me.assigned_classes]);
 
   const rules = useMemo(
-    () => ({ classIds: options.map((c) => c.class_id), restricted, editWindowDays }),
+    () => ({
+      classIds: options.map((c) => c.class_id),
+      restricted,
+      editWindowDays,
+    }),
     [options, restricted, editWindowDays],
-  )
-  const filterSchema = useMemo(() => makeFilterSchema(rules), [rules])
-  const minDate = earliestDate(rules)
+  );
+  const filterSchema = useMemo(() => makeFilterSchema(rules), [rules]);
+  const minDate = earliestDate(rules);
 
   const form = useForm({
-    defaultValues: { date: search.date ?? todayStr(), classId: search.classId ?? '' },
-    validators: { onChange: filterSchema, onSubmit: filterSchema },
-    onSubmit: ({ value }) => {
-      void qc.invalidateQueries({ queryKey: qk.attendance })
-      void navigate({ to: '/attendance', search: { date: value.date, classId: value.classId } })
+    defaultValues: {
+      date: search.date ?? todayStr(),
+      classId: search.classId ?? "",
     },
-  })
+    validators: {
+      onChange: filterSchema,
+      onSubmit: filterSchema,
+    },
+    onSubmit: ({ value }) => {
+      void qc.invalidateQueries({
+        queryKey: qk.attendance,
+      });
+      void navigate({
+        to: "/attendance",
+        search: {
+          date: value.date,
+          classId: value.classId,
+        },
+      });
+    },
+  });
 
   // Parameter URL divalidasi dengan aturan yang sama (URL bisa diubah manual)
   const urlCheck = useMemo(
-    () => (search.date || search.classId 
-      ? filterSchema.safeParse({ date: search.date ?? '', classId: search.classId ?? '' }) 
-      : null),
+    () =>
+      search.date || search.classId
+        ? filterSchema.safeParse({
+            date: search.date ?? "",
+            classId: search.classId ?? "",
+          })
+        : null,
     [filterSchema, search.date, search.classId],
-  )
+  );
 
   return (
     <div className="space-y-4">
@@ -92,9 +132,9 @@ function AttendancePage() {
           noValidate
           className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-3"
           onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            void form.handleSubmit()
+            e.preventDefault();
+            e.stopPropagation();
+            void form.handleSubmit();
           }}
         >
           <form.Field name="date">
@@ -105,79 +145,149 @@ function AttendancePage() {
                 type="date"
                 max={restricted ? todayStr() : undefined}
                 min={minDate}
-                hint={restricted && editWindowDays > 0 ? `Maksimal ${editWindowDays} hari ke belakang.` : undefined}
+                hint={
+                  restricted && editWindowDays > 0
+                    ? `Maksimal ${editWindowDays} hari ke belakang.`
+                    : undefined
+                }
               />
             )}
           </form.Field>
           <form.Field name="classId">
             {(f) => (
-              <SelectField label="Kelas" field={f}>
-                <option disabled selected value="">-- Pilih Kelas --</option>
+              <SelectField
+                label="Kelas"
+                field={f}
+              >
+                <option
+                  disabled
+                  selected
+                  value=""
+                >
+                  -- Pilih Kelas --
+                </option>
                 {options.map((c) => (
-                  <option key={c.class_id} value={c.class_id}>{c.class_name}</option>
+                  <option
+                    key={c.class_id}
+                    value={c.class_id}
+                  >
+                    {c.class_name}
+                  </option>
                 ))}
               </SelectField>
             )}
           </form.Field>
-          <button type="submit" className="btn btn-neutral mt-6 w-full">Tampilkan Daftar Siswa</button>
+          <button
+            type="submit"
+            className="btn btn-neutral mt-6 w-full"
+          >
+            Tampilkan Daftar Siswa
+          </button>
         </form>
       </div>
 
-      {urlCheck && !urlCheck.success ? <ErrorAlert message={urlCheck.error.issues[0]?.message} /> : null}
-      {urlCheck?.success ? <AttendanceSection date={urlCheck.data.date} classId={urlCheck.data.classId} /> : null}
+      {urlCheck && !urlCheck.success ? (
+        <ErrorAlert message={urlCheck.error.issues[0]?.message} />
+      ) : null}
+      {urlCheck?.success ? (
+        <AttendanceSection
+          date={urlCheck.data.date}
+          classId={urlCheck.data.classId}
+        />
+      ) : null}
     </div>
-  )
+  );
 }
 
-function AttendanceSection({ date, classId }: Readonly<{ date: string; classId: string }>) {
-  const q = useQuery(attendanceFormQuery(date, classId))
-  if (q.isPending) return <PageSpinner />
-  if (q.error) return <ErrorAlert message={q.error.message} />
+function AttendanceSection({
+  date,
+  classId,
+}: Readonly<{ date: string; classId: string }>) {
+  const q = useQuery(attendanceFormQuery(date, classId));
+  if (q.isPending) return <PageSpinner />;
+  if (q.error) return <ErrorAlert message={q.error.message} />;
   // dataUpdatedAt: form dimuat ulang dengan data server setelah penyimpanan
-  return <AttendanceForm key={`${date}|${classId}|${q.dataUpdatedAt}`} date={date} classId={classId} entries={q.data} />
+  return (
+    <AttendanceForm
+      key={`${date}|${classId}|${q.dataUpdatedAt}`}
+      date={date}
+      classId={classId}
+      entries={q.data}
+    />
+  );
 }
 
-type Row = { student_id: string; nis: string; full_name: string; status: string; notes: string }
-const col = columnHelperFor<Row>()
+type Row = {
+  student_id: string;
+  nis: string;
+  full_name: string;
+  status: string;
+  notes: string;
+};
+const col = columnHelperFor<Row>();
 
 const STATUS_STYLE = {
-  Hadir: { tone: 'checkbox-success', text: 'text-success' },
-  Sakit: { tone: 'checkbox-warning', text: 'text-warning' },
-  Izin: { tone: 'checkbox-info', text: 'text-info' },
-  Alpa: { tone: 'checkbox-error', text: 'text-error' },
-} as const
+  Hadir: {
+    tone: "checkbox-success",
+    text: "text-success",
+  },
+  Sakit: {
+    tone: "checkbox-warning",
+    text: "text-warning",
+  },
+  Izin: {
+    tone: "checkbox-info",
+    text: "text-info",
+  },
+  Alpa: {
+    tone: "checkbox-error",
+    text: "text-error",
+  },
+} as const;
 
 /** Tombol keterangan per baris: hanya muncul untuk status yang butuh keterangan. */
-function NotesButton({ 
-  form, 
-  index, 
-  onOpen
-}: Readonly<{ 
-  form: AnyFormApi; 
-  index: number; 
-  onOpen: (i: number) => void 
+function NotesButton({
+  form,
+  index,
+  onOpen,
+}: Readonly<{
+  form: AnyFormApi;
+  index: number;
+  onOpen: (i: number) => void;
 }>) {
-  const row = useSelector(form.store, (s) => s.values.rows[index])
-  const attempts = useSelector(form.store, (s) => s.submissionAttempts)
-  if (!row || !needsNotes(row.status)) return null
+  const row = useSelector(form.store, (s) => s.values.rows[index]);
+  const attempts = useSelector(form.store, (s) => s.submissionAttempts);
+  if (!row || !needsNotes(row.status)) return null;
 
-  const filled = row.notes.trim().length >= NOTES_MIN
-  const tone = filled ? 'text-success' : attempts > 0 ? 'text-error' : 'text-warning'
+  const filled = row.notes.trim().length >= NOTES_MIN;
+  const tone = filled
+    ? "text-success"
+    : attempts > 0
+      ? "text-error"
+      : "text-warning";
   return (
     <button
       type="button"
       className={`btn btn-ghost btn-xs ${tone}`}
-      aria-label={filled ? 'Ubah keterangan' : 'Isi keterangan'}
-      title={row.notes || 'Isi keterangan'}
+      aria-label={filled ? "Ubah keterangan" : "Isi keterangan"}
+      title={row.notes || "Isi keterangan"}
       onClick={() => onOpen(index)}
     >
       <MessageSquareText className="size-4" />
     </button>
-  )
+  );
 }
 
-function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; classId: string; entries: AttendanceEntry[] }>) {
-  const qc = useQueryClient()
+function AttendanceForm({
+  date,
+  classId,
+  entries,
+}: Readonly<{
+  date: string;
+  classId: string;
+  entries: AttendanceEntry[];
+}>) {
+  const qc = useQueryClient();
 
   const rows = useMemo<Row[]>(
     () =>
@@ -185,73 +295,109 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
         student_id: e.student_id,
         nis: e.nis,
         full_name: e.full_name,
-        status: e.status === 'Belum Ada' ? '' : e.status,
+        status: e.status === "Belum Ada" ? "" : e.status,
         notes: e.notes,
       })),
     [entries],
-  )
+  );
 
   const save = useMutation({
-    mutationFn: (payload: { student_id: string; status: string; notes: string }[]) => api.submitAttendance(date, classId, payload),
+    mutationFn: (
+      payload: {
+        student_id: string;
+        status: string;
+        notes: string;
+      }[],
+    ) => api.submitAttendance(date, classId, payload),
     onSuccess: (r) => {
-      toast.success(r.message || 'Data berhasil disimpan')
-      void qc.invalidateQueries({ queryKey: qk.attendance })
-      void qc.invalidateQueries({ queryKey: qk.dashboard })
-      void qc.invalidateQueries({ queryKey: qk.report })
+      toast.success(r.message || "Data berhasil disimpan");
+      void qc.invalidateQueries({
+        queryKey: qk.attendance,
+      });
+      void qc.invalidateQueries({
+        queryKey: qk.dashboard,
+      });
+      void qc.invalidateQueries({
+        queryKey: qk.report,
+      });
     },
     onError: (e) => toast.error(e.message),
-  })
+  });
 
   const form = useForm({
     defaultValues: { rows },
-    validators: { onChange: gridSchema, onSubmit: gridSchema },
-    onSubmitInvalid: () => toast.error('Periksa kembali isian yang ditandai merah.'),
-    onSubmit: async ({ value }) => {
-      const payload = value.rows.filter((r) => r.status).map(({ student_id, status, notes }) => ({ student_id, status, notes: notes.trim() }))
-      if (payload.length === 0) {
-        toast.error('Tidak ada data absensi untuk disimpan')
-        return
-      }
-      await save.mutateAsync(payload).catch(() => {})
+    validators: {
+      onChange: gridSchema,
+      onSubmit: gridSchema,
     },
-  })
-  
-  const [noteRow, setNoteRow] = useState<number | null>(null)
-  const [_, setTried] = useState(false)
+    onSubmitInvalid: () =>
+      toast.error("Periksa kembali isian yang ditandai merah."),
+    onSubmit: async ({ value }) => {
+      const payload = value.rows
+        .filter((r) => r.status)
+        .map(({ student_id, status, notes }) => ({
+          student_id,
+          status,
+          notes: notes.trim(),
+        }));
+      if (payload.length === 0) {
+        toast.error("Tidak ada data absensi untuk disimpan");
+        return;
+      }
+      await save.mutateAsync(payload).catch(() => {});
+    },
+  });
+
+  const [noteRow, setNoteRow] = useState<number | null>(null);
+  const [_, setTried] = useState(false);
 
   const openNote = (i: number) => {
-    setTried(false)
-    setNoteRow(i)
-  }
+    setTried(false);
+    setNoteRow(i);
+  };
 
   // Batal/tutup tanpa keterangan yang cukup: pilihan status dibatalkan
   const closeNote = () => {
     if (noteRow !== null) {
-      const r = form.state.values.rows[noteRow]
+      const r = form.state.values.rows[noteRow];
       if (r && needsNotes(r.status) && r.notes.trim().length < NOTES_MIN) {
-        form.setFieldValue(`rows[${noteRow}].status` as const, '')
+        form.setFieldValue(`rows[${noteRow}].status` as const, "");
       }
     }
-    setNoteRow(null)
-  }
+    setNoteRow(null);
+  };
 
   const markAll = (status: string) => {
-    rows.forEach((_, i) => form.setFieldValue(`rows[${i}].status` as const, status))
-  }
+    rows.forEach((_, i) =>
+      form.setFieldValue(`rows[${i}].status` as const, status),
+    );
+  };
 
   const columns = useMemo(
     () =>
       col.columns([
-        col.display({ id: 'no', header: 'No', cell: ({ row }) => row.index + 1 }),
-        col.accessor('nis', { header: 'NIS', enableSorting: false }),
-        col.accessor('full_name', { header: 'Nama Siswa', enableSorting: false, cell: (i) => <span className="font-medium">{i.getValue()}</span> }),
+        col.display({
+          id: "no",
+          header: "No",
+          cell: ({ row }) => row.index + 1,
+        }),
+        col.accessor("nis", {
+          header: "NIS",
+          enableSorting: false,
+        }),
+        col.accessor("full_name", {
+          header: "Nama Siswa",
+          enableSorting: false,
+          cell: (i) => <span className="font-medium">{i.getValue()}</span>,
+        }),
         ...STATUS_VALUES.map((s) =>
           col.display({
             id: s,
             header: () => (
-              <button 
-                type="button" 
-                title={`Tandai semua ${s}`} onClick={() => markAll(s)} 
+              <button
+                type="button"
+                title={`Tandai semua ${s}`}
+                onClick={() => markAll(s)}
                 className={`btn btn-ghost btn-xs ${STATUS_STYLE[s].text}`}
               >
                 {s}
@@ -267,9 +413,9 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
                       className={`checkbox checkbox-sm ${STATUS_STYLE[s].tone}`}
                       checked={f.state.value === s}
                       onChange={(e) => {
-                        const next = e.target.checked ? s : ''
-                        f.handleChange(next)
-                        if (next && needsNotes(next)) openNote(row.index)
+                        const next = e.target.checked ? s : "";
+                        f.handleChange(next);
+                        if (next && needsNotes(next)) openNote(row.index);
                       }}
                     />
                   </div>
@@ -279,72 +425,110 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
           }),
         ),
         col.display({
-          id: 'notes',
-          header: 'Ket.',
-          cell: ({ row }) => <NotesButton form={form} index={row.index} onOpen={openNote} />,
+          id: "notes",
+          header: "Ket.",
+          cell: ({ row }) => (
+            <NotesButton
+              form={form}
+              index={row.index}
+              onOpen={openNote}
+            />
+          ),
         }),
       ]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [form],
-  )
+  );
 
-  const table = useTable({ features, columns, data: rows, initialState: { pagination: { pageIndex: 0, pageSize: 1000 } } })
+  const table = useTable({
+    features,
+    columns,
+    data: rows,
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 1000,
+      },
+    },
+  });
 
   return (
     <form
       noValidate
       className="card overflow-hidden border border-base-300 bg-base-100"
       onSubmit={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        void form.handleSubmit()
+        e.preventDefault();
+        e.stopPropagation();
+        void form.handleSubmit();
       }}
     >
       <div className="flex items-center justify-between border-b border-base-300 bg-base-200/60 p-4">
         <h3 className="font-semibold">Daftar Siswa</h3>
-        <button type="button" onClick={() => markAll('Hadir')} className="btn btn-ghost btn-sm text-primary">
+        <button
+          type="button"
+          onClick={() => markAll("Hadir")}
+          className="btn btn-ghost btn-sm text-primary"
+        >
           Tandai Semua Hadir
         </button>
       </div>
 
-      <DataTable table={table} emptyText="Tidak ada siswa terdaftar di kelas ini." />
+      <DataTable
+        table={table}
+        emptyText="Tidak ada siswa terdaftar di kelas ini."
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-base-300 p-4">
         {/* Ringkasan dinamis dari nilai form */}
         <form.Subscribe selector={(s) => s.values.rows}>
           {(vals) => {
-            const filled = vals.filter((r) => r.status).length
-            const missing = vals.filter((r) => needsNotes(r.status) && r.notes.trim().length < NOTES_MIN).length
+            const filled = vals.filter((r) => r.status).length;
+            const missing = vals.filter(
+              (r) => needsNotes(r.status) && r.notes.trim().length < NOTES_MIN,
+            ).length;
             return (
               <p className="text-sm text-base-content/70">
                 Terisi {filled} dari {vals.length} siswa
-                {missing > 0 
-                  ? <span className="ml-2 text-error">· {missing} perlu keterangan</span> 
-                  : null}
+                {missing > 0 ? (
+                  <span className="ml-2 text-error">
+                    · {missing} perlu keterangan
+                  </span>
+                ) : null}
               </p>
-            )
+            );
           }}
         </form.Subscribe>
 
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <button type="submit" className="btn btn-primary" disabled={busy || rows.length === 0}>
-              {busy 
-                ? <span className="loading loading-spinner loading-sm" /> 
-                : <Save className="size-4" />}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy || rows.length === 0}
+            >
+              {busy ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                <Save className="size-4" />
+              )}
               Simpan Data Absensi
             </button>
           )}
         </form.Subscribe>
       </div>
-      
-      <Modal open={noteRow !== null} onClose={closeNote} title="Keterangan Absensi">
+
+      <Modal
+        open={noteRow !== null}
+        onClose={closeNote}
+        title="Keterangan Absensi"
+      >
         {noteRow !== null ? (
           <div className="space-y-3">
             <form.Subscribe selector={(s) => s.values.rows[noteRow]}>
               {(r) => (
                 <p className="text-sm">
-                  <span className="font-medium">{r?.full_name}</span> · {r?.status}
+                  <span className="font-medium">{r?.full_name}</span> ·{" "}
+                  {r?.status}
                 </p>
               )}
             </form.Subscribe>
@@ -362,14 +546,20 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
             </form.Field>
 
             <div className="modal-action">
-              <button type="button" className="btn" onClick={closeNote}>Batal</button>
+              <button
+                type="button"
+                className="btn"
+                onClick={closeNote}
+              >
+                Batal
+              </button>
               <button
                 type="button"
                 className="btn btn-primary"
                 onClick={() => {
-                  setTried(true)
-                  const r = form.state.values.rows[noteRow]
-                  if (r && r.notes.trim().length >= NOTES_MIN) setNoteRow(null)
+                  setTried(true);
+                  const r = form.state.values.rows[noteRow];
+                  if (r && r.notes.trim().length >= NOTES_MIN) setNoteRow(null);
                 }}
               >
                 Simpan
@@ -379,5 +569,5 @@ function AttendanceForm({ date, classId, entries }: Readonly<{ date: string; cla
         ) : null}
       </Modal>
     </form>
-  )
+  );
 }

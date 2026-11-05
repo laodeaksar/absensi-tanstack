@@ -1,61 +1,87 @@
-import { useMemo, useRef, useState, useLayoutEffect } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useForm } from '@tanstack/react-form'
-import { useTable } from '@tanstack/react-table'
-import { Pencil, Plus, UserCheck, UserX } from 'lucide-react'
-import { allowRoles } from '~/lib/auth'
-import { api } from '~/lib/api'
-import { classesQuery, qk, teachersQuery } from '~/lib/queries'
-import { columnHelperFor, features } from '~/lib/table'
-import { makeTeacherSchema } from '~/lib/teacher-schema'
-import { toast } from '~/lib/toast'
-import { isActive, parseClassIds } from '~/lib/types'
-import type { Teacher, TeacherInput } from '~/lib/types'
-import { firstMessage } from '~/lib/validation'
-import { 
+import { useForm } from "@tanstack/react-form";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useTable } from "@tanstack/react-table";
+import { Pencil, Plus, UserCheck, UserX } from "lucide-react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
+
+import type { Teacher, TeacherInput } from "~/lib/types";
+
+import { PasswordStrength } from "~/components/password-strength";
+import { PageHeader, HeaderButton } from "~/components/status-icons";
+import {
   ActiveStatusIcon,
   ActionMenu,
-  DataTable, 
-  ErrorAlert, 
-  Modal, 
-  Pager, 
-  SearchBox, 
+  DataTable,
+  ErrorAlert,
+  Modal,
+  Pager,
+  SearchBox,
   TextField,
-  PasswordField
-} from '~/components/ui'
-import { PageHeader, HeaderButton } from '~/components/status-icons'
-import { PasswordStrength } from '~/components/password-strength'
-import { useConfirm } from '~/hooks/use-confirm'
+  PasswordField,
+} from "~/components/ui";
+import { useConfirm } from "~/hooks/use-confirm";
+import { api } from "~/lib/api";
+import { allowRoles } from "~/lib/auth";
+import { classesQuery, qk, teachersQuery } from "~/lib/queries";
+import { columnHelperFor, features } from "~/lib/table";
+import { makeTeacherSchema } from "~/lib/teacher-schema";
+import { toast } from "~/lib/toast";
+import { isActive } from "~/lib/types";
+import { firstMessage } from "~/lib/validation";
 
-export const Route = createFileRoute('/_app/teachers')({
-  beforeLoad: ({ context }) => allowRoles(context.me, ['admin']),
+export const Route = createFileRoute("/_app/teachers")({
+  beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.query(teachersQuery), context.queryClient.query(classesQuery)]),
+    Promise.all([
+      context.queryClient.query(teachersQuery),
+      context.queryClient.query(classesQuery),
+    ]),
   component: TeachersPage,
-})
+});
 
-type Row = Teacher & { class_names: string[]; active: boolean }
-const col = columnHelperFor<Row>()
+type Row = Teacher & {
+  class_names: string[];
+  active: boolean;
+};
+const col = columnHelperFor<Row>();
 
 function TeachersPage() {
-  const qc = useQueryClient()
-  const { data: teachers } = useSuspenseQuery(teachersQuery)
-  const { data: classes } = useSuspenseQuery(classesQuery)
-  const [search, setSearch] = useState('')
-  const [modal, setModal] = useState<{ open: boolean; teacher: Teacher | null }>({ open: false, teacher: null })
-  const { confirm } = useConfirm()
+  const qc = useQueryClient();
+  const { data: teachers } = useSuspenseQuery(teachersQuery);
+  const { data: classes } = useSuspenseQuery(classesQuery);
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState<{
+    open: boolean;
+    teacher: Teacher | null;
+  }>({
+    open: false,
+    teacher: null,
+  });
+  const { confirm } = useConfirm();
 
   const toggle = useMutation({
-    mutationFn: (v: { user_id: string; is_active: boolean }) => api.saveTeacher(v),
+    mutationFn: (v: { user_id: string; is_active: boolean }) =>
+      api.saveTeacher(v),
     onSuccess: (_r, v) => {
-      toast.success(v.is_active ? 'Akun guru diaktifkan' : 'Akun guru dinonaktifkan')
-      qc.invalidateQueries({ queryKey: qk.teachers })
+      toast.success(
+        v.is_active ? "Akun guru diaktifkan" : "Akun guru dinonaktifkan",
+      );
+      qc.invalidateQueries({
+        queryKey: qk.teachers,
+      });
     },
     onError: (e) => toast.error(e.message),
-  })
+  });
 
-  const actions = useRef({ edit: (_t: Teacher) => {}, toggle: (_t: Row) => {} })
+  const actions = useRef({
+    edit: (_t: Teacher) => {},
+    toggle: (_t: Row) => {},
+  });
   useLayoutEffect(() => {
     actions.current.edit = (t) => setModal({ open: true, teacher: t });
     actions.current.toggle = async (t) => {
@@ -63,142 +89,227 @@ function TeachersPage() {
         t.active
           ? `Nonaktifkan akun ${t.full_name}?\nGuru tidak dapat login sampai diaktifkan kembali.`
           : `Aktifkan kembali akun ${t.full_name}?`,
-      )
-      if (ok) toggle.mutate({ user_id: t.user_id, is_active: !t.active })
-    }
+      );
+      if (ok)
+        toggle.mutate({
+          user_id: t.user_id,
+          is_active: !t.active,
+        });
+    };
   }, [confirm, toggle]);
 
   const columns = useMemo(
     () =>
       col.columns([
-        col.accessor('full_name', {
-          header: 'Nama Lengkap',
+        col.accessor("full_name", {
+          header: "Nama Lengkap",
           cell: (i) => (
             <>
               <div className="font-medium">{i.getValue()}</div>
-              {i.row.original.nip ? <div className="text-xs text-base-content/60">NIP {i.row.original.nip}</div> : null}
+              {i.row.original.nip ? (
+                <div className="text-xs text-base-content/60">
+                  NIP {i.row.original.nip}
+                </div>
+              ) : null}
             </>
           ),
         }),
-        col.accessor('username', { header: 'Username' }),
+        col.accessor("username", {
+          header: "Username",
+        }),
         col.display({
-          id: 'contact',
-          header: 'Kontak',
+          id: "contact",
+          header: "Kontak",
           enableSorting: false,
           cell: ({ row }) => {
-            const t = row.original
-            if (!t.phone && !t.email) return <span className="text-base-content/40">-</span>
+            const t = row.original;
+            if (!t.phone && !t.email)
+              return <span className="text-base-content/40">-</span>;
             return (
               <>
                 {t.phone ? <div>{t.phone}</div> : null}
-                {t.email ? <div className="text-xs text-base-content/60">{t.email}</div> : null}
+                {t.email ? (
+                  <div className="text-xs text-base-content/60">{t.email}</div>
+                ) : null}
               </>
-            )
+            );
           },
         }),
         col.display({
-          id: 'classes',
-          header: 'Kelas Diampu',
+          id: "classes",
+          header: "Kelas Diampu",
           enableSorting: false,
           cell: ({ row }) =>
             row.original.class_names.length ? (
               <div className="flex flex-wrap gap-1">
                 {row.original.class_names.map((n) => (
-                  <span key={n} className="badge badge-ghost badge-sm">{n}</span>
+                  <span
+                    key={n}
+                    className="badge badge-ghost badge-sm"
+                  >
+                    {n}
+                  </span>
                 ))}
               </div>
             ) : (
               <span className="text-base-content/40">-</span>
             ),
         }),
-        col.accessor((r) => (r.active ? 'Aktif' : 'Nonaktif'), {
-          id: 'status',
-          header: 'Status',
-          cell: (i) => <ActiveStatusIcon active={i.getValue() === 'Aktif'} />,
+        col.accessor((r) => (r.active ? "Aktif" : "Nonaktif"), {
+          id: "status",
+          header: "Status",
+          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
         }),
         col.display({
-          id: 'actions',
-          header: 'Aksi',
+          id: "actions",
+          header: "Aksi",
           enableSorting: false,
           cell: ({ row }) => {
-            const t = row.original
+            const t = row.original;
             return (
-            <ActionMenu>
-              <li>
-                <button type="button" onClick={() => actions.current.edit(row.original)}>
-                  <Pencil className="size-4" /> Edit
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => actions.current.toggle(row.original)}>
-                  {t.active ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
-                  {t.active ? 'Nonaktifkan' : 'Aktifkan'}
-                </button>
-              </li>
-            </ActionMenu>
-          )},
+              <ActionMenu>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => actions.current.edit(row.original)}
+                  >
+                    <Pencil className="size-4" /> Edit
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => actions.current.toggle(row.original)}
+                  >
+                    {t.active ? (
+                      <UserX className="size-4" />
+                    ) : (
+                      <UserCheck className="size-4" />
+                    )}
+                    {t.active ? "Nonaktifkan" : "Aktifkan"}
+                  </button>
+                </li>
+              </ActionMenu>
+            );
+          },
         }),
       ]),
     [],
-  )
+  );
 
   const data = useMemo<Row[]>(() => {
-    const names = new Map(classes.map((c) => [c.class_id, c.class_name]))
-    const q = search.trim().toLowerCase()
+    const names = new Map(classes.map((c) => [c.class_id, c.class_name]));
+    const q = search.trim().toLowerCase();
     return teachers
       .map((t) => ({
         ...t,
         active: isActive(t.is_active),
-        class_names: parseClassIds(t.assigned_classes).map((id) => names.get(id)).filter((n): n is string => !!n),
+        class_names: t.assigned_classes
+          .map((id) => names.get(id))
+          .filter((n): n is string => !!n),
       }))
-      .filter((t) => !q || `${t.full_name} ${t.username} ${t.nip}`.toLowerCase().includes(q))
-  }, [teachers, classes, search])
+      .filter(
+        (t) =>
+          !q ||
+          `${t.full_name} ${t.username} ${t.nip}`.toLowerCase().includes(q),
+      );
+  }, [teachers, classes, search]);
 
-  const table = useTable({ features, columns, data, initialState: { pagination: { pageIndex: 0, pageSize: 10 } } })
+  const table = useTable({
+    features,
+    columns,
+    data,
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 10 },
+    },
+  });
 
   return (
     <div className="space-y-4">
       <PageHeader title="Manajemen Guru">
-        <HeaderButton 
-          label="Tambah Guru" 
-          icon={<Plus className="size-4" />} 
-          onClick={() => setModal({ open: true, teacher: null })} 
+        <HeaderButton
+          label="Tambah Guru"
+          icon={<Plus className="size-4" />}
+          onClick={() =>
+            setModal({
+              open: true,
+              teacher: null,
+            })
+          }
         />
       </PageHeader>
-    
+
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="border-b border-base-300 bg-base-200/60 p-4">
-          <SearchBox value={search} onChange={(v) => { setSearch(v); table.setPageIndex(0) }} placeholder="Cari nama atau username..." />
+          <SearchBox
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              table.setPageIndex(0);
+            }}
+            placeholder="Cari nama atau username..."
+          />
         </div>
-        <DataTable table={table} emptyText="Belum ada data guru." />
+        <DataTable
+          table={table}
+          emptyText="Belum ada data guru."
+        />
         <Pager table={table} />
       </div>
 
-      <Modal open={modal.open} onClose={() => setModal((m) => ({ ...m, open: false }))} title={modal.teacher ? 'Edit Guru' : 'Tambah Guru'}>
+      <Modal
+        open={modal.open}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        title={modal.teacher ? "Edit Guru" : "Tambah Guru"}
+      >
         <TeacherForm
           teacher={modal.teacher}
           onDone={() => {
-            setModal({ open: false, teacher: null })
-            qc.invalidateQueries({ queryKey: qk.teachers })
+            setModal({
+              open: false,
+              teacher: null,
+            });
+            qc.invalidateQueries({
+              queryKey: qk.teachers,
+            });
           }}
-          onCancel={() => setModal((m) => ({ ...m, open: false }))}
+          onCancel={() =>
+            setModal((m) => ({
+              ...m,
+              open: false,
+            }))
+          }
         />
       </Modal>
     </div>
-  )
+  );
 }
 
-function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; onDone: () => void; onCancel: () => void }) {
-  const { data: classes } = useSuspenseQuery(classesQuery)
-  const { data: teachers } = useSuspenseQuery(teachersQuery)
-  const isNew = !teacher
-  const assigned = useMemo(() => (teacher ? parseClassIds(teacher.assigned_classes) : []), [teacher])
+function TeacherForm({
+  teacher,
+  onDone,
+  onCancel,
+}: {
+  teacher: Teacher | null;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const { data: classes } = useSuspenseQuery(classesQuery);
+  const { data: teachers } = useSuspenseQuery(teachersQuery);
+  const isNew = !teacher;
+  const assigned = useMemo(
+    () => (teacher ? teacher.assigned_classes : []),
+    [teacher],
+  );
 
   // Kelas yang bisa dipilih: kelas aktif + kelas yang sudah diampu guru ini
   const visibleClasses = useMemo(
-    () => classes.filter((c) => isActive(c.is_active) || assigned.includes(c.class_id)),
+    () =>
+      classes.filter(
+        (c) => isActive(c.is_active) || assigned.includes(c.class_id),
+      ),
     [classes, assigned],
-  )
+  );
 
   // Aturan dibuat dari data terbaru: username/NIP ganda, kelas valid, password wajib hanya untuk guru baru
   const schema = useMemo(
@@ -209,32 +320,36 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
         classIds: visibleClasses.map((c) => c.class_id),
       }),
     [teachers, teacher?.user_id, visibleClasses],
-  )
+  );
 
   const save = useMutation({
     mutationFn: (v: TeacherInput) => api.saveTeacher(v),
     onSuccess: (r) => {
-      toast.success(r.message || 'Data guru tersimpan')
-      onDone()
+      toast.success(r.message || "Data guru tersimpan");
+      onDone();
     },
-  })
+  });
 
   const form = useForm({
     defaultValues: {
-      full_name: teacher?.full_name ?? '',
-      nip: teacher?.nip ?? '',
-      phone: teacher?.phone ?? '',
-      email: teacher?.email ?? '',
-      username: teacher?.username ?? '',
-      password: '',
+      full_name: teacher?.full_name ?? "",
+      nip: teacher?.nip ?? "",
+      phone: teacher?.phone ?? "",
+      email: teacher?.email ?? "",
+      username: teacher?.username ?? "",
+      password: "",
       assigned_classes: assigned,
       is_active: teacher ? isActive(teacher.is_active) : true,
     },
-    validators: { onChange: schema, onSubmit: schema },
-    onSubmitInvalid: () => toast.error('Periksa kembali isian yang ditandai merah.'),
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
+    onSubmitInvalid: () =>
+      toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
       const payload: TeacherInput = {
-        user_id: teacher?.user_id ?? '',
+        user_id: teacher?.user_id ?? "",
         full_name: value.full_name.trim(),
         nip: value.nip.trim(),
         phone: value.phone.trim(),
@@ -242,42 +357,71 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
         username: value.username.trim(),
         assigned_classes: value.assigned_classes,
         is_active: value.is_active,
-      }
-      if (value.password) payload.password = value.password
-      await save.mutateAsync(payload).catch(() => {})
+      };
+      if (value.password) payload.password = value.password;
+      await save.mutateAsync(payload).catch(() => {});
     },
-  })
+  });
 
   return (
     <form
       noValidate
       className="space-y-2"
       onSubmit={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        form.handleSubmit()
+        e.preventDefault();
+        e.stopPropagation();
+        form.handleSubmit();
       }}
     >
       <form.Field name="full_name">
-        {(f) => <TextField label="Nama Lengkap" field={f} />}
+        {(f) => (
+          <TextField
+            label="Nama Lengkap"
+            field={f}
+          />
+        )}
       </form.Field>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <form.Field name="nip">{
-          (f) => <TextField label="NIP" field={f} inputMode="numeric" />}
+        <form.Field name="nip">
+          {(f) => (
+            <TextField
+              label="NIP"
+              field={f}
+              inputMode="numeric"
+            />
+          )}
         </form.Field>
         <form.Field name="phone">
-          {(f) => <TextField label="No. HP" field={f} inputMode="tel" />}
+          {(f) => (
+            <TextField
+              label="No. HP"
+              field={f}
+              inputMode="tel"
+            />
+          )}
         </form.Field>
       </div>
 
       <form.Field name="email">
-        {(f) => <TextField label="Email" field={f} type="email" />}
+        {(f) => (
+          <TextField
+            label="Email"
+            field={f}
+            type="email"
+          />
+        )}
       </form.Field>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="username">
-          {(f) => <TextField label="Username" field={f} autoComplete="off" />}
+          {(f) => (
+            <TextField
+              label="Username"
+              field={f}
+              autoComplete="off"
+            />
+          )}
         </form.Field>
         <form.Field name="password">
           {(f) => (
@@ -288,57 +432,92 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
               data-1p-ignore
               data-lpignore="true"
               data-bwignore
-              placeholder={isNew ? 'Minimal 8 karakter' : 'Kosongkan jika tidak diubah'}
+              placeholder={
+                isNew ? "Minimal 8 karakter" : "Kosongkan jika tidak diubah"
+              }
             />
           )}
         </form.Field>
       </div>
       <form.Subscribe selector={(s) => s.values}>
-        {(v) => <PasswordStrength value={v.password} forbidden={[v.username, v.full_name, v.nip, v.phone]} />}
+        {(v) => (
+          <PasswordStrength
+            value={v.password}
+            forbidden={[v.username, v.full_name, v.nip, v.phone]}
+          />
+        )}
       </form.Subscribe>
 
       <form.Field name="assigned_classes">
         {(f) => {
-          const msg = f.state.meta.isTouched ? firstMessage(f.state.meta.errors) : ''
+          const msg = f.state.meta.isTouched
+            ? firstMessage(f.state.meta.errors)
+            : "";
           return (
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Kelas yang Diampu</legend>
-              <div className={`max-h-40 space-y-2 overflow-y-auto rounded-box border p-3 ${msg ? 'border-error' : 'border-base-300'}`}>
+              <div
+                className={`max-h-40 space-y-2 overflow-y-auto rounded-box border p-3 ${msg ? "border-error" : "border-base-300"}`}
+              >
                 {visibleClasses.length === 0 ? (
-                  <p className="text-sm text-base-content/60">Belum ada kelas aktif.</p>
+                  <p className="text-sm text-base-content/60">
+                    Belum ada kelas aktif.
+                  </p>
                 ) : (
                   visibleClasses.map((c) => {
-                    const checked = f.state.value.includes(c.class_id)
+                    const checked = f.state.value.includes(c.class_id);
                     return (
-                      <label key={c.class_id} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <label
+                        key={c.class_id}
+                        className="flex cursor-pointer items-center gap-2 text-sm"
+                      >
                         <input
                           type="checkbox"
                           className="checkbox checkbox-sm checkbox-primary"
                           checked={checked}
                           onChange={() =>
-                            f.handleChange(checked 
-                              ? f.state.value.filter((id) => id !== c.class_id) 
-                              : [...f.state.value, c.class_id])
+                            f.handleChange(
+                              checked
+                                ? f.state.value.filter(
+                                    (id) => id !== c.class_id,
+                                  )
+                                : [...f.state.value, c.class_id],
+                            )
                           }
                         />
                         <span>
-                          {c.class_name} <span className="text-base-content/40">({c.academic_year || '-'})</span>
+                          {c.class_name}{" "}
+                          <span className="text-base-content/40">
+                            ({c.academic_year || "-"})
+                          </span>
                         </span>
                       </label>
-                    )
+                    );
                   })
                 )}
               </div>
-              {msg ? <p role="alert" className="mt-1 text-xs text-error">{msg}</p> : null}
+              {msg ? (
+                <p
+                  role="alert"
+                  className="mt-1 text-xs text-error"
+                >
+                  {msg}
+                </p>
+              ) : null}
             </fieldset>
-          )
+          );
         }}
       </form.Field>
 
       <form.Field name="is_active">
         {(f) => (
           <label className="flex cursor-pointer items-center gap-2 pt-2 text-sm">
-            <input type="checkbox" className="checkbox checkbox-sm checkbox-primary" checked={f.state.value} onChange={(e) => f.handleChange(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="checkbox checkbox-sm checkbox-primary"
+              checked={f.state.value}
+              onChange={(e) => f.handleChange(e.target.checked)}
+            />
             <span>Akun aktif (dapat login)</span>
           </label>
         )}
@@ -347,16 +526,28 @@ function TeacherForm({ teacher, onDone, onCancel }: { teacher: Teacher | null; o
       <ErrorAlert message={save.error?.message} />
 
       <div className="modal-action">
-        <button type="button" className="btn" onClick={onCancel}>Batal</button>
+        <button
+          type="button"
+          className="btn"
+          onClick={onCancel}
+        >
+          Batal
+        </button>
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <button type="submit" className="btn btn-primary" disabled={busy}>
-              {busy ? <span className="loading loading-spinner loading-sm" /> : null}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy}
+            >
+              {busy ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : null}
               Simpan
             </button>
           )}
         </form.Subscribe>
       </div>
     </form>
-  )
+  );
 }

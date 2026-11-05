@@ -11,6 +11,10 @@ export const cryptoCheck = internalQuery({
   handler: async () => {
     const t = Date.now();
     const h = await pbkdf2Hex("tes", "garam");
-    return { ok: h.length === 64, ms: Date.now() - t, iterations: PBKDF2_ITERATIONS };
+    return {
+      ok: h.length === 64,
+      ms: Date.now() - t,
+      iterations: PBKDF2_ITERATIONS,
+    };
   },
 });

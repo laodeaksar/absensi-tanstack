@@ -1,19 +1,23 @@
-import { redirect } from '@tanstack/react-router'
-import type { QueryClient } from '@tanstack/react-query'
-import { meQuery } from './queries'
-import type { Role, SessionUser } from './types'
+import type { QueryClient } from "@tanstack/react-query";
 
-export type HomePath = '/dashboard' | '/my-attendance'
+import { redirect } from "@tanstack/react-router";
 
-export const homeFor = (u: SessionUser): HomePath => (u.role === 'siswa' ? '/my-attendance' : '/dashboard')
+import type { Role, SessionUser } from "./types";
+
+import { meQuery } from "./queries";
+
+export type HomePath = "/dashboard" | "/my-attendance";
+
+export const homeFor = (u: SessionUser): HomePath =>
+  u.role === "siswa" ? "/my-attendance" : "/dashboard";
 
 export async function requireUser(ctx: { queryClient: QueryClient }) {
-  const me = await ctx.queryClient.query(meQuery)
-  if (!me) throw redirect({ to: '/login' })
-  return me
+  const me = await ctx.queryClient.query(meQuery);
+  if (!me) throw redirect({ to: "/login" });
+  return me;
 }
 
 /** Lempar redirect ke beranda jika peran tidak diizinkan. */
 export function allowRoles(me: SessionUser, roles: Role[]) {
-  if (!roles.includes(me.role)) throw redirect({ to: homeFor(me) })
+  if (!roles.includes(me.role)) throw redirect({ to: homeFor(me) });
 }

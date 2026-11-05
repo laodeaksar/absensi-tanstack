@@ -1,7 +1,11 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { fail, nowIso, requireAuth } from "./lib";
+
+import { mutation, query } from "./_generated/server";
+import { fail, nowIso, requireAuth, tzOffsetMinutes } from "./lib";
+import { LIMITS } from "./limits";
+import { RULES, isAcademicYear } from "./rules";
 
 export const SETTINGS_DEFAULTS: Record<string, string> = {
   school_name: "EduAbsen",
@@ -12,22 +16,42 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   edit_window_days: "0", // 0 = guru boleh mengubah absensi tanggal berapa pun
 };
 
-export async function getSettingsMap(ctx: QueryCtx): Promise<Record<string, string>> {
+export async function getSettingsMap(
+  ctx: QueryCtx,
+): Promise<Record<string, string>> {
   const map = { ...SETTINGS_DEFAULTS };
   const rows = await ctx.db.query("settings").collect();
   for (const r of rows) {
-    if (Object.prototype.hasOwnProperty.call(SETTINGS_DEFAULTS, r.setting_key)) map[r.setting_key] = r.setting_value;
+    if (Object.prototype.hasOwnProperty.call(SETTINGS_DEFAULTS, r.setting_key))
+      map[r.setting_key] = r.setting_value;
   }
   if (!map.school_name) map.school_name = SETTINGS_DEFAULTS.school_name;
+  // Turunan dari env TZ_OFFSET_MINUTES (tidak disimpan): klien memakainya agar "hari ini" sama dengan server.
+  map.tz_offset_minutes = String(tzOffsetMinutes());
   return map;
 }
 
-async function upsertSettings(ctx: MutationCtx, values: Record<string, string>) {
+async function upsertSettings(
+  ctx: MutationCtx,
+  values: Record<string, string>,
+) {
   const now = nowIso();
   for (const [key, value] of Object.entries(values)) {
-    const row = await ctx.db.query("settings").withIndex("by_key", (q) => q.eq("setting_key", key)).unique();
-    if (row) await ctx.db.patch(row._id, { setting_value: value, updated_at: now });
-    else await ctx.db.insert("settings", { setting_key: key, setting_value: value, updated_at: now });
+    const row = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("setting_key", key))
+      .unique();
+    if (row)
+      await ctx.db.patch(row._id, {
+        setting_value: value,
+        updated_at: now,
+      });
+    else
+      await ctx.db.insert("settings", {
+        setting_key: key,
+        setting_value: value,
+        updated_at: now,
+      });
   }
 }
 
@@ -38,35 +62,38 @@ function validateSettings(d: Record<string, unknown>) {
   if (d.school_name !== undefined) {
     const s = str("school_name");
     if (!s) fail("Nama sekolah wajib diisi.");
-    if (s.length > 100) fail("Nama sekolah maksimal 100 karakter.");
+    if (s.length > LIMITS.schoolName)
+      fail(`Nama sekolah maksimal ${LIMITS.schoolName} karakter.`);
     out.school_name = s;
   }
   if (d.school_address !== undefined) {
     const s = str("school_address");
-    if (s.length > 200) fail("Alamat sekolah maksimal 200 karakter.");
+    if (s.length > LIMITS.schoolAddress)
+      fail(`Alamat sekolah maksimal ${LIMITS.schoolAddress} karakter.`);
     out.school_address = s;
   }
   if (d.principal_name !== undefined) {
     const s = str("principal_name");
-    if (s.length > 100) fail("Nama kepala sekolah maksimal 100 karakter.");
+    if (s.length > LIMITS.personName)
+      fail(`Nama kepala sekolah maksimal ${LIMITS.personName} karakter.`);
     out.principal_name = s;
   }
   if (d.principal_nip !== undefined) {
     const s = str("principal_nip");
-    if (s && !/^[0-9]{5,30}$/.test(s)) fail("NIP kepala sekolah hanya berisi angka (5-30 digit).");
+    if (s && !RULES.nip.test(s))
+      fail("NIP kepala sekolah hanya berisi angka (5-30 digit).");
     out.principal_nip = s;
   }
   if (d.active_academic_year !== undefined) {
     const s = str("active_academic_year");
-    if (s) {
-      const m = /^(\d{4})\/(\d{4})$/.exec(s);
-      if (!m || Number(m[2]) !== Number(m[1]) + 1) fail("Tahun ajaran harus berformat 2025/2026.");
-    }
+    if (s && !isAcademicYear(s))
+      fail("Tahun ajaran harus berformat 2025/2026.");
     out.active_academic_year = s;
   }
   if (d.edit_window_days !== undefined) {
     const s = str("edit_window_days") || "0";
-    if (!/^[0-9]{1,3}$/.test(s) || Number(s) > 365) fail("Batas edit absensi harus 0-365 hari.");
+    if (!/^[0-9]{1,3}$/.test(s) || Number(s) > LIMITS.editWindowMaxDays)
+      fail(`Batas edit absensi harus 0-${LIMITS.editWindowMaxDays} hari.`);
     out.edit_window_days = String(Number(s));
   }
   return out;
@@ -75,23 +102,60 @@ function validateSettings(d: Record<string, unknown>) {
 /** Tanpa login: hanya data aman untuk halaman login. */
 export const getPublicSettings = query({
   args: {},
-  handler: async (ctx) => ({ settings: { school_name: (await getSettingsMap(ctx)).school_name } }),
+  handler: async (ctx) => ({
+    settings: {
+      school_name: (await getSettingsMap(ctx)).school_name,
+    },
+  }),
 });
 
 export const getSettings = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
-    await requireAuth(ctx, token, { allowStudent: true, allowPending: true });
-    return { settings: await getSettingsMap(ctx) };
+    const user = await requireAuth(ctx, token, {
+      allowStudent: true,
+      allowPending: true,
+    });
+    const all = await getSettingsMap(ctx);
+    // Siswa tidak perlu NIP/nama kepala sekolah dan alamat; kirim yang dibutuhkan saja
+    const settings =
+      user.role === "siswa"
+        ? {
+            school_name: all.school_name,
+            active_academic_year: all.active_academic_year,
+            tz_offset_minutes: all.tz_offset_minutes,
+          }
+        : all;
+    return { settings };
   },
 });
 
+// Semua field opsional: hanya yang dikirim yang diperbarui. Field tak dikenal ditolak.
+const settingsInput = v.object({
+  school_name: v.optional(v.string()),
+  school_address: v.optional(v.string()),
+  principal_name: v.optional(v.string()),
+  principal_nip: v.optional(v.string()),
+  active_academic_year: v.optional(v.string()),
+  edit_window_days: v.optional(v.string()),
+});
+
 export const saveSettings = mutation({
-  args: { token: v.string(), data: v.any() },
+  args: { token: v.string(), data: settingsInput },
   handler: async (ctx, { token, data }) => {
-    await requireAuth(ctx, token, { admin: true });
-    if (!data || typeof data !== "object") fail("Data pengaturan tidak boleh kosong.");
-    await upsertSettings(ctx, validateSettings(data as Record<string, unknown>));
-    return { message: "Pengaturan berhasil disimpan.", settings: await getSettingsMap(ctx) };
+    await requireAuth(ctx, token, {
+      admin: true,
+    });
+    const clean = validateSettings(data);
+    // Aturan lintas field (cerminan schoolSchema di klien): diperiksa terhadap hasil gabungan,
+    // karena pembaruan boleh sebagian.
+    const next = { ...(await getSettingsMap(ctx)), ...clean };
+    if (next.principal_nip && !next.principal_name)
+      fail("Nama kepala sekolah wajib diisi jika NIP diisi.");
+    await upsertSettings(ctx, clean);
+    return {
+      message: "Pengaturan berhasil disimpan.",
+      settings: await getSettingsMap(ctx),
+    };
   },
 });

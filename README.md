@@ -11,14 +11,14 @@ ke setiap panggilan; browser tidak pernah memegang token (tidak lagi di localSto
 
 ## Stack
 
-| Kebutuhan | Paket |
-|---|---|
-| Framework | `@tanstack/react-start`, `@tanstack/react-router`, `@tanstack/react-router-ssr-query` |
-| Query / mutation | `@tanstack/react-query` |
-| Form | `@tanstack/react-form` |
-| Tabel | `@tanstack/react-table` (v9: `useTable`, `tableFeatures`) |
-| Chart | `@tanstack/charts` (`@tanstack/charts/react`, `/polar`) |
-| UI | Tailwind v4 + daisyUI 5 + lucide-react |
+| Kebutuhan        | Paket                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| Framework        | `@tanstack/react-start`, `@tanstack/react-router`, `@tanstack/react-router-ssr-query` |
+| Query / mutation | `@tanstack/react-query`                                                               |
+| Form             | `@tanstack/react-form`                                                                |
+| Tabel            | `@tanstack/react-table` (v9: `useTable`, `tableFeatures`)                             |
+| Chart            | `@tanstack/charts` (`@tanstack/charts/react`, `/polar`)                               |
+| UI               | Tailwind v4 + daisyUI 5 + lucide-react                                                |
 
 ## Instalasi
 

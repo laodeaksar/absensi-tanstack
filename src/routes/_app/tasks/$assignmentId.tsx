@@ -1,23 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { useForm, useStore } from "@tanstack/react-form";
 import {
   useMutation,
   useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useForm, useStore } from "@tanstack/react-form";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, Clock, Hourglass, Send } from "lucide-react";
-import { allowRoles } from "~/lib/auth";
-import { toast } from "~/lib/toast";
-import { api } from "~/lib/api";
-import { formatDateTime } from "~/lib/date";
-import { myResultQuery, myTasksQuery, qk } from "~/lib/queries";
-import { letter, makeTakeSchema, nowLocalInput } from "~/lib/assignment-schema";
-import { LIMITS } from "~/convex/limits"
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import type { AnswerInput, TaskSession } from "~/lib/types";
-import { ErrorAlert, PageSpinner, TextAreaField, RadioField } from "~/components/ui";
+
+import {
+  ErrorAlert,
+  PageSpinner,
+  TextAreaField,
+  RadioField,
+} from "~/components/ui";
+import { LIMITS } from "~/convex/limits";
 import { useConfirm } from "~/hooks/use-confirm";
+import { api } from "~/lib/api";
+import { letter, makeTakeSchema, nowLocalInput } from "~/lib/assignment-schema";
+import { allowRoles } from "~/lib/auth";
+import { formatDateTime } from "~/lib/date";
+import { myResultQuery, myTasksQuery, qk, settingsQuery } from "~/lib/queries";
+import { toast } from "~/lib/toast";
+import { useDraftAutosave } from "~/lib/use-draft-autosave";
 
 export const Route = createFileRoute("/_app/tasks/$assignmentId")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["siswa"]),
@@ -35,7 +43,10 @@ const mmss = (ms: number) => {
 
 function BackLink() {
   return (
-    <Link to="/tasks" className="btn btn-ghost btn-xs mb-1 -ml-2">
+    <Link
+      to="/tasks"
+      className="btn btn-ghost btn-xs mb-1 -ml-2"
+    >
       <ArrowLeft className="size-4" /> Daftar tugas
     </Link>
   );
@@ -45,6 +56,7 @@ function TaskPage() {
   const { assignmentId } = Route.useParams();
   const qc = useQueryClient();
   const { data: tasks } = useSuspenseQuery(myTasksQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const task = tasks.find((t) => t.assignment_id === assignmentId);
   const [session, setSession] = useState<TaskSession | null>(null);
 
@@ -53,15 +65,24 @@ function TaskPage() {
     onSuccess: (s) => setSession(s),
     onError: (e) => {
       toast.error(e.message);
-      void qc.invalidateQueries({ queryKey: qk.myTasks }); // status mungkin berubah (sudah dikumpulkan / waktu habis)
+      void qc.invalidateQueries({
+        queryKey: qk.myTasks,
+      }); // status mungkin berubah (sudah dikumpulkan / waktu habis)
     },
   });
-  
-  const isLate = useMemo(() => {
-    return task?.status === "belum" && task.due_at !== "" && task.due_at <= nowLocalInput();
-  }, [task]);
 
-  // const isLate = late;
+  // Render ulang tiap 30 detik agar status "lewat tenggat" ikut berubah selama halaman terbuka
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Tenggat dibandingkan dengan jam zona waktu sekolah (sama dengan server), bukan jam perangkat
+  const isLate =
+    task?.status === "belum" &&
+    task.due_at !== "" &&
+    task.due_at <= nowLocalInput(Number(settings.tz_offset_minutes));
   const isContinuing = task?.status === "berlangsung";
   const isLoading = start.isPending;
 
@@ -75,7 +96,10 @@ function TaskPage() {
     return (
       <div className="space-y-4">
         <BackLink />
-        <div role="alert" className="alert alert-warning alert-soft">
+        <div
+          role="alert"
+          className="alert alert-warning alert-soft"
+        >
           Tugas tidak ditemukan atau belum tersedia untuk Anda.
         </div>
       </div>
@@ -83,7 +107,13 @@ function TaskPage() {
   }
 
   if (session)
-    return <TaskForm session={session} key={session.submission_id} onFinished={() => setSession(null)} />;
+    return (
+      <TaskForm
+        session={session}
+        key={session.submission_id}
+        onFinished={() => setSession(null)}
+      />
+    );
 
   if (task.status === "dinilai")
     return <ResultCard assignmentId={assignmentId} />;
@@ -143,7 +173,10 @@ function TaskPage() {
               <b>{task.due_at ? formatDateTime(task.due_at) : "-"}</b>
             </li>
           </ul>
-          <div role="alert" className="alert alert-info alert-soft text-sm">
+          <div
+            role="alert"
+            className="alert alert-info alert-soft text-sm"
+          >
             Tugas hanya dapat dikerjakan satu kali. Setelah dikumpulkan, jawaban
             tidak dapat diubah.
             {task.duration_minutes > 0
@@ -158,11 +191,15 @@ function TaskPage() {
               onClick={() => start.mutate()}
               title={isLate ? "Tenggat waktu sudah lewat" : undefined}
             >
-              {isLoading && <span className="loading loading-spinner loading-sm" />}
+              {isLoading && (
+                <span className="loading loading-spinner loading-sm" />
+              )}
               {label}
             </button>
             {isLate && (
-              <span className="text-xs text-error mt-1">Tenggat telah berakhir</span>
+              <span className="text-xs text-error mt-1">
+                Tenggat telah berakhir
+              </span>
             )}
           </div>
         </div>
@@ -247,16 +284,17 @@ function ResultCard({ assignmentId }: Readonly<{ assignmentId: string }>) {
 function TaskForm({
   session,
   onFinished,
-}: Readonly<{ 
-  session: TaskSession; 
-  onFinished: () => void 
+}: Readonly<{
+  session: TaskSession;
+  onFinished: () => void;
 }>) {
   const qc = useQueryClient();
   const { confirm, dialog } = useConfirm();
   const id = session.assignment.assignment_id;
   const draftKey = `task-draft:${session.submission_id}`;
 
-  // Draf jawaban disimpan di sessionStorage agar tidak hilang saat halaman dimuat ulang
+  // Draf jawaban: sessionStorage (selalu terbaru di tab ini) dan draf di server (saved_answers,
+  // untuk melanjutkan di tab/perangkat lain atau setelah penyimpanan lokal hilang)
   const initial = useMemo(() => {
     let draft: Record<string, unknown> = {};
     try {
@@ -264,13 +302,16 @@ function TaskForm({
     } catch {
       /* abaikan draf rusak */
     }
-    return session.questions.map((q) => ({
-      question_id: q.question_id,
-      answer:
-        typeof draft[q.question_id] === "string"
-          ? (draft[q.question_id] as string)
-          : "",
-    }));
+    return session.questions.map((q) => {
+      const local = draft[q.question_id];
+      return {
+        question_id: q.question_id,
+        answer:
+          typeof local === "string" && local !== ""
+            ? local
+            : (session.saved_answers?.[q.question_id] ?? ""),
+      };
+    });
   }, [session, draftKey]);
 
   const schema = useMemo(
@@ -284,25 +325,46 @@ function TaskForm({
       sessionStorage.removeItem(draftKey);
       toast.success(r.message);
       await Promise.all([
-        qc.invalidateQueries({ queryKey: qk.myTasks }),
-        qc.invalidateQueries({ queryKey: qk.result(id) })
-      ])
+        qc.invalidateQueries({
+          queryKey: qk.myTasks,
+        }),
+        qc.invalidateQueries({
+          queryKey: qk.result(id),
+        }),
+      ]);
       onFinished();
     },
     onError: async (e) => {
       toast.error(e.message);
       if (/habis|sudah dikumpulkan/i.test(e.message)) {
-        await qc.invalidateQueries({ queryKey: qk.myTasks });
+        await qc.invalidateQueries({
+          queryKey: qk.myTasks,
+        });
         onFinished();
       }
     },
   });
 
   const auto = useRef(false);
+  const sending = useRef(false);
+  // Satu pengiriman pada satu waktu. Bila gagal, dibuka lagi agar tombol Kumpulkan bisa dicoba ulang.
+  const send = (answers: AnswerInput[]) => {
+    if (sending.current) return Promise.resolve();
+    sending.current = true;
+    return submit.mutateAsync(answers).then(
+      () => undefined,
+      () => {
+        sending.current = false;
+      },
+    );
+  };
 
   const form = useForm({
     defaultValues: { answers: initial },
-    validators: { onChange: schema, onSubmit: schema },
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali jawaban yang ditandai merah."),
     onSubmit: async ({ value }) => {
@@ -312,8 +374,8 @@ function TaskForm({
           ? `Masih ada ${blank} soal yang belum dijawab. Kumpulkan sekarang?\nJawaban tidak dapat diubah setelah dikumpulkan.`
           : "Kumpulkan jawaban sekarang?\nJawaban tidak dapat diubah setelah dikumpulkan.",
       );
-      if (!ok || auto.current) return;
-      await submit.mutateAsync(value.answers).catch(() => {});
+      if (!ok) return;
+      await send(value.answers);
     },
   });
 
@@ -332,7 +394,9 @@ function TaskForm({
   const [offset] = useState(() => session.server_now - Date.now());
 
   const [left, setLeft] = useState(() => {
-    return session.deadline ? session.deadline - (Date.now() + offset) : Infinity;
+    return session.deadline
+      ? session.deadline - (Date.now() + offset)
+      : Infinity;
   });
 
   useEffect(() => {
@@ -342,15 +406,20 @@ function TaskForm({
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [session.deadline, offset]);
- 
+
   // Waktu habis: kumpulkan otomatis apa adanya (tanpa dialog)
   useEffect(() => {
     if (left <= 0 && !auto.current) {
       auto.current = true;
       toast.info("Waktu habis. Jawaban dikumpulkan otomatis.");
-      submit.mutate(form.state.values.answers);
+      void send(form.state.values.answers);
     }
   }, [left]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Simpan draf ke server tiap ~25 detik; berhenti saat waktu habis atau sedang/selesai mengumpulkan
+  useDraftAutosave(id, () => form.state.values.answers, {
+    enabled: left > 0 && !submit.isPending && !submit.isSuccess,
+  });
 
   const answered = answers.filter((a) => a.answer.trim()).length;
   const hasTimer = Number.isFinite(left);
@@ -425,11 +494,11 @@ function TaskForm({
                       field={f}
                       options={q.options.map((o, oi) => ({
                         value: String(oi),
-                        label: ( 
+                        label: (
                           <>
                             <b>{letter(oi)}.</b> {o}
                           </>
-                        )
+                        ),
                       }))}
                     />
                   )}

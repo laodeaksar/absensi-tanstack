@@ -1,18 +1,19 @@
-import { useId } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
-import { EllipsisVertical } from 'lucide-react'
+import type { CSSProperties, ReactNode } from "react";
 
-export function ActionMenu({ 
-  children, 
-  label = 'Aksi' 
-}: { 
+import { EllipsisVertical } from "lucide-react";
+import { useId } from "react";
+
+export function ActionMenu({
+  children,
+  label = "Aksi",
+}: {
   children: ReactNode;
-  label?: string
+  label?: string;
 }) {
   // useId berisi karakter yang tidak valid untuk nama anchor CSS, jadi dibersihkan
-  const key = useId().replace(/[^a-zA-Z0-9_-]/g, '')
-  const popoverId = `menu-${key}`
-  const anchor = `--anchor-${key}`
+  const key = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const popoverId = `menu-${key}`;
+  const anchor = `--anchor-${key}`;
 
   return (
     <>
@@ -29,11 +30,15 @@ export function ActionMenu({
         id={popoverId}
         popover="auto"
         className="dropdown dropdown-end menu w-48 rounded-box bg-base-100 p-1 shadow-lg"
-        style={{ positionAnchor: anchor } as CSSProperties}
+        style={
+          {
+            positionAnchor: anchor,
+          } as CSSProperties
+        }
         onClick={(e) => e.currentTarget.hidePopover()}
       >
         {children}
       </ul>
     </>
-  )
+  );
 }

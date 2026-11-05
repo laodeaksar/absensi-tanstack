@@ -23,17 +23,32 @@ export const LIMITS = {
   // jawaban dan penilaian
   essayAnswer: 5000,
   feedback: 500,
-  
+
   // kelas
   className: 50,
   gradeLevel: 20,
 
-  // Pindahkan juga dari ~/lib/attendance-schema dengan nilai yang sama:
-  // notesMin: <nilai NOTES_MIN sekarang>,
+  // absensi
   notesMin: 3,
-  notesMax: 200
-} as const
+  notesMax: 200,
+
+  // pengaturan sekolah
+  schoolName: 100,
+  schoolAddress: 200,
+  editWindowMaxDays: 365,
+
+  // orang (nama kepala sekolah, guru, siswa)
+  personName: 100,
+
+  // siswa
+  nisMin: 3,
+  nisMax: 20,
+  studentNameMin: 3,
+
+  // login
+  loginLockMs: 15 * 60_000, // lama kunci akun setelah terlalu banyak gagal login
+} as const;
 
 /** Status yang mewajibkan keterangan. Ubah di sini untuk mengatur aturan. */
-export const NOTES_REQUIRED: readonly string[] = ['Sakit', 'Izin']
-export const needsNotes = (status: string) => NOTES_REQUIRED.includes(status)
+export const NOTES_REQUIRED: readonly string[] = ["Sakit", "Izin"];
+export const needsNotes = (status: string) => NOTES_REQUIRED.includes(status);
