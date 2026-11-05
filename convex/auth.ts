@@ -22,7 +22,7 @@ import {
   needsRehash,
 } from "./lib";
 import { LIMITS } from "./limits";
-import { passwordIssue } from "./rules"
+import { passwordIssue } from "./rules";
 
 const MAX_FAILS = 5;
 const LOCK_MS = LIMITS.loginLockMs;

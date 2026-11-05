@@ -1034,7 +1034,10 @@ export const saveDraft = mutation({
     for (const [qid, raw] of latest) {
       const type = types.get(qid);
       if (!type) continue; // soal bukan milik tugas ini
-      const answer = String(raw).slice(0, type === "esai" ? LIMITS.essayAnswer : 10);
+      const answer = String(raw).slice(
+        0,
+        type === "esai" ? LIMITS.essayAnswer : 10,
+      );
       const row = existing.get(qid);
       if (row) {
         if (row.answer !== answer) await ctx.db.patch(row._id, { answer });
