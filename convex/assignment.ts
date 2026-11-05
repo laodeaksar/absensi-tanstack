@@ -324,7 +324,8 @@ export const deleteAssignment = mutation({
       assignmentId,
     });
     return {
-      message: "Tugas dan soal dihapus. Jawaban siswa dibersihkan di latar belakang.",
+      message:
+        "Tugas dan soal dihapus. Jawaban siswa dibersihkan di latar belakang.",
     };
   },
 });
@@ -343,7 +344,9 @@ export const purgeSubmissions = internalMutation({
     for (const s of subs) {
       for (const ans of await ctx.db
         .query("answers")
-        .withIndex("by_submission", (q) => q.eq("submission_id", s.submission_id))
+        .withIndex("by_submission", (q) =>
+          q.eq("submission_id", s.submission_id),
+        )
         .collect())
         await ctx.db.delete(ans._id);
       await ctx.db.delete(s._id);
@@ -460,7 +463,10 @@ export const saveQuestion = mutation({
       options = (Array.isArray(d.options) ? d.options : []).map((o) =>
         String(o).trim(),
       );
-      if (options.length < LIMITS.optionsMin || options.length > LIMITS.optionsMax)
+      if (
+        options.length < LIMITS.optionsMin ||
+        options.length > LIMITS.optionsMax
+      )
         fail(
           `Pilihan jawaban harus ${LIMITS.optionsMin} sampai ${LIMITS.optionsMax}.`,
         );
@@ -1086,7 +1092,10 @@ export const saveDraft = mutation({
     for (const [qid, raw] of latest) {
       const type = types.get(qid);
       if (!type) continue; // soal bukan milik tugas ini
-      const answer = String(raw).slice(0, type === "esai" ? LIMITS.essayAnswer : 10);
+      const answer = String(raw).slice(
+        0,
+        type === "esai" ? LIMITS.essayAnswer : 10,
+      );
       const row = existing.get(qid);
       if (row) {
         if (row.answer !== answer) await ctx.db.patch(row._id, { answer });

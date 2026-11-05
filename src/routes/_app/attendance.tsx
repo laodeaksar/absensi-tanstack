@@ -220,8 +220,8 @@ function AttendanceSection({
   );
 }
 
-type Row = Omit<AttendanceEntry, "attendance_id">
- /* {
+type Row = Omit<AttendanceEntry, "attendance_id">;
+/* {
   student_id: string;
   nis: string;
   full_name: string;
