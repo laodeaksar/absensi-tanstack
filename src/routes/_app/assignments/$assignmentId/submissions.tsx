@@ -131,7 +131,11 @@ function createSubmissionColumns(assignmentId: string) {
 
 function SubmissionsPage() {
   const { assignmentId } = Route.useParams();
-  const { data: res } = useSuspenseQuery(submissionsQuery(assignmentId));
+  // Muat ulang tiap 30 detik: guru memantau siswa yang baru mengumpulkan atau yang waktunya habis
+  const { data: res } = useSuspenseQuery({
+    ...submissionsQuery(assignmentId),
+    refetchInterval: 30_000,
+  });
   const [search, setSearch] = useState("");
 
   const columns = useMemo(

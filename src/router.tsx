@@ -3,29 +3,41 @@ import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
 import { PageSpinner } from "~/components/ui";
-// import { qk } from "~/lib/queries";
-import { handleAuthError } from "~/lib/auth-error";
+import { isAuthFailed, isMustChangePassword } from "~/lib/auth-errors";
+import { qk } from "~/lib/queries";
 
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
-  // Sesi berakhir di mana pun terdeteksi -> kembali ke halaman login
-  /* const onAuthError = (error: unknown) => {
-    if (typeof window === "undefined") return;
-    if (error instanceof Error && error.message.includes("AUTH_FAILED")) {
-      queryClient.removeQueries({
-        queryKey: qk.me,
-      });
-      router.navigate({ to: "/login" });
-    }
-  }; */
+  let redirecting = false;
 
-  const queryClient: QueryClient = new QueryClient({
+  // Sesi berakhir di mana pun terdeteksi (query atau mutation) -> bersihkan cache, kembali ke login
+  const onAuthError = (error: unknown) => {
+    if (typeof window === "undefined") return; // SSR: ditangani komponen error rute
+    const path = router.state.location.pathname;
+
+    if (isAuthFailed(error)) {
+      if (redirecting || path === "/login") return; // beberapa query gagal bersamaan
+      redirecting = true;
+      // Cache `me` dihapus dulu agar /login tidak mengira pengguna masih masuk. Sisa cache
+      // (data pengguna sebelumnya, mungkin di komputer bersama) dikosongkan setelah pindah
+      // halaman, saat layout sudah tidak aktif.
+      queryClient.removeQueries({ queryKey: qk.me });
+      void router.navigate({ to: "/login" }).finally(() => {
+        queryClient.clear();
+        redirecting = false;
+      });
+    } else if (isMustChangePassword(error) && path !== "/settings") {
+      void router.navigate({ to: "/settings" });
+    }
+  };
+
+  const queryClient = new QueryClient({
     queryCache: new QueryCache({
-      onError: (e) => handleAuthError(e, queryClient),
+      onError: onAuthError,
     }),
     mutationCache: new MutationCache({
-      onError: (e) => handleAuthError(e, queryClient),
+      onError: onAuthError,
     }),
     defaultOptions: {
       queries: {
@@ -45,6 +57,8 @@ export function getRouter() {
     defaultPendingComponent: PageSpinner,
     defaultPendingMs: 150,
     defaultErrorComponent: ({ error }) => {
+      // Sesi berakhir: pengalihan ke login sedang berjalan, jangan tampilkan kode "AUTH_FAILED"
+      if (isAuthFailed(error)) return <PageSpinner />;
       const message =
         error instanceof Error ? error.message : "Terjadi kesalahan";
       return (

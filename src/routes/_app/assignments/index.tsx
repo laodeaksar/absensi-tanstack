@@ -39,6 +39,7 @@ import {
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { makeAssignmentSchema } from "~/lib/assignment-schema";
+import { LIMITS } from "~/convex/limits";
 import { allowRoles } from "~/lib/auth";
 import { formatDateTime } from "~/lib/date";
 import {
@@ -102,11 +103,22 @@ function AssignmentsPage() {
     publish: (_a: Assignment) => {},
   });
   useLayoutEffect(() => {
-    actions.current.publish = (a) =>
+    actions.current.publish = async (a) => {
+      const unpublishing = published(a.is_published);
+      // Menarik tugas yang sudah dikerjakan siswa perlu konfirmasi: tugas hilang dari daftar siswa
+      if (
+        unpublishing &&
+        a.started_count > 0 &&
+        !(await confirm(
+          `Tarik tugas "${a.title}" ke draft?\n${a.started_count} siswa sudah mulai mengerjakan; tugas tidak lagi tampil di daftar siswa sampai diterbitkan kembali.`,
+        ))
+      )
+        return;
       publish.mutate({
         id: a.assignment_id,
-        published: !published(a.is_published),
+        published: !unpublishing,
       });
+    };
     actions.current.edit = (a) => setModal({ open: true, item: a });
     actions.current.remove = async (a) => {
       const extra =
@@ -410,7 +422,7 @@ function AssignmentForm({
           <TextField
             label="Judul Tugas"
             field={f}
-            maxLength={150}
+            maxLength={LIMITS.title}
           />
         )}
       </form.Field>
@@ -424,34 +436,49 @@ function AssignmentForm({
         )}
       </form.Field>
 
-      <form.Field name="class_id">
-        {(f) => (
-          <SelectField
-            label="Kelas"
-            field={f}
-            hint={
-              item && item.started_count > 0
-                ? "Kelas tidak dapat diubah karena sudah ada siswa yang mengerjakan."
-                : undefined
-            }
-          >
-            <option
-              disabled
-              value=""
+      {item && item.started_count > 0 ? (
+        // Server menolak pergantian kelas bila sudah ada pengerjaan, jadi ditampilkan sebagai teks saja
+        <div className="space-y-1">
+          <div className="text-sm font-medium">Kelas</div>
+          <div className="border-base-300 bg-base-200 rounded-lg border px-3 py-2 text-sm">
+            {item.class_name}
+          </div>
+          <p className="text-base-content/60 text-xs">
+            Kelas tidak dapat diubah karena sudah ada siswa yang mengerjakan.
+          </p>
+        </div>
+      ) : (
+        <form.Field name="class_id">
+          {(f) => (
+            <SelectField
+              label="Kelas"
+              field={f}
             >
-              -- Pilih Kelas --
-            </option>
-            {options.map((c) => (
               <option
-                key={c.class_id}
-                value={c.class_id}
+                disabled
+                value=""
               >
-                {c.class_name}
+                -- Pilih Kelas --
               </option>
-            ))}
-          </SelectField>
-        )}
-      </form.Field>
+              {options.map((c) => (
+                <option
+                  key={c.class_id}
+                  value={c.class_id}
+                >
+                  {c.class_name}
+                </option>
+              ))}
+            </SelectField>
+          )}
+        </form.Field>
+      )}
+      {options.length === 0 ? (
+        <p className="text-warning text-sm">
+          {me.role === "guru"
+            ? "Anda belum mengampu kelas aktif. Hubungi admin untuk menambahkan kelas."
+            : "Belum ada kelas aktif. Tambahkan kelas terlebih dahulu."}
+        </p>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="due_at">

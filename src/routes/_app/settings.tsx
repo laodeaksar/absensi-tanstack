@@ -9,6 +9,7 @@ import { useMemo } from "react";
 
 import { PasswordStrength } from "~/components/password-strength";
 import { ErrorAlert, TextField, PasswordField } from "~/components/ui";
+import { LIMITS } from "~/convex/limits";
 import { api } from "~/lib/api";
 import { qk, settingsQuery } from "~/lib/queries";
 import { makePasswordSchema, schoolSchema } from "~/lib/settings-schema";
@@ -109,7 +110,7 @@ function SchoolSettings() {
               <TextField
                 label="Nama Sekolah"
                 field={f}
-                maxLength={100}
+                maxLength={LIMITS.schoolName}
               />
             )}
           </form.Field>
@@ -118,7 +119,7 @@ function SchoolSettings() {
               <TextField
                 label="Alamat Sekolah"
                 field={f}
-                maxLength={200}
+                maxLength={LIMITS.schoolAddress}
               />
             )}
           </form.Field>
@@ -128,7 +129,7 @@ function SchoolSettings() {
                 <TextField
                   label="Nama Kepala Sekolah"
                   field={f}
-                  maxLength={100}
+                  maxLength={LIMITS.personName}
                 />
               )}
             </form.Field>

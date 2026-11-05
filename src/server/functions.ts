@@ -2,6 +2,7 @@ import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import {
   deleteCookie,
   getCookie,
+  getRequestHeader,
   setCookie,
 } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -11,6 +12,20 @@ import type { SessionUser } from "~/lib/types";
 import type { RpcName } from "./convex.server";
 
 import { callConvex, isRpcName } from "./convex.server";
+
+/**
+ * Alamat IP klien dari header proxy; kosong bila tidak tersedia (kunci login lalu per username saja).
+ * Sesuaikan header dengan hosting: pakai header yang HANYA diisi proxy tepercaya Anda
+ * (mis. cf-connecting-ip di Cloudflare), karena x-forwarded-for bisa dipalsukan bila proxy tidak menimpanya.
+ */
+function clientIp(): string {
+  try {
+    const first = getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim();
+    return first || getRequestHeader("x-real-ip")?.trim() || "";
+  } catch {
+    return "";
+  }
+}
 
 const SESSION_COOKIE = "eduabsen_token"; // nilai tetap agar sesi berjalan tidak putus
 const SESSION_MAX_AGE_S = 60 * 60 * 6;
@@ -81,7 +96,7 @@ export const loginFn = createServerFn({
       user?: SessionUser;
       message?: string;
       retry_after_ms?: number;
-    }>("login", [data.username, data.password]);
+    }>("login", [data.username, data.password, clientIp()]);
     if (!res.ok || !res.token || !res.user) {
       return {
         ok: false as const,

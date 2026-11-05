@@ -39,9 +39,15 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
   // akun & pengaturan
   login: mutationRoute(
     api.auth.login,
-    ([username, password]) => ({
+    ([username, password, clientIp]) => ({
       username,
       password,
+      // IP klien hanya dipercaya Convex bila kunci bersama cocok (LOGIN_SHARED_SECRET di kedua sisi)
+      ...(typeof clientIp === "string" &&
+      clientIp &&
+      process.env.LOGIN_SHARED_SECRET
+        ? { clientIp, serverSecret: process.env.LOGIN_SHARED_SECRET }
+        : {}),
     }),
     false,
   ),

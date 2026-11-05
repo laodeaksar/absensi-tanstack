@@ -4,9 +4,14 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  Link,
+  createFileRoute,
+  useBlocker,
+  useNavigate,
+} from "@tanstack/react-router";
 import { ArrowLeft, Check, KeyRound, UserCheck, X } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 import { ErrorAlert, TextField, TextAreaField, Tip } from "~/components/ui";
 import { api } from "~/lib/api";
@@ -53,6 +58,9 @@ function ReviewPage() {
     [essays],
   );
 
+  // Setelah berhasil disimpan, pindah halaman tidak perlu ditahan
+  const saved = useRef(false);
+
   const save = useMutation({
     mutationFn: (
       grades: {
@@ -62,6 +70,7 @@ function ReviewPage() {
       }[],
     ) => api.grade(submissionId, grades),
     onSuccess: (r) => {
+      saved.current = true;
       toast.success(r.message);
       void qc.invalidateQueries({
         queryKey: qk.review(submissionId),
@@ -103,6 +112,17 @@ function ReviewPage() {
         )
         .catch(() => {});
     },
+  });
+
+  // Peringatkan bila meninggalkan halaman dengan nilai atau komentar yang belum disimpan
+  useBlocker({
+    shouldBlockFn: () => {
+      if (saved.current || !form.state.isDirty) return false;
+      return !window.confirm(
+        "Nilai atau komentar belum disimpan. Tinggalkan halaman ini?",
+      );
+    },
+    enableBeforeUnload: () => !saved.current && form.state.isDirty,
   });
 
   return (

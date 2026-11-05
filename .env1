@@ -1,7 +1,0 @@
-# Deployment used by `npx convex dev`
-CONVEX_DEPLOYMENT=prod:aromatic-crab-960 # team: aksar-la-ode, project: absensi
-
-CONVEX_URL=https://aromatic-crab-960.convex.cloud
-
-VITE_CONVEX_SITE_URL=https://aromatic-crab-960.convex.site
-# CONVEX_DEPLOY_KEY=prod:aromatic-crab-960|eyJ2MiI6IjU3MGJhMWNhYzU3MDQ5MDY5NTZiMzYzNTYxNDQ4N2FmIn0=

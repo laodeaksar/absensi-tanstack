@@ -297,7 +297,10 @@ function QuestionsPage() {
             <p className="text-sm text-base-content/60">
               Kelas {assignment.class_name} - {questions.length} soal - total{" "}
               {max_score} poin
-              {assignment.is_published === true ? " - Terbit" : " - Draft"}
+              {assignment.is_published === true ||
+              assignment.is_published === "TRUE"
+                ? " - Terbit"
+                : " - Draft"}
             </p>
           }
         >
@@ -486,7 +489,8 @@ function QuestionForm({
             label="Pertanyaan"
             field={f}
             rows={4}
-            maxLength={2100}
+            // Sedikit di atas batas agar pesan validasi tetap muncul, bukan ketikan berhenti diam-diam
+            maxLength={LIMITS.questionText + 100}
           />
         )}
       </form.Field>
@@ -543,7 +547,7 @@ function QuestionForm({
                                 <TextField
                                   label={`Pilihan ${letter(i)}`}
                                   field={f}
-                                  maxLength={310}
+                                  maxLength={LIMITS.optionText + 10}
                                 />
                               )}
                             </form.Field>
