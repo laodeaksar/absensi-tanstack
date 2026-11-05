@@ -10,7 +10,7 @@ import { KeyRound, Plus, Pencil, ArrowRightLeft } from "lucide-react";
 import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import { z } from "zod";
 
-import type { Student, StudentInput } from "~/lib/types";
+import type { Student, StudentInput, StudentClass } from "~/lib/types";
 
 import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
@@ -28,7 +28,12 @@ import {
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { allowRoles } from "~/lib/auth";
-import { classesQuery, qk, studentsQuery } from "~/lib/queries";
+import {
+  classesQuery,
+  qk,
+  studentsQuery,
+  studentClassesQuery,
+} from "~/lib/queries";
 import { makeStudentSchema } from "~/lib/student-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";

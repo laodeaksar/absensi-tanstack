@@ -23,14 +23,13 @@ import {
   TextField,
   TextAreaField,
 } from "~/components/ui";
+import { LIMITS, needsNotes } from "~/convex/limits";
+import { STATUS_VALUES } from "~/convex/rules";
 import { api } from "~/lib/api";
 import {
-  NOTES_MIN,
-  STATUS_VALUES,
   earliestDate,
   gridSchema,
   makeFilterSchema,
-  needsNotes,
 } from "~/lib/attendance-schema";
 import { allowRoles } from "~/lib/auth";
 import { todayStr } from "~/lib/date";
@@ -259,7 +258,7 @@ function NotesButton({
   const attempts = useSelector(form.store, (s) => s.submissionAttempts);
   if (!row || !needsNotes(row.status)) return null;
 
-  const filled = row.notes.trim().length >= NOTES_MIN;
+  const filled = row.notes.trim().length >= LIMITS.notesMin;
   const tone = filled
     ? "text-success"
     : attempts > 0
@@ -360,7 +359,11 @@ function AttendanceForm({
   const closeNote = () => {
     if (noteRow !== null) {
       const r = form.state.values.rows[noteRow];
-      if (r && needsNotes(r.status) && r.notes.trim().length < NOTES_MIN) {
+      if (
+        r &&
+        needsNotes(r.status) &&
+        r.notes.trim().length < LIMITS.notesMin
+      ) {
         form.setFieldValue(`rows[${noteRow}].status` as const, "");
       }
     }
@@ -484,7 +487,8 @@ function AttendanceForm({
           {(vals) => {
             const filled = vals.filter((r) => r.status).length;
             const missing = vals.filter(
-              (r) => needsNotes(r.status) && r.notes.trim().length < NOTES_MIN,
+              (r) =>
+                needsNotes(r.status) && r.notes.trim().length < LIMITS.notesMin,
             ).length;
             return (
               <p className="text-sm text-base-content/70">
@@ -540,7 +544,7 @@ function AttendanceForm({
                   label="Keterangan"
                   field={f}
                   rows={3}
-                  hint="Minimal {NOTES_MIN} karakter."
+                  hint="Minimal {LIMITS.notesMin} karakter."
                 />
               )}
             </form.Field>
@@ -559,7 +563,8 @@ function AttendanceForm({
                 onClick={() => {
                   setTried(true);
                   const r = form.state.values.rows[noteRow];
-                  if (r && r.notes.trim().length >= NOTES_MIN) setNoteRow(null);
+                  if (r && r.notes.trim().length >= LIMITS.notesMin)
+                    setNoteRow(null);
                 }}
               >
                 Simpan
