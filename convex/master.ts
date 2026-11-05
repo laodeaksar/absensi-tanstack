@@ -28,6 +28,7 @@ const classInput = v.object({
   grade_level: v.string(),
   academic_year: v.string(),
   homeroom_teacher: v.string(),
+  is_active: v.optional(v.boolean()),
 });
 
 const studentInput = v.object({
@@ -333,6 +334,8 @@ export const moveStudent = mutation({
   },
 });
 
+const MAX_ACCOUNTS_PER_RUN = 1500;
+
 export const generateStudentAccounts = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
@@ -348,10 +351,16 @@ export const generateStudentAccounts = mutation({
     );
     const now = nowIso();
     let created = 0;
+    let more = false;
     const skipped: string[] = [];
 
     for (const s of students) {
       if (hasAccount.has(s.student_id)) continue;
+      // Batasi per jalankan agar tidak melewati batas tulis mutation; sisanya dibuat pada jalankan berikutnya
+      if (created >= MAX_ACCOUNTS_PER_RUN) {
+        more = true;
+        break;
+      }
       const nis = s.nis.trim();
       const nisn = s.nisn.trim();
       if (nis.length < 3) {
@@ -374,6 +383,7 @@ export const generateStudentAccounts = mutation({
     }
 
     let msg = `${created} akun siswa dibuat.`;
+    if (more) msg += " Masih ada siswa lain, jalankan lagi.";
     if (skipped.length > 0)
       msg += ` ${skipped.length} dilewati (${skipped.slice(0, 3).join("; ")}${skipped.length > 3 ? "; ..." : ""}).`;
     return { message: msg };
@@ -463,6 +473,12 @@ export const saveClass = mutation({
     const id = String(d.class_id ?? "");
     const existing = id ? await classById(ctx, id) : null;
     if (id && !existing) fail("Kelas tidak ditemukan.");
+    // Kelas baru selalu aktif; saat edit, status hanya berubah bila dikirim eksplisit
+    const nextActive =
+      typeof d.is_active === "boolean"
+        ? d.is_active
+        : (existing?.is_active ?? true);
+    const reactivating = !!existing && !existing.is_active && nextActive;
 
     const all = await ctx.db.query("classes").collect();
     if (
@@ -485,7 +501,11 @@ export const saveClass = mutation({
 
       // Satu guru hanya boleh menjadi wali satu kelas aktif per tahun ajaran.
       // Hanya diperiksa saat wali atau tahun ajarannya diubah, supaya data lama tidak menghalangi edit lain.
-      if (changedTeacher || year !== existing?.academic_year) {
+      // Kelas yang dinonaktifkan tidak diperiksa; mengaktifkan kembali diperiksa agar tidak bentrok
+      if (
+        nextActive &&
+        (changedTeacher || year !== existing?.academic_year || reactivating)
+      ) {
         const other = all.find(
           (c) =>
             c.is_active &&
@@ -507,6 +527,7 @@ export const saveClass = mutation({
         grade_level: grade,
         academic_year: year,
         homeroom_teacher: homeroom,
+        is_active: nextActive,
         updated_at: now,
       });
     } else {

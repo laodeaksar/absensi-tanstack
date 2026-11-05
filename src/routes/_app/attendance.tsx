@@ -220,13 +220,14 @@ function AttendanceSection({
   );
 }
 
-type Row = {
+type Row = Omit<AttendanceEntry, "attendance_id">
+ /* {
   student_id: string;
   nis: string;
   full_name: string;
   status: string;
   notes: string;
-};
+}; */
 const col = columnHelperFor<Row>();
 
 const STATUS_STYLE = {

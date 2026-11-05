@@ -19,6 +19,7 @@ import {
   Modal,
   Pager,
   SearchBox,
+  CheckboxField,
   SelectField,
   TextField,
   Tip,
@@ -228,6 +229,7 @@ function ClassForm({
           ? {
               homeroom_teacher: cls.homeroom_teacher,
               academic_year: cls.academic_year,
+              is_active: isActive(cls.is_active),
             }
           : undefined,
       }),
@@ -255,6 +257,7 @@ function ClassForm({
       homeroom_teacher: cls?.homeroom_teacher ?? "",
       grade_level: cls?.grade_level ?? "",
       academic_year: cls?.academic_year ?? settings.active_academic_year ?? "",
+      is_active: cls ? isActive(cls.is_active) : true,
     },
     validators: {
       onChange: schema,
@@ -270,6 +273,8 @@ function ClassForm({
           grade_level: value.grade_level.trim(),
           academic_year: value.academic_year.trim(),
           homeroom_teacher: value.homeroom_teacher,
+          // Kelas baru selalu aktif; status hanya diubah saat edit
+          ...(cls ? { is_active: value.is_active } : {}),
         })
         .catch(() => {});
     },
@@ -341,6 +346,17 @@ function ClassForm({
           )}
         </form.Field>
       </div>
+      {cls ? (
+        <form.Field name="is_active">
+          {(f) => (
+            <CheckboxField
+              label="Kelas aktif"
+              field={f}
+              hint="Kelas nonaktif tidak muncul di pilihan absensi, laporan, dan tugas baru."
+            />
+          )}
+        </form.Field>
+      ) : null}
       <datalist id="grade-levels">
         {gradeSuggestions.map((g) => (
           <option

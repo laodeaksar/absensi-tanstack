@@ -169,9 +169,21 @@ export const listAssignments = query({
   handler: async (ctx, { token }) => {
     const user = await staff(ctx, token);
     const classes = await classNameMap(ctx);
-    const all = (await ctx.db.query("assignments").collect()).filter((a) =>
-      canAccessClass(user, a.class_id),
-    );
+    // Admin melihat semua; guru hanya kelas yang diampu (lewat index by_class, tanpa memindai tabel)
+    const pool =
+      user.role === "admin"
+        ? await ctx.db.query("assignments").collect()
+        : (
+            await Promise.all(
+              user.assigned_classes.map((classId) =>
+                ctx.db
+                  .query("assignments")
+                  .withIndex("by_class", (q) => q.eq("class_id", classId))
+                  .collect(),
+              ),
+            )
+          ).flat();
+    const all = pool.filter((a) => canAccessClass(user, a.class_id));
 
     const data = [];
     for (const a of all) {
@@ -303,23 +315,46 @@ export const deleteAssignment = mutation({
     const user = await staff(ctx, token);
     const a = await manageAssignment(ctx, user, assignmentId);
 
-    for (const s of await submissionsOf(ctx, assignmentId)) {
+    // Tugas dan soal dihapus sekarang; jawaban siswa dibersihkan bertahap di latar belakang
+    // agar penghapusan tugas besar tidak melewati batas tulis satu mutation
+    for (const q of await questionsOf(ctx, assignmentId))
+      await ctx.db.delete(q._id);
+    await ctx.db.delete(a._id);
+    await ctx.scheduler.runAfter(0, internal.assignment.purgeSubmissions, {
+      assignmentId,
+    });
+    return {
+      message:
+        "Tugas dan soal dihapus. Jawaban siswa dibersihkan di latar belakang.",
+    };
+  },
+});
+
+const PURGE_BATCH = 25;
+
+/** Hapus pengumpulan (beserta jawabannya) milik tugas yang sudah dihapus, per kelompok. */
+export const purgeSubmissions = internalMutation({
+  args: { assignmentId: v.string() },
+  // Tipe kembalian eksplisit: fungsi ini menjadwalkan dirinya sendiri lewat `internal`
+  handler: async (ctx, { assignmentId }): Promise<void> => {
+    const subs = await ctx.db
+      .query("submissions")
+      .withIndex("by_assignment", (q) => q.eq("assignment_id", assignmentId))
+      .take(PURGE_BATCH);
+    for (const s of subs) {
       for (const ans of await ctx.db
         .query("answers")
         .withIndex("by_submission", (q) =>
           q.eq("submission_id", s.submission_id),
         )
-        .collect()) {
+        .collect())
         await ctx.db.delete(ans._id);
-      }
       await ctx.db.delete(s._id);
     }
-    for (const q of await questionsOf(ctx, assignmentId))
-      await ctx.db.delete(q._id);
-    await ctx.db.delete(a._id);
-    return {
-      message: "Tugas beserta soal dan jawaban siswa dihapus.",
-    };
+    if (subs.length === PURGE_BATCH)
+      await ctx.scheduler.runAfter(0, internal.assignment.purgeSubmissions, {
+        assignmentId,
+      });
   },
 });
 
@@ -726,9 +761,19 @@ export const listMyTasks = query({
     const user = await student(ctx, token);
     const mine = new Set(await myClassIds(ctx, user.student_id));
     const classes = await classNameMap(ctx);
-    const assignments = (await ctx.db.query("assignments").collect()).filter(
-      (a) => a.is_published && mine.has(a.class_id),
-    );
+    // Per kelas lewat index by_class, bukan memindai seluruh tabel tugas
+    const assignments = (
+      await Promise.all(
+        [...mine].map((classId) =>
+          ctx.db
+            .query("assignments")
+            .withIndex("by_class", (q) => q.eq("class_id", classId))
+            .collect(),
+        ),
+      )
+    )
+      .flat()
+      .filter((a) => a.is_published);
 
     const data = [];
     for (const a of assignments) {

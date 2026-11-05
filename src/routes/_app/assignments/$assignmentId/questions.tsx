@@ -297,10 +297,7 @@ function QuestionsPage() {
             <p className="text-sm text-base-content/60">
               Kelas {assignment.class_name} - {questions.length} soal - total{" "}
               {max_score} poin
-              {assignment.is_published === true ||
-              assignment.is_published === "TRUE"
-                ? " - Terbit"
-                : " - Draft"}
+              {assignment.is_published === true ? " - Terbit" : " - Draft"}
             </p>
           }
         >

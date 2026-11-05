@@ -141,6 +141,8 @@ export type ClassInput = {
   grade_level: string;
   academic_year: string;
   homeroom_teacher: string;
+  /** Hanya dikirim saat edit; kelas baru selalu aktif */
+  is_active?: boolean;
 };
 
 export type TeacherInput = {

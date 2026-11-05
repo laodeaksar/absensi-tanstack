@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
-import type { QueryCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 
-import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { internalMutation, mutation, query } from "./_generated/server";
 import {
   classById,
   fail,
@@ -60,6 +61,72 @@ async function activeMembers(ctx: QueryCtx, classId: string) {
     .withIndex("by_class", (q) => q.eq("class_id", classId))
     .collect();
   return [...new Set(hist.filter((h) => h.is_active).map((h) => h.student_id))];
+}
+
+/* ---------- ringkasan harian (attendance_daily) ---------- */
+
+const STATUS_FIELD = {
+  Hadir: "hadir",
+  Sakit: "sakit",
+  Izin: "izin",
+  Alpa: "alpa",
+} as const;
+type DailyField = (typeof STATUS_FIELD)[keyof typeof STATUS_FIELD];
+type DailyDelta = Record<DailyField, number> & {
+  classId: string;
+  date: string;
+};
+
+/** Catat perubahan hitungan (+1/-1) untuk satu status pada satu kelas dan tanggal. */
+function bumpDaily(
+  map: Map<string, DailyDelta>,
+  classId: string,
+  date: string,
+  status: string,
+  by: 1 | -1,
+) {
+  const field = (STATUS_FIELD as Record<string, DailyField | undefined>)[
+    status
+  ];
+  if (!field) return;
+  const key = `${classId}|${date}`;
+  let d = map.get(key);
+  if (!d) {
+    d = { classId, date, hadir: 0, sakit: 0, izin: 0, alpa: 0 };
+    map.set(key, d);
+  }
+  d[field] += by;
+}
+
+/** Terapkan perubahan hitungan ke tabel attendance_daily (dibuat bila belum ada). */
+async function applyDaily(ctx: MutationCtx, map: Map<string, DailyDelta>) {
+  const next = (cur: number, by: number) => Math.max(0, cur + by);
+  for (const d of map.values()) {
+    if (!d.hadir && !d.sakit && !d.izin && !d.alpa) continue;
+    const row = await ctx.db
+      .query("attendance_daily")
+      .withIndex("by_class_date", (q) =>
+        q.eq("class_id", d.classId).eq("attendance_date", d.date),
+      )
+      .first();
+    if (row) {
+      await ctx.db.patch(row._id, {
+        hadir: next(row.hadir, d.hadir),
+        sakit: next(row.sakit, d.sakit),
+        izin: next(row.izin, d.izin),
+        alpa: next(row.alpa, d.alpa),
+      });
+    } else {
+      await ctx.db.insert("attendance_daily", {
+        attendance_date: d.date,
+        class_id: d.classId,
+        hadir: next(0, d.hadir),
+        sakit: next(0, d.sakit),
+        izin: next(0, d.izin),
+        alpa: next(0, d.alpa),
+      });
+    }
+  }
 }
 
 /* ---------- form absensi ---------- */
@@ -120,6 +187,7 @@ export const submitAttendanceBatch = mutation({
 
     const now = nowIso();
     const seen = new Set<string>();
+    const deltas = new Map<string, DailyDelta>();
     let skipped = 0;
     for (const raw of rows as Record<string, unknown>[]) {
       const sid = String(raw?.student_id ?? "");
@@ -148,6 +216,9 @@ export const submitAttendanceBatch = mutation({
         )
         .first();
       if (ex) {
+        // Status lama (mungkin di kelas lama bila siswa pindah) dikurangi, status baru ditambah
+        bumpDaily(deltas, ex.class_id, date, ex.status, -1);
+        bumpDaily(deltas, classId, date, status, 1);
         await ctx.db.patch(ex._id, {
           status,
           notes,
@@ -156,6 +227,7 @@ export const submitAttendanceBatch = mutation({
           updated_at: now,
         });
       } else {
+        bumpDaily(deltas, classId, date, status, 1);
         await ctx.db.insert("attendance", {
           attendance_id: randomId("ATT"),
           attendance_date: date,
@@ -169,6 +241,7 @@ export const submitAttendanceBatch = mutation({
         });
       }
     }
+    await applyDaily(ctx, deltas);
     return {
       message:
         "Data absensi berhasil disimpan." +
@@ -204,16 +277,31 @@ export const getDashboardStats = query({
       ).length;
     }
 
-    const from = todayStr(-7);
+    // 7 hari terakhir termasuk hari ini, dibaca dari ringkasan harian (bukan semua baris absensi)
+    const from = todayStr(-6);
     const to = todayStr(0);
-    const recent = (
-      await ctx.db
-        .query("attendance")
-        .withIndex("by_date", (q) =>
-          q.gte("attendance_date", from).lte("attendance_date", to),
-        )
-        .collect()
-    ).filter((a) => inScope(a.class_id));
+    const daily = scope
+      ? (
+          await Promise.all(
+            [...scope].map((cid) =>
+              ctx.db
+                .query("attendance_daily")
+                .withIndex("by_class_date", (q) =>
+                  q
+                    .eq("class_id", cid)
+                    .gte("attendance_date", from)
+                    .lte("attendance_date", to),
+                )
+                .collect(),
+            ),
+          )
+        ).flat()
+      : await ctx.db
+          .query("attendance_daily")
+          .withIndex("by_date", (q) =>
+            q.gte("attendance_date", from).lte("attendance_date", to),
+          )
+          .collect();
 
     const stats = {
       totalStudents,
@@ -224,24 +312,21 @@ export const getDashboardStats = query({
       alpa: 0,
       persentase: "0" as string | number,
     };
-    for (const a of recent) {
+    for (const a of daily) {
       if (a.attendance_date !== today) continue;
-      if (a.status === "Hadir") stats.hadir++;
-      else if (a.status === "Sakit") stats.sakit++;
-      else if (a.status === "Izin") stats.izin++;
-      else if (a.status === "Alpa") stats.alpa++;
+      stats.hadir += a.hadir;
+      stats.sakit += a.sakit;
+      stats.izin += a.izin;
+      stats.alpa += a.alpa;
     }
     const total = stats.hadir + stats.sakit + stats.izin + stats.alpa;
     stats.persentase = total > 0 ? ((stats.hadir / total) * 100).toFixed(1) : 0;
 
     const byDate = new Map<string, { h: number; t: number }>();
-    for (const a of recent) {
-      const e = byDate.get(a.attendance_date) ?? {
-        h: 0,
-        t: 0,
-      };
-      if (a.status === "Hadir") e.h++;
-      else e.t++;
+    for (const a of daily) {
+      const e = byDate.get(a.attendance_date) ?? { h: 0, t: 0 };
+      e.h += a.hadir;
+      e.t += a.sakit + a.izin + a.alpa;
       byDate.set(a.attendance_date, e);
     }
     const dates = [...byDate.keys()].sort();
@@ -253,6 +338,53 @@ export const getDashboardStats = query({
         tidakHadir: dates.map((d) => byDate.get(d)!.t),
       },
     };
+  },
+});
+
+/**
+ * Hitung ulang ringkasan satu tanggal dari data absensi. Dipakai backfill dan untuk memperbaiki
+ * selisih bila data absensi pernah diubah di luar submitAttendanceBatch.
+ */
+export const rebuildDay = internalMutation({
+  args: { date: v.string() },
+  // Tipe kembalian eksplisit: modul ini merujuk dirinya sendiri lewat `internal`
+  handler: async (ctx, { date }): Promise<void> => {
+    const rows = await ctx.db
+      .query("attendance")
+      .withIndex("by_date", (q) => q.eq("attendance_date", date))
+      .collect();
+    const agg = new Map<string, DailyDelta>();
+    for (const r of rows) bumpDaily(agg, r.class_id, date, r.status, 1);
+
+    for (const old of await ctx.db
+      .query("attendance_daily")
+      .withIndex("by_date", (q) => q.eq("attendance_date", date))
+      .collect())
+      await ctx.db.delete(old._id);
+    for (const d of agg.values())
+      await ctx.db.insert("attendance_daily", {
+        attendance_date: date,
+        class_id: d.classId,
+        hadir: d.hadir,
+        sakit: d.sakit,
+        izin: d.izin,
+        alpa: d.alpa,
+      });
+  },
+});
+
+/**
+ * Sekali jalan setelah deploy: bangun ringkasan 7 hari terakhir.
+ *   npx convex run attendance:rebuildRecentSummary
+ */
+export const rebuildRecentSummary = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<number> => {
+    for (let i = 0; i < 7; i++)
+      await ctx.scheduler.runAfter(0, internal.attendance.rebuildDay, {
+        date: todayStr(-i),
+      });
+    return 7;
   },
 });
 
