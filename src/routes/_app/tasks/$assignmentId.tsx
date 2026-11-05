@@ -336,11 +336,15 @@ function TaskForm({
     },
     onError: async (e) => {
       toast.error(e.message);
-      if (/habis|sudah dikumpulkan/i.test(e.message)) {
-        await qc.invalidateQueries({
-          queryKey: qk.myTasks,
-        });
-        onFinished();
+      // Putuskan berdasarkan status terbaru di server (bukan isi pesan error): bila pengerjaan
+      // sudah ditutup (waktu habis / sudah dikumpulkan), keluar dari form. Bila jaringan bermasalah,
+      // tetap di halaman agar siswa bisa mencoba lagi.
+      try {
+        const tasks = await qc.fetchQuery(myTasksQuery);
+        const t = tasks.find((x) => x.assignment_id === id);
+        if (t && t.status !== "berlangsung") onFinished();
+      } catch {
+        /* abaikan */
       }
     },
   });

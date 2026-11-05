@@ -123,6 +123,21 @@ export default defineSchema({
     .index("by_date", ["attendance_date"])
     .index("by_student", ["student_id", "attendance_date"]),
 
+  /**
+   * Ringkasan absensi per kelas per tanggal. Dijaga oleh submitAttendanceBatch (dan dibangun ulang
+   * oleh rebuildDay) agar dashboard tidak perlu memindai semua baris absensi.
+   */
+  attendance_daily: defineTable({
+    attendance_date: v.string(), // yyyy-MM-dd
+    class_id: v.string(),
+    hadir: v.number(),
+    sakit: v.number(),
+    izin: v.number(),
+    alpa: v.number(),
+  })
+    .index("by_date", ["attendance_date"])
+    .index("by_class_date", ["class_id", "attendance_date"]),
+
   settings: defineTable({
     setting_key: v.string(),
     setting_value: v.string(),

@@ -62,7 +62,7 @@ function TeachersPage() {
     open: false,
     teacher: null,
   });
-  const { confirm } = useConfirm();
+  const { confirm, dialog } = useConfirm();
 
   const toggle = useMutation({
     mutationFn: (v: { user_id: string; is_active: boolean }) =>
@@ -71,7 +71,7 @@ function TeachersPage() {
       toast.success(
         v.is_active ? "Akun guru diaktifkan" : "Akun guru dinonaktifkan",
       );
-      qc.invalidateQueries({
+      void qc.invalidateQueries({
         queryKey: qk.teachers,
       });
     },
@@ -262,25 +262,29 @@ function TeachersPage() {
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         title={modal.teacher ? "Edit Guru" : "Tambah Guru"}
       >
-        <TeacherForm
-          teacher={modal.teacher}
-          onDone={() => {
-            setModal({
-              open: false,
-              teacher: null,
-            });
-            qc.invalidateQueries({
-              queryKey: qk.teachers,
-            });
-          }}
-          onCancel={() =>
-            setModal((m) => ({
-              ...m,
-              open: false,
-            }))
-          }
-        />
+        {modal.open ? (
+          <TeacherForm
+            key={modal.teacher?.user_id ?? "new"}
+            teacher={modal.teacher}
+            onDone={() => {
+              setModal({
+                open: false,
+                teacher: null,
+              });
+              void qc.invalidateQueries({
+                queryKey: qk.teachers,
+              });
+            }}
+            onCancel={() =>
+              setModal((m) => ({
+                ...m,
+                open: false,
+              }))
+            }
+          />
+        ) : null}
       </Modal>
+      {dialog}
     </div>
   );
 }
@@ -370,7 +374,7 @@ function TeacherForm({
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        form.handleSubmit();
+        void form.handleSubmit();
       }}
     >
       <form.Field name="full_name">

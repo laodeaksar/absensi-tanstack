@@ -60,7 +60,7 @@ function QuestionTextCell({ question }: Readonly<{ question: Question }>) {
         <ol className="mt-1 list-[upper-alpha] pl-5 text-sm">
           {question.options.map((option, index) => (
             <li
-              key={`${question.question_id}-${option}`}
+              key={`${question.question_id}-${index}`}
               className={
                 index === Number(question.correct_index)
                   ? "font-semibold text-success"
@@ -254,6 +254,8 @@ function QuestionsPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const removeQuestion = remove.mutate; // stabil, berbeda dari objek `remove` yang baru tiap render
+
   const columns = useMemo(
     () =>
       createQuestionColumns({
@@ -261,11 +263,11 @@ function QuestionsPage() {
         onEdit: (question) => setModal({ open: true, question }),
         onRemove: (question) => {
           void confirm("Hapus soal ini?").then((confirmed) => {
-            if (confirmed) remove.mutate(question.question_id);
+            if (confirmed) removeQuestion(question.question_id);
           });
         },
       }),
-    [locked, confirm, remove],
+    [locked, confirm, removeQuestion],
   );
 
   const table = useTable({
@@ -295,7 +297,10 @@ function QuestionsPage() {
             <p className="text-sm text-base-content/60">
               Kelas {assignment.class_name} - {questions.length} soal - total{" "}
               {max_score} poin
-              {assignment.is_published === true ? " - Terbit" : " - Draft"}
+              {assignment.is_published === true ||
+              assignment.is_published === "TRUE"
+                ? " - Terbit"
+                : " - Draft"}
             </p>
           }
         >
@@ -347,23 +352,26 @@ function QuestionsPage() {
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         title={modal.question ? "Edit Soal" : "Tambah Soal"}
       >
-        <QuestionForm
-          assignmentId={assignmentId}
-          question={modal.question}
-          onDone={() => {
-            setModal({
-              open: false,
-              question: null,
-            });
-            refresh();
-          }}
-          onCancel={() =>
-            setModal((m) => ({
-              ...m,
-              open: false,
-            }))
-          }
-        />
+        {modal.open ? (
+          <QuestionForm
+            key={modal.question?.question_id ?? "new"}
+            assignmentId={assignmentId}
+            question={modal.question}
+            onDone={() => {
+              setModal({
+                open: false,
+                question: null,
+              });
+              refresh();
+            }}
+            onCancel={() =>
+              setModal((m) => ({
+                ...m,
+                open: false,
+              }))
+            }
+          />
+        ) : null}
       </Modal>
       {dialog}
     </div>
@@ -385,7 +393,9 @@ function QuestionForm({
 }>) {
   const schema = useMemo(() => makeQuestionSchema(), []);
 
-  const optionKeys = useRef<string[]>([]); // di QuestionForm
+  // Kunci stabil per baris pilihan: tidak boleh memakai teks pilihan, karena berubah tiap ketikan
+  // dan membuat input dipasang ulang (fokus hilang setelah satu karakter)
+  const optionKeys = useRef<string[]>([]);
 
   const save = useMutation({
     mutationFn: (v: QuestionInput) => api.saveQuestion(v),
@@ -518,7 +528,7 @@ function QuestionForm({
                     <div className="space-y-1">
                       {opts.state.value.map((_, i) => (
                         <div
-                          key={opts.state.value[i] || `new-option-${i}`}
+                          key={optionKeys.current[i]}
                           className="flex items-start gap-2"
                         >
                           <form.Field name="correct_index">

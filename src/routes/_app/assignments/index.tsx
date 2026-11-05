@@ -41,7 +41,12 @@ import { api } from "~/lib/api";
 import { makeAssignmentSchema } from "~/lib/assignment-schema";
 import { allowRoles } from "~/lib/auth";
 import { formatDateTime } from "~/lib/date";
-import { classesQuery, assignmentsQuery, qk } from "~/lib/queries";
+import {
+  classesQuery,
+  assignmentsQuery,
+  qk,
+  settingsQuery,
+} from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
@@ -226,7 +231,7 @@ function AssignmentsPage() {
                     className="text-error"
                     onClick={() => actions.current.remove(row.original)}
                   >
-                    <Trash2 className="size-4" />
+                    <Trash2 className="size-4" /> Hapus
                   </button>
                 </li>
               </ActionMenu>
@@ -288,21 +293,24 @@ function AssignmentsPage() {
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         title={modal.item ? "Edit Tugas" : "Buat Tugas"}
       >
-        <AssignmentForm
-          item={modal.item}
-          onDone={() => {
-            setModal({ open: false, item: null });
-            void qc.invalidateQueries({
-              queryKey: qk.list,
-            });
-          }}
-          onCancel={() =>
-            setModal((m) => ({
-              ...m,
-              open: false,
-            }))
-          }
-        />
+        {modal.open ? (
+          <AssignmentForm
+            key={modal.item?.assignment_id ?? "new"}
+            item={modal.item}
+            onDone={() => {
+              setModal({ open: false, item: null });
+              void qc.invalidateQueries({
+                queryKey: qk.list,
+              });
+            }}
+            onCancel={() =>
+              setModal((m) => ({
+                ...m,
+                open: false,
+              }))
+            }
+          />
+        ) : null}
       </Modal>
       {dialog}
     </div>
@@ -320,7 +328,12 @@ function AssignmentForm({
 }>) {
   const { me } = Route.useRouteContext();
   const { data: classes } = useSuspenseQuery(classesQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const isNew = !item;
+  // Tenggat harus di masa depan menurut zona waktu sekolah (sama dengan server), bukan jam perangkat
+  const tzRaw = settings.tz_offset_minutes;
+  const tz =
+    tzRaw !== "" && Number.isFinite(Number(tzRaw)) ? Number(tzRaw) : undefined;
 
   // Guru hanya boleh memilih kelas yang diampu
   const options = useMemo(() => {
@@ -339,8 +352,9 @@ function AssignmentForm({
         classIds: options.map((c) => c.class_id),
         questionCount,
         isNew,
+        tzOffsetMinutes: tz,
       }),
-    [options, questionCount, isNew],
+    [options, questionCount, isNew, tz],
   );
 
   const save = useMutation({

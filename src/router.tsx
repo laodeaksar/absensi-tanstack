@@ -3,13 +3,14 @@ import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
 import { PageSpinner } from "~/components/ui";
-import { qk } from "~/lib/queries";
+// import { qk } from "~/lib/queries";
+import { handleAuthError } from "~/lib/auth-error";
 
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
   // Sesi berakhir di mana pun terdeteksi -> kembali ke halaman login
-  const onAuthError = (error: unknown) => {
+  /* const onAuthError = (error: unknown) => {
     if (typeof window === "undefined") return;
     if (error instanceof Error && error.message.includes("AUTH_FAILED")) {
       queryClient.removeQueries({
@@ -17,14 +18,14 @@ export function getRouter() {
       });
       router.navigate({ to: "/login" });
     }
-  };
+  }; */
 
-  const queryClient = new QueryClient({
+  const queryClient: QueryClient = new QueryClient({
     queryCache: new QueryCache({
-      onError: onAuthError,
+      onError: (e) => handleAuthError(e, queryClient),
     }),
     mutationCache: new MutationCache({
-      onError: onAuthError,
+      onError: (e) => handleAuthError(e, queryClient),
     }),
     defaultOptions: {
       queries: {

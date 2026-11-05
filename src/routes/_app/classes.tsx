@@ -166,21 +166,27 @@ function ClassesPage() {
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         title={modal.cls ? "Edit Kelas" : "Tambah Kelas"}
       >
-        <ClassForm
-          cls={modal.cls}
-          onDone={() => {
-            setModal({ open: false, cls: null });
-            void qc.invalidateQueries({
-              queryKey: qk.classes,
-            });
-          }}
-          onCancel={() =>
-            setModal((m) => ({
-              ...m,
-              open: false,
-            }))
-          }
-        />
+        {modal.open ? (
+          <ClassForm
+            key={modal.cls?.class_id ?? "new"}
+            cls={modal.cls}
+            onDone={() => {
+              setModal({ open: false, cls: null });
+              void qc.invalidateQueries({
+                queryKey: qk.classes,
+              });
+              void qc.invalidateQueries({
+                queryKey: qk.dashboard,
+              });
+            }}
+            onCancel={() =>
+              setModal((m) => ({
+                ...m,
+                open: false,
+              }))
+            }
+          />
+        ) : null}
       </Modal>
     </div>
   );
@@ -326,7 +332,6 @@ function ClassForm({
               label="Tahun Ajaran"
               field={f}
               placeholder="2025/2026"
-              inputMode="numeric"
               hint={
                 settings.active_academic_year
                   ? `Tahun ajaran aktif: ${settings.active_academic_year}`

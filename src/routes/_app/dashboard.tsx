@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Thermometer, UserCheck, UserX, Users } from "lucide-react";
+import { Percent, Thermometer, UserCheck, UserX, Users } from "lucide-react";
 
 import { StatusDonut, TrendChart } from "~/components/charts";
 import { allowRoles } from "~/lib/auth";
@@ -83,7 +83,7 @@ function DashboardPage() {
           title="Persentase Kehadiran"
           value={fmtPct(stats.persentase)}
           tone="text-info"
-          icon={<UserX className="size-6" />}
+          icon={<Percent className="size-6" />}
         />
       </div>
 

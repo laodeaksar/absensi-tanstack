@@ -20,6 +20,7 @@ export interface ClassRules {
   original?: {
     homeroom_teacher: string;
     academic_year: string;
+    is_active: boolean;
   };
 }
 
@@ -57,6 +58,7 @@ export function makeClassSchema(rules: ClassRules) {
           (id) => !id || rules.teacherIds.includes(id),
           "Wali kelas tidak valid",
         ),
+      is_active: z.boolean(),
     })
     .superRefine((v, ctx) => {
       const name = v.class_name.trim();
@@ -77,10 +79,14 @@ export function makeClassSchema(rules: ClassRules) {
       }
 
       const teacher = v.homeroom_teacher;
+      // Kelas nonaktif tidak diperiksa; mengaktifkan kembali kelas nonaktif diperiksa penuh
+      const reactivating = rules.original?.is_active === false && v.is_active;
       if (
+        v.is_active &&
         teacher &&
         (teacher !== rules.original?.homeroom_teacher ||
-          year !== rules.original?.academic_year)
+          year !== rules.original?.academic_year ||
+          reactivating)
       ) {
         const other = rules.classes.find(
           (c) =>

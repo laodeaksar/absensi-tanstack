@@ -9,6 +9,7 @@ import type { SubmissionRow, SubmissionStatus } from "~/lib/types";
 import { SubmissionStatusIcon } from "~/components/status-icons";
 import { DataTable, Pager, SearchBox, Tip } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
+import { formatDateTime } from "~/lib/date";
 import { submissionsQuery } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
 
@@ -56,17 +57,9 @@ function SubmissionScoreCell({ row }: Readonly<{ row: SubmissionRow }>) {
   return <span className="text-base-content/40">-</span>;
 }
 
-const submittedFmt = new Intl.DateTimeFormat("id-ID", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
+/** Waktu kumpul (epoch ms) dengan format tampilan yang sama dengan halaman lain. */
 function SubmittedAtCell({ value }: Readonly<{ value: number | "" }>) {
-  return (
-    <span className="whitespace-nowrap">
-      {value === "" ? "-" : submittedFmt.format(new Date(Number(value)))}
-    </span>
-  );
+  return <span className="whitespace-nowrap">{formatDateTime(value)}</span>;
 }
 
 function SubmissionActionCell({

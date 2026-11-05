@@ -95,6 +95,11 @@ function ReportsPage() {
     );
   }, [classes, me.role, me.assigned_classes]);
 
+  // Nama kelas pada kop cetak (kosong = semua kelas yang boleh dilihat)
+  const classLabel = search.classId
+    ? (classes.find((c) => c.class_id === search.classId)?.class_name ?? "-")
+    : "Semua Kelas";
+
   const schema = useMemo(
     () =>
       makeReportFilterSchema({
@@ -222,18 +227,6 @@ function ReportsPage() {
           disabled={data.length === 0}
         />
       </PageHeader>
-      <div className="no-print flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Laporan Absensi</h2>
-        <button
-          type="button"
-          className="btn btn-neutral btn-sm"
-          onClick={print}
-          disabled={data.length === 0}
-        >
-          <Printer className="size-4" /> Cetak Laporan
-        </button>
-      </div>
-
       <div className="card no-print border border-base-300 bg-base-100">
         <form
           noValidate
@@ -297,8 +290,10 @@ function ReportsPage() {
         ) : null}
         <h2 className="mt-2 text-lg font-semibold">Laporan Absensi Siswa</h2>
         <p className="text-base-content/70">
-          Periode: {search.startDate || "-"} s.d {search.endDate || "-"}
+          Periode: {formatDate(search.startDate)} s.d{" "}
+          {formatDate(search.endDate)}
         </p>
+        <p className="text-base-content/70">Kelas: {classLabel}</p>
       </div>
 
       {urlCheck && !urlCheck.success ? (

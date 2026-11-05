@@ -68,6 +68,10 @@ function AttendancePage() {
   // Aturan dinamis: bergantung peran, kelas yang diampu, dan pengaturan jendela edit
   const restricted = me.role !== "admin";
   const editWindowDays = Number(settings.edit_window_days) || 0;
+  // "Hari ini" mengikuti zona waktu sekolah (sama dengan server), bukan jam perangkat
+  const tzRaw = settings.tz_offset_minutes;
+  const tz =
+    tzRaw !== "" && Number.isFinite(Number(tzRaw)) ? Number(tzRaw) : undefined;
 
   const options = useMemo(() => {
     const mine = me.role === "guru" ? me.assigned_classes : null;
@@ -81,15 +85,16 @@ function AttendancePage() {
       classIds: options.map((c) => c.class_id),
       restricted,
       editWindowDays,
+      tzOffsetMinutes: tz,
     }),
-    [options, restricted, editWindowDays],
+    [options, restricted, editWindowDays, tz],
   );
   const filterSchema = useMemo(() => makeFilterSchema(rules), [rules]);
   const minDate = earliestDate(rules);
 
   const form = useForm({
     defaultValues: {
-      date: search.date ?? todayStr(),
+      date: search.date ?? todayStr(tz),
       classId: search.classId ?? "",
     },
     validators: {
@@ -142,7 +147,7 @@ function AttendancePage() {
                 label="Tanggal"
                 field={f}
                 type="date"
-                max={restricted ? todayStr() : undefined}
+                max={restricted ? todayStr(tz) : undefined}
                 min={minDate}
                 hint={
                   restricted && editWindowDays > 0
@@ -160,7 +165,6 @@ function AttendancePage() {
               >
                 <option
                   disabled
-                  selected
                   value=""
                 >
                   -- Pilih Kelas --
@@ -348,12 +352,7 @@ function AttendanceForm({
   });
 
   const [noteRow, setNoteRow] = useState<number | null>(null);
-  const [_, setTried] = useState(false);
-
-  const openNote = (i: number) => {
-    setTried(false);
-    setNoteRow(i);
-  };
+  const openNote = (i: number) => setNoteRow(i);
 
   // Batal/tutup tanpa keterangan yang cukup: pilihan status dibatalkan
   const closeNote = () => {
@@ -412,7 +411,7 @@ function AttendanceForm({
                   <div className="text-center">
                     <input
                       type="checkbox"
-                      aria-label={s}
+                      aria-label={`${s}: ${row.original.full_name}`}
                       className={`checkbox checkbox-sm ${STATUS_STYLE[s].tone}`}
                       checked={f.state.value === s}
                       onChange={(e) => {
@@ -544,7 +543,7 @@ function AttendanceForm({
                   label="Keterangan"
                   field={f}
                   rows={3}
-                  hint="Minimal {LIMITS.notesMin} karakter."
+                  hint={`Minimal ${LIMITS.notesMin} karakter.`}
                 />
               )}
             </form.Field>
@@ -561,10 +560,13 @@ function AttendanceForm({
                 type="button"
                 className="btn btn-primary"
                 onClick={() => {
-                  setTried(true);
                   const r = form.state.values.rows[noteRow];
                   if (r && r.notes.trim().length >= LIMITS.notesMin)
                     setNoteRow(null);
+                  else
+                    toast.error(
+                      `Keterangan minimal ${LIMITS.notesMin} karakter.`,
+                    );
                 }}
               >
                 Simpan

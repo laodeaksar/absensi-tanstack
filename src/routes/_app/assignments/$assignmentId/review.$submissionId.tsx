@@ -118,7 +118,7 @@ function ReviewPage() {
         <h2 className="text-2xl font-bold">{assignment.title}</h2>
         <p className="text-sm text-base-content/60">
           {student.full_name} (NIS {student.nis}) - Kelas{" "}
-          {assignment.class_name} - dikumpulkan dikumpulkan{" "}
+          {assignment.class_name} - dikumpulkan{" "}
           {submission.submitted_at
             ? formatDateTime(submission.submitted_at)
             : "-"}

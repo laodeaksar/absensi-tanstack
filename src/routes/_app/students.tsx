@@ -10,7 +10,7 @@ import { KeyRound, Plus, Pencil, ArrowRightLeft } from "lucide-react";
 import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import { z } from "zod";
 
-import type { Student, StudentInput, StudentClass } from "~/lib/types";
+import type { Student, StudentClass, StudentInput } from "~/lib/types";
 
 import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
@@ -31,8 +31,8 @@ import { allowRoles } from "~/lib/auth";
 import {
   classesQuery,
   qk,
-  studentsQuery,
   studentClassesQuery,
+  studentsQuery,
 } from "~/lib/queries";
 import { makeStudentSchema } from "~/lib/student-schema";
 import { columnHelperFor, features } from "~/lib/table";
@@ -56,7 +56,6 @@ type StudentRow = Student & {
   class_year: string;
 };
 const col = columnHelperFor<StudentRow>();
-// const col = columnHelperFor<Student>();
 
 function StudentsPage() {
   const qc = useQueryClient();
@@ -188,11 +187,11 @@ function StudentsPage() {
 
   const data = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return students;
+    if (!q) return rows;
     return rows.filter((s) =>
       `${s.full_name} ${s.nis} ${s.nisn}`.toLowerCase().includes(q),
     );
-  }, [students, rows, search]);
+  }, [rows, search]);
 
   const table = useTable({
     features,
@@ -258,27 +257,34 @@ function StudentsPage() {
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         title={modal.student ? "Edit Siswa" : "Tambah Siswa"}
       >
-        <StudentForm
-          student={modal.student}
-          onDone={() => {
-            setModal({
-              open: false,
-              student: null,
-            });
-            void qc.invalidateQueries({
-              queryKey: qk.students,
-            });
-            void qc.invalidateQueries({
-              queryKey: qk.dashboard,
-            });
-          }}
-          onCancel={() =>
-            setModal((m) => ({
-              ...m,
-              open: false,
-            }))
-          }
-        />
+        {modal.open ? (
+          <StudentForm
+            key={modal.student?.student_id ?? "new"}
+            student={modal.student}
+            onDone={() => {
+              setModal({
+                open: false,
+                student: null,
+              });
+              void qc.invalidateQueries({
+                queryKey: qk.students,
+              });
+              // Siswa baru langsung masuk kelas (riwayat kelas dibuat server)
+              void qc.invalidateQueries({
+                queryKey: qk.studentClasses,
+              });
+              void qc.invalidateQueries({
+                queryKey: qk.dashboard,
+              });
+            }}
+            onCancel={() =>
+              setModal((m) => ({
+                ...m,
+                open: false,
+              }))
+            }
+          />
+        ) : null}
       </Modal>
       <Modal
         open={moving !== null}
