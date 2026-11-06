@@ -16,6 +16,7 @@ import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppClassesRouteImport } from './routes/_app/classes'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
+import { Route as AppMySubjectAttendanceRouteImport } from './routes/_app/my-subject-attendance'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppStudentsRouteImport } from './routes/_app/students'
@@ -63,6 +64,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
   id: '/my-attendance',
   path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMySubjectAttendanceRoute = AppMySubjectAttendanceRouteImport.update({
+  id: '/my-subject-attendance',
+  path: '/my-subject-attendance',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
   '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-subject-attendance': typeof AppMySubjectAttendanceRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/students': typeof AppStudentsRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
   '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-subject-attendance': typeof AppMySubjectAttendanceRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/students': typeof AppStudentsRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/_app/classes': typeof AppClassesRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/my-attendance': typeof AppMyAttendanceRoute
+  '/_app/my-subject-attendance': typeof AppMySubjectAttendanceRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/students': typeof AppStudentsRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/classes'
     | '/dashboard'
     | '/my-attendance'
+    | '/my-subject-attendance'
     | '/reports'
     | '/settings'
     | '/students'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/classes'
     | '/dashboard'
     | '/my-attendance'
+    | '/my-subject-attendance'
     | '/reports'
     | '/settings'
     | '/students'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/_app/classes'
     | '/_app/dashboard'
     | '/_app/my-attendance'
+    | '/_app/my-subject-attendance'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/students'
@@ -332,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/my-attendance'
       fullPath: '/my-attendance'
       preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-subject-attendance': {
+      id: '/_app/my-subject-attendance'
+      path: '/my-subject-attendance'
+      fullPath: '/my-subject-attendance'
+      preLoaderRoute: typeof AppMySubjectAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reports': {
@@ -440,6 +459,7 @@ interface AppRouteChildren {
   AppClassesRoute: typeof AppClassesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
+  AppMySubjectAttendanceRoute: typeof AppMySubjectAttendanceRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStudentsRoute: typeof AppStudentsRoute
@@ -461,6 +481,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppClassesRoute: AppClassesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
+  AppMySubjectAttendanceRoute: AppMySubjectAttendanceRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRoute,

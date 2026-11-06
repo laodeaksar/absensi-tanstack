@@ -183,7 +183,11 @@ export default defineSchema({
     created_at: v.string(),
     updated_at: v.string(),
   })
-    .index("by_class_subject_date", ["class_id", "subject_id", "attendance_date"])
+    .index("by_class_subject_date", [
+      "class_id",
+      "subject_id",
+      "attendance_date",
+    ])
     .index("by_student_subject_date", [
       "student_id",
       "subject_id",

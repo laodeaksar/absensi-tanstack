@@ -76,8 +76,7 @@ export const api = {
     }[],
   ) => rpc<Msg>("submitAttendanceBatch", date, classId, rows),
 
-  subjects: () =>
-    rpc<{ data: Subject[] }>("listSubjects").then((r) => r.data),
+  subjects: () => rpc<{ data: Subject[] }>("listSubjects").then((r) => r.data),
   saveSubject: (d: SubjectInput) => rpc<Msg>("saveSubject", d),
   deleteSubject: (id: string) => rpc<Msg>("deleteSubject", id),
   /** Admin: semua pengampu. Guru: hanya miliknya sendiri. */

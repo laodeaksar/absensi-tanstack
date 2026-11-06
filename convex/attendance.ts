@@ -37,7 +37,7 @@ const myFilters = v.object({
 });
 
 /** Cerminan assertAttendanceEditable lama: format/nilai tanggal, tanggal masa depan, jendela edit guru. */
-async function assertAttendanceEditable(
+export async function assertAttendanceEditable(
   ctx: QueryCtx,
   user: Doc<"users">,
   date: string,
@@ -55,7 +55,7 @@ async function assertAttendanceEditable(
   }
 }
 
-async function activeMembers(ctx: QueryCtx, classId: string) {
+export async function activeMembers(ctx: QueryCtx, classId: string) {
   const hist = await ctx.db
     .query("student_class_history")
     .withIndex("by_class", (q) => q.eq("class_id", classId))

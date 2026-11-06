@@ -36,10 +36,10 @@ import {
   CheckboxField,
   ActionMenu,
 } from "~/components/ui";
+import { LIMITS } from "~/convex/limits";
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { makeAssignmentSchema } from "~/lib/assignment-schema";
-import { LIMITS } from "~/convex/limits";
 import { allowRoles } from "~/lib/auth";
 import { formatDateTime } from "~/lib/date";
 import {
@@ -382,9 +382,7 @@ function AssignmentForm({
       }));
     if (
       item?.subject_id &&
-      !rows.some(
-        (r) => r.classId === item.class_id && r.id === item.subject_id,
-      )
+      !rows.some((r) => r.classId === item.class_id && r.id === item.subject_id)
     )
       rows.push({
         classId: item.class_id,
@@ -502,21 +500,10 @@ function AssignmentForm({
       ) : (
         <form.Field name="class_id">
           {(f) => (
-            <SelectField
-              label="Kelas"
-              field={f}
-            >
-              <option
-                disabled
-                value=""
-              >
-                -- Pilih Kelas --
-              </option>
+            <SelectField label="Kelas" field={f}>
+              <option disabled value="">-- Pilih Kelas --</option>
               {options.map((c) => (
-                <option
-                  key={c.class_id}
-                  value={c.class_id}
-                >
+                <option key={c.class_id} value={c.class_id}>
                   {c.class_name}
                 </option>
               ))}
@@ -532,10 +519,7 @@ function AssignmentForm({
           >
             <option value="">-- Tanpa Mata Pelajaran --</option>
             {choicesForClass.map((r) => (
-              <option
-                key={r.id}
-                value={r.id}
-              >
+              <option key={r.id} value={r.id}>
                 {r.label}
               </option>
             ))}

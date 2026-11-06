@@ -62,6 +62,7 @@ type NavTo =
   | "/subject-attendance"
   | "/subject-reports"
   | "/my-attendance"
+  | "/my-subject-attendance"
   | "/settings";
 
 function NavItem({
@@ -245,6 +246,12 @@ function AppLayout() {
                   to="/my-attendance"
                   icon={<CalendarCheck className={ic} />}
                   label="Kehadiran Saya"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/my-subject-attendance"
+                  icon={<BookMarked className={ic} />}
+                  label="Kehadiran Mapel"
                   onNavigate={close}
                 />
                 <NavItem

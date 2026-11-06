@@ -12,7 +12,7 @@ export function fail(message: string): never {
   throw new ConvexError(message);
 }
 
-// export const flag = (x: unknown) => x === true || x === "true" || x === "TRUE";
+export const flag = (x: unknown) => x === true || x === "true" || x === "TRUE";
 
 /* ---------- waktu ---------- */
 

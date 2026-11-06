@@ -120,10 +120,9 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
   // mata pelajaran dan guru pengampu
   listSubjects: queryRoute(api.subjects.listSubjects),
   saveSubject: mutationRoute(api.subjects.saveSubject, ([data]) => ({ data })),
-  deleteSubject: mutationRoute(
-    api.subjects.deleteSubject,
-    ([subjectId]) => ({ subjectId }),
-  ),
+  deleteSubject: mutationRoute(api.subjects.deleteSubject, ([subjectId]) => ({
+    subjectId,
+  })),
   listTeaching: queryRoute(api.subjects.listTeaching),
   saveTeaching: mutationRoute(api.subjects.saveTeaching, ([data]) => ({
     data,

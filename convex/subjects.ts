@@ -45,6 +45,11 @@ const attendanceRow = v.object({
   notes: v.string(),
 });
 
+const myRange = v.object({ 
+  startDate: v.string(), 
+  endDate: v.string()
+});
+
 const subjectReportFilters = v.object({
   startDate: v.string(),
   endDate: v.string(),
@@ -269,7 +274,10 @@ export const saveTeaching = mutation({
 
     const now = nowIso();
     if (existing) {
-      await ctx.db.patch(existing._id, { teacher_id: teacherId, updated_at: now });
+      await ctx.db.patch(existing._id, {
+        teacher_id: teacherId,
+        updated_at: now,
+      });
     } else {
       await ctx.db.insert("teaching", {
         teaching_id: randomId("TCH"),
@@ -507,6 +515,73 @@ export const getSubjectReportData = query({
         subject_name: subject?.name ?? "-",
         meetings: dates.size,
       },
+    };
+  },
+});
+
+/** Siswa melihat kehadiran per mata pelajaran miliknya sendiri dalam rentang tanggal. */
+export const getMySubjectAttendance = query({
+  args: { token: v.string(), filters: myRange },
+  handler: async (ctx, { token, filters }) => {
+    const user = await requireAuth(ctx, token, { allowStudent: true });
+    if (user.role !== "siswa" || !user.student_id) fail("FORBIDDEN");
+    const sid = user.student_id;
+
+    const { startDate, endDate } = filters;
+    if (!isRealDate(startDate) || !isRealDate(endDate))
+      fail("Format tanggal tidak valid.");
+    if (startDate > endDate)
+      fail("Tanggal mulai tidak boleh setelah tanggal akhir.");
+    const days = (Date.parse(endDate) - Date.parse(startDate)) / 86_400_000 + 1;
+    if (days > MAX_RANGE_DAYS)
+      fail(`Rentang maksimal ${MAX_RANGE_DAYS} hari.`);
+
+    const recs = await ctx.db
+      .query("subject_attendance")
+      .withIndex("by_student_date", (q) =>
+        q.eq("student_id", sid)
+          .gte("attendance_date", startDate)
+          .lte("attendance_date", endDate),
+      )
+      .order("desc")
+      .take(MAX_REPORT_ROWS + 1);
+    if (recs.length > MAX_REPORT_ROWS)
+      fail("Data terlalu banyak. Persempit rentang tanggal.");
+
+    const names = new Map(
+      (await ctx.db.query("subjects").collect()).map((s) => [s.subject_id, s.name]),
+    );
+    type Tally = { hadir: number; sakit: number; izin: number; alpa: number };
+    const tally = new Map<string, Tally>();
+    for (const r of recs) {
+      let t = tally.get(r.subject_id);
+      if (!t) { t = { hadir: 0, sakit: 0, izin: 0, alpa: 0 }; tally.set(r.subject_id, t); }
+      if (r.status === "Hadir") t.hadir++;
+      else if (r.status === "Sakit") t.sakit++;
+      else if (r.status === "Izin") t.izin++;
+      else if (r.status === "Alpa") t.alpa++;
+    }
+
+    const summary = [...tally].map(([subjectId, t]) => {
+      const total = t.hadir + t.sakit + t.izin + t.alpa;
+      return {
+        subject_id: subjectId,
+        subject_name: names.get(subjectId) ?? "-",
+        ...t,
+        total,
+        persentase: total > 0 ? round1((t.hadir / total) * 100) : 0,
+      };
+    });
+    summary.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
+
+    return {
+      summary,
+      records: recs.map((r) => ({
+        date: r.attendance_date,
+        subject_name: names.get(r.subject_id) ?? "-",
+        status: r.status || "-",
+        notes: r.notes,
+      })),
     };
   },
 });

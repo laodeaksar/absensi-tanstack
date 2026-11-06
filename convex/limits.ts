@@ -12,6 +12,10 @@ export const LIMITS = {
   description: 1000,
   durationMinutes: 600, // 0 = tanpa batas durasi
 
+  // mata pelajaran
+  subjectCodeMax: 20,
+  subjectName: 50,
+
   // soal
   questionText: 2000,
   optionText: 300,

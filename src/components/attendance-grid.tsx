@@ -9,9 +9,9 @@ import { useMemo, useState } from "react";
 import type { AttendanceEntry } from "~/lib/types";
 
 import { DataTable, Modal, TextAreaField } from "~/components/ui";
+import { LIMITS, needsNotes } from "~/convex/limits";
+import { STATUS_VALUES } from "~/convex/rules";
 import { gridSchema } from "~/lib/attendance-schema";
-import { STATUS_VALUES } from "~/convex/rules"
-import { LIMITS, needsNotes } from "~/convex/limits"
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 
@@ -101,7 +101,6 @@ export function AttendanceGrid({
   onSaved: () => void;
   emptyText?: string;
 }>) {
-
   const rows = useMemo<Row[]>(
     () =>
       entries.map((e) => ({
@@ -154,7 +153,11 @@ export function AttendanceGrid({
   const closeNote = () => {
     if (noteRow !== null) {
       const r = form.state.values.rows[noteRow];
-      if (r && needsNotes(r.status) && r.notes.trim().length < LIMITS.notesMin) {
+      if (
+        r &&
+        needsNotes(r.status) &&
+        r.notes.trim().length < LIMITS.notesMin
+      ) {
         form.setFieldValue(`rows[${noteRow}].status` as const, "");
       }
     }
@@ -199,7 +202,9 @@ export function AttendanceGrid({
                   {s}
                 </button>
               ) : (
-                <span className={`text-xs font-semibold ${STATUS_STYLE[s].text}`}>
+                <span
+                  className={`text-xs font-semibold ${STATUS_STYLE[s].text}`}
+                >
                   {s}
                 </span>
               ),
@@ -284,7 +289,8 @@ export function AttendanceGrid({
           {(vals) => {
             const filled = vals.filter((r) => r.status).length;
             const missing = vals.filter(
-              (r) => needsNotes(r.status) && r.notes.trim().length < LIMITS.notesMin,
+              (r) =>
+                needsNotes(r.status) && r.notes.trim().length < LIMITS.notesMin,
             ).length;
             return (
               <p className="text-sm text-base-content/70">
@@ -358,8 +364,12 @@ export function AttendanceGrid({
                 className="btn btn-primary"
                 onClick={() => {
                   const r = form.state.values.rows[noteRow];
-                  if (r && r.notes.trim().length >= LIMITS.notesMin) setNoteRow(null);
-                  else toast.error(`Keterangan minimal ${LIMITS.notesMin} karakter.`);
+                  if (r && r.notes.trim().length >= LIMITS.notesMin)
+                    setNoteRow(null);
+                  else
+                    toast.error(
+                      `Keterangan minimal ${LIMITS.notesMin} karakter.`,
+                    );
                 }}
               >
                 Simpan

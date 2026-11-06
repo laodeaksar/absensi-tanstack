@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { getMeFn, getPublicSettingsFn } from "~/server/functions";
 
-import type { ReportFilters } from "./types";
+import type { ReportFilters, SubjectReportFilters } from "./types";
 
 import { api } from "./api";
 
@@ -25,6 +25,7 @@ export const qk = {
   teaching: ["teaching"] as const,
   subjectAttendance: ["subject-attendance"] as const,
   subjectReport: ["subject-report"] as const,
+  mySubjectAttendance: ["my-subject-attendance"] as const,
   myTasks: ["my-tasks"] as const,
   result: (id: string) => ["my-result", id] as const,
 };
@@ -130,7 +131,7 @@ export const myResultQuery = (id: string) =>
     queryFn: () => api.myResult(id),
     staleTime: 0,
   });
-  
+
 export const subjectsQuery = queryOptions({
   queryKey: qk.subjects,
   queryFn: () => api.subjects(),
@@ -159,3 +160,9 @@ export const subjectReportQuery = (f: SubjectReportFilters) =>
     staleTime: 0,
   });
   
+export const mySubjectAttendanceQuery = (f: { startDate: string; endDate: string }) =>
+  queryOptions({
+    queryKey: [...qk.mySubjectAttendance, f],
+    queryFn: () => api.mySubjectAttendance(f),
+    staleTime: 0,
+  });

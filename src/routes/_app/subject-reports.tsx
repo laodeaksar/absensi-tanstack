@@ -211,12 +211,7 @@ function SubjectReportsPage() {
                 label="Kelas dan Mata Pelajaran"
                 field={f}
               >
-                <option
-                  disabled
-                  value=""
-                >
-                  -- Pilih --
-                </option>
+                <option disabled value="">-- Pilih --</option>
                 {options.map((t) => (
                   <option
                     key={t.teaching_id}

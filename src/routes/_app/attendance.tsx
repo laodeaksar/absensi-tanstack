@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, revalidateLogic } from "@tanstack/react-form";
 import {
   useQuery,
   useQueryClient,
@@ -82,10 +82,8 @@ function AttendancePage() {
       date: search.date ?? todayStr(tz),
       classId: search.classId ?? "",
     },
-    validators: {
-      onChange: filterSchema,
-      onSubmit: filterSchema,
-    },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: filterSchema },
     onSubmit: ({ value }) => {
       void qc.invalidateQueries({
         queryKey: qk.attendance,
@@ -148,17 +146,9 @@ function AttendancePage() {
                 label="Kelas"
                 field={f}
               >
-                <option
-                  disabled
-                  value=""
-                >
-                  -- Pilih Kelas --
-                </option>
+                <option disabled value="">-- Pilih Kelas --</option>
                 {options.map((c) => (
-                  <option
-                    key={c.class_id}
-                    value={c.class_id}
-                  >
+                  <option key={c.class_id} value={c.class_id}>
                     {c.class_name}
                   </option>
                 ))}

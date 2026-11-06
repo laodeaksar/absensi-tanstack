@@ -19,7 +19,10 @@ export function makeTeachingSchema(rules: TeachingRules) {
       class_id: z
         .string()
         .min(1, "Pilih kelas")
-        .refine((id) => !id || rules.classIds.includes(id), "Kelas tidak valid"),
+        .refine(
+          (id) => !id || rules.classIds.includes(id),
+          "Kelas tidak valid",
+        ),
       subject_id: z
         .string()
         .min(1, "Pilih mata pelajaran")
