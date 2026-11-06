@@ -12,12 +12,16 @@ import {
 } from "@tanstack/react-router";
 import {
   BarChart3,
+  BookMarked,
   BookOpenCheck,
   CalendarCheck,
   ClipboardCheck,
   ClipboardList,
   DoorOpen,
+  GraduationCap,
   LayoutDashboard,
+  Library,
+  ListChecks,
   LogOut,
   Menu,
   School,
@@ -53,6 +57,10 @@ type NavTo =
   | "/students"
   | "/classes"
   | "/teachers"
+  | "/subjects"
+  | "/teaching"
+  | "/subject-attendance"
+  | "/subject-reports"
   | "/my-attendance"
   | "/settings";
 
@@ -171,6 +179,12 @@ function AppLayout() {
                   onNavigate={close}
                 />
                 <NavItem
+                  to="/subject-attendance"
+                  icon={<BookMarked className={ic} />}
+                  label="Absensi Mapel"
+                  onNavigate={close}
+                />
+                <NavItem
                   to="/assignments"
                   icon={<ClipboardList className={ic} />}
                   label="Tugas"
@@ -180,6 +194,12 @@ function AppLayout() {
                   to="/reports"
                   icon={<BarChart3 className={ic} />}
                   label="Laporan"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/subject-reports"
+                  icon={<ListChecks className={ic} />}
+                  label="Rekap Mapel"
                   onNavigate={close}
                 />
               </>
@@ -203,6 +223,18 @@ function AppLayout() {
                   to="/teachers"
                   icon={<UserCog className={ic} />}
                   label="Data Guru"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/subjects"
+                  icon={<Library className={ic} />}
+                  label="Mata Pelajaran"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/teaching"
+                  icon={<GraduationCap className={ic} />}
+                  label="Pengampu Mapel"
                   onNavigate={close}
                 />
               </>

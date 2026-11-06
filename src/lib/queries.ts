@@ -21,6 +21,10 @@ export const qk = {
   detail: (id: string) => ["assignments", id, "detail"] as const,
   subs: (id: string) => ["assignments", id, "subs"] as const,
   review: (id: string) => ["review", id] as const,
+  subjects: ["subjects"] as const,
+  teaching: ["teaching"] as const,
+  subjectAttendance: ["subject-attendance"] as const,
+  subjectReport: ["subject-report"] as const,
   myTasks: ["my-tasks"] as const,
   result: (id: string) => ["my-result", id] as const,
 };
@@ -126,3 +130,32 @@ export const myResultQuery = (id: string) =>
     queryFn: () => api.myResult(id),
     staleTime: 0,
   });
+  
+export const subjectsQuery = queryOptions({
+  queryKey: qk.subjects,
+  queryFn: () => api.subjects(),
+});
+
+export const teachingQuery = queryOptions({
+  queryKey: qk.teaching,
+  queryFn: () => api.teaching(),
+});
+
+export const subjectAttendanceFormQuery = (
+  date: string,
+  classId: string,
+  subjectId: string,
+) =>
+  queryOptions({
+    queryKey: [...qk.subjectAttendance, date, classId, subjectId],
+    queryFn: () => api.subjectAttendanceForm(date, classId, subjectId),
+    staleTime: 0,
+  });
+
+export const subjectReportQuery = (f: SubjectReportFilters) =>
+  queryOptions({
+    queryKey: [...qk.subjectReport, f],
+    queryFn: () => api.subjectReport(f),
+    staleTime: 0,
+  });
+  

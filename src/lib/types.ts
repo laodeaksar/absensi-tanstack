@@ -170,6 +170,9 @@ export interface Assignment {
   description: string;
   class_id: string;
   class_name: string;
+  /** '' bila tugas tidak bermapel */
+  subject_id: string;
+  subject_name: string;
   /** 'yyyy-MM-ddTHH:mm' atau '' */
   due_at: string;
   duration_minutes: number;
@@ -253,6 +256,8 @@ export interface MyTask {
   title: string;
   description: string;
   class_name: string;
+  /** '' bila tugas tidak bermapel */
+  subject_name: string;
   due_at: string;
   duration_minutes: number;
   question_count: number;
@@ -319,6 +324,8 @@ export type AssignmentInput = {
   title: string;
   description: string;
   class_id: string;
+  /** kosong = tanpa mata pelajaran */
+  subject_id?: string;
   due_at: string;
   duration_minutes: number;
   is_published: boolean;
@@ -343,3 +350,87 @@ export type AnswerInput = {
   question_id: string;
   answer: string;
 };
+
+/* ---------- mata pelajaran, pengampu, absensi mapel ---------- */
+
+export interface Subject {
+  subject_id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Semua opsional: tombol Aktif/Nonaktifkan hanya mengirim { subject_id, is_active } */
+export type SubjectInput = {
+  subject_id?: string;
+  code?: string;
+  name?: string;
+  is_active?: boolean;
+};
+
+/** Satu baris pengampu: guru, kelas, dan mata pelajaran */
+export interface TeachingRow {
+  teaching_id: string;
+  class_id: string;
+  class_name: string;
+  class_active: boolean;
+  subject_id: string;
+  subject_code: string;
+  subject_name: string;
+  subject_active: boolean;
+  teacher_id: string;
+  teacher_name: string;
+  teacher_active: boolean;
+}
+
+export type TeachingInput = {
+  teaching_id?: string;
+  class_id: string;
+  subject_id: string;
+  teacher_id: string;
+};
+
+export interface SubjectReportFilters {
+  startDate: string;
+  endDate: string;
+  classId: string;
+  subjectId: string;
+}
+
+export interface SubjectReportRow {
+  student_id: string;
+  nis: string;
+  full_name: string;
+  hadir: number;
+  sakit: number;
+  izin: number;
+  alpa: number;
+  total: number;
+  persentase: number;
+}
+
+export interface SubjectReport {
+  data: SubjectReportRow[];
+  meta: { class_name: string; subject_name: string; meetings: number };
+}
+
+export interface MySubjectAttendance {
+  summary: {
+    subject_id: string;
+    subject_name: string;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpa: number;
+    total: number;
+    persentase: number;
+  }[];
+  records: {
+    date: string;
+    subject_name: string;
+    status: string;
+    notes: string;
+  }[];
+}

@@ -8,14 +8,21 @@ import type {
   ClassRow,
   DashboardData,
   MyAttendance,
+  MySubjectAttendance,
   ReportFilters,
   ReportRow,
   Settings,
   Student,
   StudentClass,
   StudentInput,
+  Subject,
+  SubjectInput,
+  SubjectReport,
+  SubjectReportFilters,
   Teacher,
   TeacherInput,
+  TeachingInput,
+  TeachingRow,
   AnswerInput,
   Assignment,
   AssignmentDetail,
@@ -68,6 +75,33 @@ export const api = {
       notes: string;
     }[],
   ) => rpc<Msg>("submitAttendanceBatch", date, classId, rows),
+
+  subjects: () =>
+    rpc<{ data: Subject[] }>("listSubjects").then((r) => r.data),
+  saveSubject: (d: SubjectInput) => rpc<Msg>("saveSubject", d),
+  deleteSubject: (id: string) => rpc<Msg>("deleteSubject", id),
+  /** Admin: semua pengampu. Guru: hanya miliknya sendiri. */
+  teaching: () =>
+    rpc<{ data: TeachingRow[] }>("listTeaching").then((r) => r.data),
+  saveTeaching: (d: TeachingInput) => rpc<Msg>("saveTeaching", d),
+  deleteTeaching: (id: string) => rpc<Msg>("deleteTeaching", id),
+  subjectAttendanceForm: (date: string, classId: string, subjectId: string) =>
+    rpc<{ data: AttendanceEntry[] }>(
+      "getSubjectAttendanceForm",
+      date,
+      classId,
+      subjectId,
+    ).then((r) => r.data),
+  submitSubjectAttendance: (
+    date: string,
+    classId: string,
+    subjectId: string,
+    rows: { student_id: string; status: string; notes: string }[],
+  ) => rpc<Msg>("submitSubjectAttendance", date, classId, subjectId, rows),
+  mySubjectAttendance: (f: { startDate: string; endDate: string }) =>
+    rpc<MySubjectAttendance>("getMySubjectAttendance", f),
+  subjectReport: (f: SubjectReportFilters) =>
+    rpc<SubjectReport>("getSubjectReportData", f),
 
   dashboard: () => rpc<DashboardData>("getDashboardStats"),
   report: (f: ReportFilters) =>

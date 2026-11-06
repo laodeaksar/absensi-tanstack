@@ -1,11 +1,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { ArrowLeft, Eye, PenLine } from "lucide-react";
+import { Eye, PenLine } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { SubmissionRow, SubmissionStatus } from "~/lib/types";
 
+import { BackLink } from "~/components/back-link";
 import { SubmissionStatusIcon } from "~/components/status-icons";
 import { DataTable, Pager, SearchBox, Tip } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
@@ -170,12 +171,7 @@ function SubmissionsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link
-          to="/assignments"
-          className="btn btn-ghost btn-xs mb-1 -ml-2"
-        >
-          <ArrowLeft className="size-4" /> Kembali
-        </Link>
+        <BackLink to="/assignments" />
         <h2 className="text-2xl font-bold">
           Pengumpulan: {res.assignment.title}
         </h2>

@@ -5,12 +5,13 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, Clock, Hourglass, Send } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Clock, Hourglass, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AnswerInput, TaskSession } from "~/lib/types";
 
+import { BackLink } from "~/components/back-link";
 import {
   ErrorAlert,
   PageSpinner,
@@ -40,17 +41,6 @@ const mmss = (ms: number) => {
   const sec = s % 60;
   return `${h > 0 ? `${h}:` : ""}${String(m).padStart(h > 0 ? 2 : 1, "0")}:${String(sec).padStart(2, "0")}`;
 };
-
-function BackLink() {
-  return (
-    <Link
-      to="/tasks"
-      className="btn btn-ghost btn-xs mb-1 -ml-2"
-    >
-      <ArrowLeft className="size-4" /> Daftar tugas
-    </Link>
-  );
-}
 
 function TaskPage() {
   const { assignmentId } = Route.useParams();
@@ -95,7 +85,10 @@ function TaskPage() {
   if (!task) {
     return (
       <div className="space-y-4">
-        <BackLink />
+        <BackLink
+          to="/tasks"
+          label="Daftar tugas"
+        />
         <div
           role="alert"
           className="alert alert-warning alert-soft"
@@ -121,7 +114,10 @@ function TaskPage() {
   if (task.status === "diserahkan") {
     return (
       <div className="space-y-4">
-        <BackLink />
+        <BackLink
+          to="/tasks"
+          label="Daftar tugas"
+        />
         <div className="card border border-base-300 bg-base-100">
           <div className="card-body items-center gap-3 py-10 text-center">
             <Hourglass className="size-10 text-warning" />
@@ -138,7 +134,10 @@ function TaskPage() {
 
   return (
     <div className="space-y-4">
-      <BackLink />
+      <BackLink
+        to="/tasks"
+        label="Daftar tugas"
+      />
       <div className="card border border-base-300 bg-base-100">
         <div className="card-body gap-3">
           <h2 className="card-title text-2xl">{task.title}</h2>
@@ -218,7 +217,10 @@ function ResultCard({ assignmentId }: Readonly<{ assignmentId: string }>) {
 
   return (
     <div className="space-y-4">
-      <BackLink />
+      <BackLink
+        to="/tasks"
+        label="Daftar tugas"
+      />
       <div className="card border border-base-300 bg-base-100">
         <div className="card-body gap-4">
           <h2 className="card-title text-2xl">{r.title}</h2>

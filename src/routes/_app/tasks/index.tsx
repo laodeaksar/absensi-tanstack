@@ -90,6 +90,9 @@ function TasksPage() {
             <>
               <div className="font-medium">{i.getValue()}</div>
               <div className="text-xs text-base-content/60">
+                {i.row.original.subject_name
+                  ? `${i.row.original.subject_name} · `
+                  : ""}
                 {i.row.original.question_count} soal -{" "}
                 {i.row.original.max_score} poin
               </div>

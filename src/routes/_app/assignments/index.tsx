@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, useSelector } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
@@ -15,7 +15,7 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 
 import type { Assignment } from "~/lib/types";
 
@@ -36,10 +36,10 @@ import {
   CheckboxField,
   ActionMenu,
 } from "~/components/ui";
-import { LIMITS } from "~/convex/limits";
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { makeAssignmentSchema } from "~/lib/assignment-schema";
+import { LIMITS } from "~/convex/limits";
 import { allowRoles } from "~/lib/auth";
 import { formatDateTime } from "~/lib/date";
 import {
@@ -47,7 +47,9 @@ import {
   assignmentsQuery,
   qk,
   settingsQuery,
+  teachingQuery,
 } from "~/lib/queries";
+import { pairKey } from "~/lib/subject-attendance-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
@@ -152,6 +154,11 @@ function AssignmentsPage() {
         }),
         col.accessor("class_name", {
           header: "Kelas",
+        }),
+        col.accessor("subject_name", {
+          header: "Mapel",
+          cell: (i) =>
+            i.getValue() || <span className="text-base-content/50">-</span>,
         }),
         col.accessor((r) => r.due_at, {
           id: "due",
@@ -258,7 +265,9 @@ function AssignmentsPage() {
     const q = search.trim().toLowerCase();
     return q
       ? items.filter((a) =>
-          `${a.title} ${a.class_name}`.toLowerCase().includes(q),
+          `${a.title} ${a.class_name} ${a.subject_name}`
+            .toLowerCase()
+            .includes(q),
         )
       : items;
   }, [items, search]);
@@ -341,21 +350,49 @@ function AssignmentForm({
   const { me } = Route.useRouteContext();
   const { data: classes } = useSuspenseQuery(classesQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
+  // Guru: pengampu miliknya. Admin: semua pengampu yang terdaftar.
+  const { data: teaching } = useSuspenseQuery(teachingQuery);
   const isNew = !item;
   // Tenggat harus di masa depan menurut zona waktu sekolah (sama dengan server), bukan jam perangkat
   const tzRaw = settings.tz_offset_minutes;
   const tz =
     tzRaw !== "" && Number.isFinite(Number(tzRaw)) ? Number(tzRaw) : undefined;
 
-  // Guru hanya boleh memilih kelas yang diampu
+  // Guru boleh memilih kelas yang diampu (wali/penugasan kelas) dan kelas tempat ia mengampu mapel
   const options = useMemo(() => {
-    const mine = me.role === "guru" ? me.assigned_classes : null;
+    const mine =
+      me.role === "guru"
+        ? new Set([...me.assigned_classes, ...teaching.map((t) => t.class_id)])
+        : null;
     return classes.filter(
       (c) =>
-        (isActive(c.is_active) && (!mine || mine.includes(c.class_id))) ||
+        (isActive(c.is_active) && (!mine || mine.has(c.class_id))) ||
         c.class_id === item?.class_id,
     );
-  }, [classes, me.role, me.assigned_classes, item?.class_id]);
+  }, [classes, me.role, me.assigned_classes, teaching, item?.class_id]);
+
+  // Pasangan kelas + mapel yang boleh dipilih; pasangan tugas ini saat ini tetap tersedia saat edit
+  const subjectChoices = useMemo(() => {
+    const rows = teaching
+      .filter((t) => t.subject_active)
+      .map((t) => ({
+        classId: t.class_id,
+        id: t.subject_id,
+        label: `${t.subject_code} - ${t.subject_name}`,
+      }));
+    if (
+      item?.subject_id &&
+      !rows.some(
+        (r) => r.classId === item.class_id && r.id === item.subject_id,
+      )
+    )
+      rows.push({
+        classId: item.class_id,
+        id: item.subject_id,
+        label: item.subject_name,
+      });
+    return rows;
+  }, [teaching, item?.class_id, item?.subject_id, item?.subject_name]);
 
   const questionCount = item?.question_count ?? 0;
   const schema = useMemo(
@@ -365,8 +402,9 @@ function AssignmentForm({
         questionCount,
         isNew,
         tzOffsetMinutes: tz,
+        subjectPairs: subjectChoices.map((r) => pairKey(r.classId, r.id)),
       }),
-    [options, questionCount, isNew, tz],
+    [options, questionCount, isNew, tz, subjectChoices],
   );
 
   const save = useMutation({
@@ -382,6 +420,7 @@ function AssignmentForm({
       title: item?.title ?? "",
       description: item?.description ?? "",
       class_id: item?.class_id ?? "",
+      subject_id: item?.subject_id ?? "",
       due_at: item?.due_at ?? "",
       duration_minutes: String(item?.duration_minutes ?? 0),
       is_published: item ? published(item.is_published) : false,
@@ -399,6 +438,7 @@ function AssignmentForm({
           title: value.title.trim(),
           description: value.description.trim(),
           class_id: value.class_id,
+          subject_id: value.subject_id,
           due_at: value.due_at,
           duration_minutes: Number(value.duration_minutes.trim() || 0),
           is_published: value.is_published,
@@ -406,6 +446,18 @@ function AssignmentForm({
         .catch(() => {});
     },
   });
+
+  // Pilihan mapel mengikuti kelas; bila kelas diganti dan mapel tidak berlaku di kelas baru, kosongkan
+  const classId = useSelector(form.store, (st) => st.values.class_id);
+  const choicesForClass = useMemo(
+    () => subjectChoices.filter((r) => r.classId === classId),
+    [subjectChoices, classId],
+  );
+  useEffect(() => {
+    const cur = form.state.values.subject_id;
+    if (cur && !choicesForClass.some((r) => r.id === cur))
+      form.setFieldValue("subject_id", "");
+  }, [choicesForClass, form]);
 
   return (
     <form
@@ -472,6 +524,24 @@ function AssignmentForm({
           )}
         </form.Field>
       )}
+      <form.Field name="subject_id">
+        {(f) => (
+          <SelectField
+            label="Mata Pelajaran"
+            field={f}
+          >
+            <option value="">-- Tanpa Mata Pelajaran --</option>
+            {choicesForClass.map((r) => (
+              <option
+                key={r.id}
+                value={r.id}
+              >
+                {r.label}
+              </option>
+            ))}
+          </SelectField>
+        )}
+      </form.Field>
       {options.length === 0 ? (
         <p className="text-warning text-sm">
           {me.role === "guru"

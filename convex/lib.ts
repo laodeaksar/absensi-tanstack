@@ -5,12 +5,14 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { passwordIssue } from "./rules";
 
+export { passwordIssue };
+
 /** Pesan di ConvexError sampai ke klien; error biasa disembunyikan Convex di production. */
 export function fail(message: string): never {
   throw new ConvexError(message);
 }
 
-export const flag = (x: unknown) => x === true || x === "true" || x === "TRUE";
+// export const flag = (x: unknown) => x === true || x === "true" || x === "TRUE";
 
 /* ---------- waktu ---------- */
 
@@ -260,4 +262,39 @@ export async function userById(ctx: QueryCtx, userId: string) {
     .query("users")
     .withIndex("by_user_id", (q) => q.eq("user_id", userId))
     .unique();
+}
+
+/* ---------- mata pelajaran dan guru pengampu ---------- */
+
+export async function subjectById(ctx: QueryCtx, subjectId: string) {
+  return ctx.db
+    .query("subjects")
+    .withIndex("by_subject_id", (q) => q.eq("subject_id", subjectId))
+    .unique();
+}
+
+/** Baris pengampu untuk satu pasangan kelas + mata pelajaran (maksimal satu guru). */
+export async function teachingRowOf(
+  ctx: QueryCtx,
+  classId: string,
+  subjectId: string,
+) {
+  return ctx.db
+    .query("teaching")
+    .withIndex("by_class_subject", (q) =>
+      q.eq("class_id", classId).eq("subject_id", subjectId),
+    )
+    .first();
+}
+
+/** Admin boleh semua; guru hanya bila ia pengampu mata pelajaran tersebut di kelas tersebut. */
+export async function canTeach(
+  ctx: QueryCtx,
+  user: Doc<"users">,
+  classId: string,
+  subjectId: string,
+) {
+  if (user.role === "admin") return true;
+  const row = await teachingRowOf(ctx, classId, subjectId);
+  return !!row && row.teacher_id === user.user_id;
 }

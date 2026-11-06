@@ -5,14 +5,14 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import {
-  Link,
   createFileRoute,
   useBlocker,
   useNavigate,
 } from "@tanstack/react-router";
-import { ArrowLeft, Check, KeyRound, UserCheck, X } from "lucide-react";
+import { Check, KeyRound, UserCheck, X } from "lucide-react";
 import { useMemo, useRef } from "react";
 
+import { BackLink } from "~/components/back-link";
 import { ErrorAlert, TextField, TextAreaField, Tip } from "~/components/ui";
 import { api } from "~/lib/api";
 import { letter, makeGradeSchema } from "~/lib/assignment-schema";
@@ -128,13 +128,10 @@ function ReviewPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link
+        <BackLink
           to="/assignments/$assignmentId/submissions"
           params={{ assignmentId }}
-          className="btn btn-ghost btn-xs mb-1 -ml-2"
-        >
-          <ArrowLeft className="size-4" /> Kembali
-        </Link>
+        />
         <h2 className="text-2xl font-bold">{assignment.title}</h2>
         <p className="text-sm text-base-content/60">
           {student.full_name} (NIS {student.nis}) - Kelas{" "}

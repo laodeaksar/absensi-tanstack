@@ -9,6 +9,8 @@ import { z } from "zod";
 
 import type { SessionUser } from "~/lib/types";
 
+import { isAuthFailed } from "~/lib/auth-errors";
+
 import type { RpcName } from "./convex.server";
 
 import { callConvex, isRpcName } from "./convex.server";
@@ -71,7 +73,8 @@ export const rpcFn = createServerFn({
         });
       return res;
     } catch (e) {
-      if (e instanceof Error && e.message.includes("AUTH_FAILED")) {
+      if (isAuthFailed(e)) {
+        //if (e instanceof Error && e.message.includes("AUTH_FAILED")) {
         deleteCookie(SESSION_COOKIE, {
           path: "/",
         });
@@ -138,7 +141,8 @@ export const getMeFn = createServerFn({
     }>("getMe", [], token);
     return res.user;
   } catch (e) {
-    if (e instanceof Error && e.message.includes("AUTH_FAILED")) {
+    if (isAuthFailed(e)) {
+      // if (e instanceof Error && e.message.includes("AUTH_FAILED")) {
       deleteCookie(SESSION_COOKIE, {
         path: "/",
       });

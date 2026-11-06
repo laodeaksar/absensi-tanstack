@@ -21,7 +21,6 @@ import {
 import { LIMITS } from "./limits";
 
 const GRACE_MS = 60_000; // toleransi keterlambatan jaringan saat kumpul
-// const ESSAY_MAX = 5000;
 
 /* ---------- helper ---------- */
 

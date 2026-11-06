@@ -10,6 +10,8 @@ export const RULES = {
   phone: /^[0-9+][0-9\s-]{5,19}$/,
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   nisn: /^\d{10}$/,
+  /** Kode mata pelajaran, mis. MTK, B.IND; disimpan huruf besar */
+  subjectCode: /^[A-Za-z0-9._-]{2,10}$/,
 } as const;
 
 /** 2025/2026: dua tahun berurutan. */

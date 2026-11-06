@@ -8,7 +8,6 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import {
   AlignLeft,
-  ArrowLeft,
   ListChecks,
   Lock,
   Pencil,
@@ -20,6 +19,7 @@ import { useMemo, useState, useRef } from "react";
 
 import type { Question, QuestionInput } from "~/lib/types";
 
+import { BackLink } from "~/components/back-link";
 import { HeaderButton, PageHeader } from "~/components/status-icons";
 import {
   ActionMenu,
@@ -285,12 +285,7 @@ function QuestionsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link
-          to="/assignments"
-          className="btn btn-ghost btn-xs mb-1 -ml-2"
-        >
-          <ArrowLeft className="size-4" /> Kembali
-        </Link>
+        <BackLink to="/assignments" />
         <PageHeader
           title={assignment.title}
           subtitle={

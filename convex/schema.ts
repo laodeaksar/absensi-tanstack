@@ -144,11 +144,60 @@ export default defineSchema({
     updated_at: v.string(),
   }).index("by_key", ["setting_key"]),
 
+  /** Mata pelajaran */
+  subjects: defineTable({
+    subject_id: v.string(),
+    code: v.string(), // huruf besar, mis. MTK
+    name: v.string(),
+    is_active: v.boolean(),
+    created_at: v.string(),
+    updated_at: v.string(),
+  })
+    .index("by_subject_id", ["subject_id"])
+    .index("by_code", ["code"]),
+
+  /** Guru pengampu: satu guru per mata pelajaran per kelas */
+  teaching: defineTable({
+    teaching_id: v.string(),
+    class_id: v.string(),
+    subject_id: v.string(),
+    teacher_id: v.string(), // users.user_id
+    created_at: v.string(),
+    updated_at: v.string(),
+  })
+    .index("by_teaching_id", ["teaching_id"])
+    .index("by_class_subject", ["class_id", "subject_id"])
+    .index("by_teacher", ["teacher_id"])
+    .index("by_subject", ["subject_id"]),
+
+  /** Absensi per mata pelajaran; terpisah dari absensi harian (tabel attendance) */
+  subject_attendance: defineTable({
+    attendance_id: v.string(),
+    attendance_date: v.string(), // yyyy-MM-dd
+    class_id: v.string(),
+    subject_id: v.string(),
+    student_id: v.string(),
+    status: v.string(),
+    notes: v.string(),
+    recorded_by: v.string(),
+    created_at: v.string(),
+    updated_at: v.string(),
+  })
+    .index("by_class_subject_date", ["class_id", "subject_id", "attendance_date"])
+    .index("by_student_subject_date", [
+      "student_id",
+      "subject_id",
+      "attendance_date",
+    ])
+    .index("by_student_date", ["student_id", "attendance_date"])
+    .index("by_subject", ["subject_id"]),
+
   assignments: defineTable({
     assignment_id: v.string(),
     title: v.string(),
     description: v.string(),
     class_id: v.string(),
+    subject_id: v.optional(v.string()), // tugas lama belum bermapel
     due_at: v.string(), // 'yyyy-MM-ddTHH:mm' (waktu lokal sekolah) atau ''
     duration_minutes: v.number(),
     is_published: v.boolean(),
@@ -157,7 +206,8 @@ export default defineSchema({
     updated_at: v.string(),
   })
     .index("by_assignment_id", ["assignment_id"])
-    .index("by_class", ["class_id"]),
+    .index("by_class", ["class_id"])
+    .index("by_subject", ["subject_id"]),
 
   questions: defineTable({
     question_id: v.string(),

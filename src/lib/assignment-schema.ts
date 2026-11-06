@@ -31,6 +31,8 @@ export interface AssignmentRules {
   isNew: boolean;
   /** Zona waktu sekolah (menit dari UTC) untuk cek tenggat di masa depan */
   tzOffsetMinutes?: number;
+  /** Pasangan "classId|subjectId" yang boleh dipilih akun ini (pengampu); kosong = tanpa pembatasan */
+  subjectPairs?: string[];
 }
 
 export function makeAssignmentSchema(r: AssignmentRules) {
@@ -52,6 +54,8 @@ export function makeAssignmentSchema(r: AssignmentRules) {
           (id) => !id || r.classIds.includes(id),
           "Kelas tidak tersedia untuk akun Anda",
         ),
+      // '' = tanpa mata pelajaran
+      subject_id: z.string(),
       due_at: z
         .string()
         .refine(
@@ -71,6 +75,17 @@ export function makeAssignmentSchema(r: AssignmentRules) {
       is_published: z.boolean(),
     })
     .superRefine((v, ctx) => {
+      if (
+        v.subject_id &&
+        r.subjectPairs &&
+        !r.subjectPairs.includes(`${v.class_id}|${v.subject_id}`)
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["subject_id"],
+          message: "Anda bukan pengampu mata pelajaran ini di kelas tersebut",
+        });
+      }
       if (v.is_published && r.questionCount === 0) {
         ctx.addIssue({
           code: "custom",

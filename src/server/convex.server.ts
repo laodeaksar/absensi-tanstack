@@ -117,6 +117,38 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
     filters,
   })),
 
+  // mata pelajaran dan guru pengampu
+  listSubjects: queryRoute(api.subjects.listSubjects),
+  saveSubject: mutationRoute(api.subjects.saveSubject, ([data]) => ({ data })),
+  deleteSubject: mutationRoute(
+    api.subjects.deleteSubject,
+    ([subjectId]) => ({ subjectId }),
+  ),
+  listTeaching: queryRoute(api.subjects.listTeaching),
+  saveTeaching: mutationRoute(api.subjects.saveTeaching, ([data]) => ({
+    data,
+  })),
+  deleteTeaching: mutationRoute(
+    api.subjects.deleteTeaching,
+    ([teachingId]) => ({ teachingId }),
+  ),
+  getSubjectAttendanceForm: queryRoute(
+    api.subjects.getSubjectAttendanceForm,
+    ([date, classId, subjectId]) => ({ date, classId, subjectId }),
+  ),
+  submitSubjectAttendance: mutationRoute(
+    api.subjects.submitSubjectAttendance,
+    ([date, classId, subjectId, rows]) => ({ date, classId, subjectId, rows }),
+  ),
+  getMySubjectAttendance: queryRoute(
+    api.subjects.getMySubjectAttendance,
+    ([filters]) => ({ filters }),
+  ),
+  getSubjectReportData: queryRoute(
+    api.subjects.getSubjectReportData,
+    ([filters]) => ({ filters }),
+  ),
+
   // tugas
   listAssignments: queryRoute(api.assignment.listAssignments),
   saveAssignment: mutationRoute(api.assignment.saveAssignment, ([data]) => ({
