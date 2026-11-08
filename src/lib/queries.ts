@@ -71,10 +71,19 @@ export const dashboardQuery = queryOptions({
   staleTime: 15_000,
 });
 
-export const attendanceFormQuery = (date: string, classId: string) =>
+export const attendanceFormQuery = (
+  date: string,
+  classId: string,
+  subjectId?: string,
+) =>
   queryOptions({
-    queryKey: [...qk.attendance, date, classId],
-    queryFn: () => api.attendanceForm(date, classId),
+    queryKey: subjectId
+      ? [...qk.subjectAttendance, date, classId, subjectId]
+      : [...qk.attendance, date, classId],
+    queryFn: () =>
+      subjectId
+        ? api.subjectAttendanceForm(date, classId, subjectId)
+        : api.attendanceForm(date, classId),
     staleTime: 0,
   });
 
@@ -159,8 +168,11 @@ export const subjectReportQuery = (f: SubjectReportFilters) =>
     queryFn: () => api.subjectReport(f),
     staleTime: 0,
   });
-  
-export const mySubjectAttendanceQuery = (f: { startDate: string; endDate: string }) =>
+
+export const mySubjectAttendanceQuery = (f: {
+  startDate: string;
+  endDate: string;
+}) =>
   queryOptions({
     queryKey: [...qk.mySubjectAttendance, f],
     queryFn: () => api.mySubjectAttendance(f),

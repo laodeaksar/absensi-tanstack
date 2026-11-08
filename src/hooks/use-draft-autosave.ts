@@ -17,7 +17,10 @@ export function useDraftAutosave(
   { enabled = true, intervalMs = 25_000 } = {},
 ) {
   const getRef = useRef(getAnswers);
-  getRef.current = getAnswers;
+  // Perbarui ref di effect (bukan saat render) supaya timer selalu memanggil versi terbaru
+  useEffect(() => {
+    getRef.current = getAnswers;
+  });
 
   useEffect(() => {
     if (!enabled) return;

@@ -336,10 +336,21 @@ function TeachingForm({
         <>
           <form.Field name="class_id">
             {(f) => (
-              <SelectField label="Kelas"field={f}>
-                <option disabled value="">-- Pilih Kelas --</option>
+              <SelectField
+                label="Kelas"
+                field={f}
+              >
+                <option
+                  disabled
+                  value=""
+                >
+                  -- Pilih Kelas --
+                </option>
                 {classOptions.map((c) => (
-                  <option key={c.class_id} value={c.class_id}>
+                  <option
+                    key={c.class_id}
+                    value={c.class_id}
+                  >
                     {c.class_name}
                   </option>
                 ))}
@@ -348,10 +359,21 @@ function TeachingForm({
           </form.Field>
           <form.Field name="subject_id">
             {(f) => (
-              <SelectField label="Mata Pelajaran"field={f}>
-                <option disabled value="">-- Pilih Mata Pelajaran --</option>
+              <SelectField
+                label="Mata Pelajaran"
+                field={f}
+              >
+                <option
+                  disabled
+                  value=""
+                >
+                  -- Pilih Mata Pelajaran --
+                </option>
                 {subjectOptions.map((s) => (
-                  <option key={s.subject_id} value={s.subject_id}>
+                  <option
+                    key={s.subject_id}
+                    value={s.subject_id}
+                  >
                     {s.code} - {s.name}
                   </option>
                 ))}
@@ -363,10 +385,21 @@ function TeachingForm({
 
       <form.Field name="teacher_id">
         {(f) => (
-          <SelectField label="Guru Pengampu" field={f}>
-            <option disabled value="">-- Pilih Guru --</option>
+          <SelectField
+            label="Guru Pengampu"
+            field={f}
+          >
+            <option
+              disabled
+              value=""
+            >
+              -- Pilih Guru --
+            </option>
             {teacherOptions.map((t) => (
-              <option key={t.user_id} value={t.user_id}>
+              <option
+                key={t.user_id}
+                value={t.user_id}
+              >
                 {t.full_name}
                 {isActive(t.is_active) ? "" : " (nonaktif)"}
               </option>

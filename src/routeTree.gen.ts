@@ -8,472 +8,412 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
-import { Route as AppClassesRouteImport } from './routes/_app/classes'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
-import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
-import { Route as AppMySubjectAttendanceRouteImport } from './routes/_app/my-subject-attendance'
-import { Route as AppReportsRouteImport } from './routes/_app/reports'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppStudentsRouteImport } from './routes/_app/students'
-import { Route as AppSubjectAttendanceRouteImport } from './routes/_app/subject-attendance'
-import { Route as AppSubjectReportsRouteImport } from './routes/_app/subject-reports'
-import { Route as AppSubjectsRouteImport } from './routes/_app/subjects'
-import { Route as AppTeachersRouteImport } from './routes/_app/teachers'
-import { Route as AppTeachingRouteImport } from './routes/_app/teaching'
-import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignments/index'
-import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
-import { Route as AppTasksAssignmentIdRouteImport } from './routes/_app/tasks/$assignmentId'
-import { Route as AppAssignmentsAssignmentIdQuestionsRouteImport } from './routes/_app/assignments/$assignmentId/questions'
-import { Route as AppAssignmentsAssignmentIdSubmissionsRouteImport } from './routes/_app/assignments/$assignmentId/submissions'
-import { Route as AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport } from './routes/_app/assignments/$assignmentId/review.$submissionId'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as AppRouteImport } from "./routes/_app";
+import { Route as AppAssignmentsAssignmentIdQuestionsRouteImport } from "./routes/_app/assignments/$assignmentId/questions";
+import { Route as AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport } from "./routes/_app/assignments/$assignmentId/review.$submissionId";
+import { Route as AppAssignmentsAssignmentIdSubmissionsRouteImport } from "./routes/_app/assignments/$assignmentId/submissions";
+import { Route as AppAssignmentsIndexRouteImport } from "./routes/_app/assignments/index";
+import { Route as AppAttendanceRouteImport } from "./routes/_app/attendance";
+import { Route as AppClassesRouteImport } from "./routes/_app/classes";
+import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard";
+import { Route as AppMyAttendanceRouteImport } from "./routes/_app/my-attendance";
+import { Route as AppReportsRouteImport } from "./routes/_app/reports";
+import { Route as AppSettingsRouteImport } from "./routes/_app/settings";
+import { Route as AppStudentsRouteImport } from "./routes/_app/students";
+import { Route as AppSubjectsRouteImport } from "./routes/_app/subjects";
+import { Route as AppTasksAssignmentIdRouteImport } from "./routes/_app/tasks/$assignmentId";
+import { Route as AppTasksIndexRouteImport } from "./routes/_app/tasks/index";
+import { Route as AppTeachersRouteImport } from "./routes/_app/teachers";
+import { Route as AppTeachingRouteImport } from "./routes/_app/teaching";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as LoginRouteImport } from "./routes/login";
 
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AppRoute = AppRouteImport.update({
-  id: '/_app',
+  id: "/_app",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
+  id: "/attendance",
+  path: "/attendance",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppClassesRoute = AppClassesRouteImport.update({
-  id: '/classes',
-  path: '/classes',
+  id: "/classes",
+  path: "/classes",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+  id: "/dashboard",
+  path: "/dashboard",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
-  id: '/my-attendance',
-  path: '/my-attendance',
+  id: "/my-attendance",
+  path: "/my-attendance",
   getParentRoute: () => AppRoute,
-} as any)
-const AppMySubjectAttendanceRoute = AppMySubjectAttendanceRouteImport.update({
-  id: '/my-subject-attendance',
-  path: '/my-subject-attendance',
-  getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppReportsRoute = AppReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+  id: "/reports",
+  path: "/reports",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppStudentsRoute = AppStudentsRouteImport.update({
-  id: '/students',
-  path: '/students',
+  id: "/students",
+  path: "/students",
   getParentRoute: () => AppRoute,
-} as any)
-const AppSubjectAttendanceRoute = AppSubjectAttendanceRouteImport.update({
-  id: '/subject-attendance',
-  path: '/subject-attendance',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSubjectReportsRoute = AppSubjectReportsRouteImport.update({
-  id: '/subject-reports',
-  path: '/subject-reports',
-  getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppSubjectsRoute = AppSubjectsRouteImport.update({
-  id: '/subjects',
-  path: '/subjects',
+  id: "/subjects",
+  path: "/subjects",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppTeachersRoute = AppTeachersRouteImport.update({
-  id: '/teachers',
-  path: '/teachers',
+  id: "/teachers",
+  path: "/teachers",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppTeachingRoute = AppTeachingRouteImport.update({
-  id: '/teaching',
-  path: '/teaching',
+  id: "/teaching",
+  path: "/teaching",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
-  id: '/assignments/',
-  path: '/assignments/',
+  id: "/assignments/",
+  path: "/assignments/",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
-  id: '/tasks/',
-  path: '/tasks/',
+  id: "/tasks/",
+  path: "/tasks/",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppTasksAssignmentIdRoute = AppTasksAssignmentIdRouteImport.update({
-  id: '/tasks/$assignmentId',
-  path: '/tasks/$assignmentId',
+  id: "/tasks/$assignmentId",
+  path: "/tasks/$assignmentId",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppAssignmentsAssignmentIdQuestionsRoute =
   AppAssignmentsAssignmentIdQuestionsRouteImport.update({
-    id: '/assignments/$assignmentId/questions',
-    path: '/assignments/$assignmentId/questions',
+    id: "/assignments/$assignmentId/questions",
+    path: "/assignments/$assignmentId/questions",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 const AppAssignmentsAssignmentIdSubmissionsRoute =
   AppAssignmentsAssignmentIdSubmissionsRouteImport.update({
-    id: '/assignments/$assignmentId/submissions',
-    path: '/assignments/$assignmentId/submissions',
+    id: "/assignments/$assignmentId/submissions",
+    path: "/assignments/$assignmentId/submissions",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 const AppAssignmentsAssignmentIdReviewSubmissionIdRoute =
   AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport.update({
-    id: '/assignments/$assignmentId/review/$submissionId',
-    path: '/assignments/$assignmentId/review/$submissionId',
+    id: "/assignments/$assignmentId/review/$submissionId",
+    path: "/assignments/$assignmentId/review/$submissionId",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/attendance': typeof AppAttendanceRoute
-  '/classes': typeof AppClassesRoute
-  '/dashboard': typeof AppDashboardRoute
-  '/my-attendance': typeof AppMyAttendanceRoute
-  '/my-subject-attendance': typeof AppMySubjectAttendanceRoute
-  '/reports': typeof AppReportsRoute
-  '/settings': typeof AppSettingsRoute
-  '/students': typeof AppStudentsRoute
-  '/subject-attendance': typeof AppSubjectAttendanceRoute
-  '/subject-reports': typeof AppSubjectReportsRoute
-  '/subjects': typeof AppSubjectsRoute
-  '/teachers': typeof AppTeachersRoute
-  '/teaching': typeof AppTeachingRoute
-  '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
-  '/assignments/': typeof AppAssignmentsIndexRoute
-  '/tasks/': typeof AppTasksIndexRoute
-  '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
-  '/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
-  '/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
+  "/": typeof IndexRoute;
+  "/login": typeof LoginRoute;
+  "/attendance": typeof AppAttendanceRoute;
+  "/classes": typeof AppClassesRoute;
+  "/dashboard": typeof AppDashboardRoute;
+  "/my-attendance": typeof AppMyAttendanceRoute;
+  "/reports": typeof AppReportsRoute;
+  "/settings": typeof AppSettingsRoute;
+  "/students": typeof AppStudentsRoute;
+  "/subjects": typeof AppSubjectsRoute;
+  "/teachers": typeof AppTeachersRoute;
+  "/teaching": typeof AppTeachingRoute;
+  "/tasks/$assignmentId": typeof AppTasksAssignmentIdRoute;
+  "/assignments/": typeof AppAssignmentsIndexRoute;
+  "/tasks/": typeof AppTasksIndexRoute;
+  "/assignments/$assignmentId/questions": typeof AppAssignmentsAssignmentIdQuestionsRoute;
+  "/assignments/$assignmentId/submissions": typeof AppAssignmentsAssignmentIdSubmissionsRoute;
+  "/assignments/$assignmentId/review/$submissionId": typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/attendance': typeof AppAttendanceRoute
-  '/classes': typeof AppClassesRoute
-  '/dashboard': typeof AppDashboardRoute
-  '/my-attendance': typeof AppMyAttendanceRoute
-  '/my-subject-attendance': typeof AppMySubjectAttendanceRoute
-  '/reports': typeof AppReportsRoute
-  '/settings': typeof AppSettingsRoute
-  '/students': typeof AppStudentsRoute
-  '/subject-attendance': typeof AppSubjectAttendanceRoute
-  '/subject-reports': typeof AppSubjectReportsRoute
-  '/subjects': typeof AppSubjectsRoute
-  '/teachers': typeof AppTeachersRoute
-  '/teaching': typeof AppTeachingRoute
-  '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
-  '/assignments': typeof AppAssignmentsIndexRoute
-  '/tasks': typeof AppTasksIndexRoute
-  '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
-  '/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
-  '/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
+  "/": typeof IndexRoute;
+  "/login": typeof LoginRoute;
+  "/attendance": typeof AppAttendanceRoute;
+  "/classes": typeof AppClassesRoute;
+  "/dashboard": typeof AppDashboardRoute;
+  "/my-attendance": typeof AppMyAttendanceRoute;
+  "/reports": typeof AppReportsRoute;
+  "/settings": typeof AppSettingsRoute;
+  "/students": typeof AppStudentsRoute;
+  "/subjects": typeof AppSubjectsRoute;
+  "/teachers": typeof AppTeachersRoute;
+  "/teaching": typeof AppTeachingRoute;
+  "/tasks/$assignmentId": typeof AppTasksAssignmentIdRoute;
+  "/assignments": typeof AppAssignmentsIndexRoute;
+  "/tasks": typeof AppTasksIndexRoute;
+  "/assignments/$assignmentId/questions": typeof AppAssignmentsAssignmentIdQuestionsRoute;
+  "/assignments/$assignmentId/submissions": typeof AppAssignmentsAssignmentIdSubmissionsRoute;
+  "/assignments/$assignmentId/review/$submissionId": typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/_app': typeof AppRouteWithChildren
-  '/login': typeof LoginRoute
-  '/_app/attendance': typeof AppAttendanceRoute
-  '/_app/classes': typeof AppClassesRoute
-  '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/my-attendance': typeof AppMyAttendanceRoute
-  '/_app/my-subject-attendance': typeof AppMySubjectAttendanceRoute
-  '/_app/reports': typeof AppReportsRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/students': typeof AppStudentsRoute
-  '/_app/subject-attendance': typeof AppSubjectAttendanceRoute
-  '/_app/subject-reports': typeof AppSubjectReportsRoute
-  '/_app/subjects': typeof AppSubjectsRoute
-  '/_app/teachers': typeof AppTeachersRoute
-  '/_app/teaching': typeof AppTeachingRoute
-  '/_app/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
-  '/_app/assignments/': typeof AppAssignmentsIndexRoute
-  '/_app/tasks/': typeof AppTasksIndexRoute
-  '/_app/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
-  '/_app/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
-  '/_app/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/_app": typeof AppRouteWithChildren;
+  "/login": typeof LoginRoute;
+  "/_app/attendance": typeof AppAttendanceRoute;
+  "/_app/classes": typeof AppClassesRoute;
+  "/_app/dashboard": typeof AppDashboardRoute;
+  "/_app/my-attendance": typeof AppMyAttendanceRoute;
+  "/_app/reports": typeof AppReportsRoute;
+  "/_app/settings": typeof AppSettingsRoute;
+  "/_app/students": typeof AppStudentsRoute;
+  "/_app/subjects": typeof AppSubjectsRoute;
+  "/_app/teachers": typeof AppTeachersRoute;
+  "/_app/teaching": typeof AppTeachingRoute;
+  "/_app/tasks/$assignmentId": typeof AppTasksAssignmentIdRoute;
+  "/_app/assignments/": typeof AppAssignmentsIndexRoute;
+  "/_app/tasks/": typeof AppTasksIndexRoute;
+  "/_app/assignments/$assignmentId/questions": typeof AppAssignmentsAssignmentIdQuestionsRoute;
+  "/_app/assignments/$assignmentId/submissions": typeof AppAssignmentsAssignmentIdSubmissionsRoute;
+  "/_app/assignments/$assignmentId/review/$submissionId": typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/login'
-    | '/attendance'
-    | '/classes'
-    | '/dashboard'
-    | '/my-attendance'
-    | '/my-subject-attendance'
-    | '/reports'
-    | '/settings'
-    | '/students'
-    | '/subject-attendance'
-    | '/subject-reports'
-    | '/subjects'
-    | '/teachers'
-    | '/teaching'
-    | '/tasks/$assignmentId'
-    | '/assignments/'
-    | '/tasks/'
-    | '/assignments/$assignmentId/questions'
-    | '/assignments/$assignmentId/submissions'
-    | '/assignments/$assignmentId/review/$submissionId'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/login"
+    | "/attendance"
+    | "/classes"
+    | "/dashboard"
+    | "/my-attendance"
+    | "/reports"
+    | "/settings"
+    | "/students"
+    | "/subjects"
+    | "/teachers"
+    | "/teaching"
+    | "/tasks/$assignmentId"
+    | "/assignments/"
+    | "/tasks/"
+    | "/assignments/$assignmentId/questions"
+    | "/assignments/$assignmentId/submissions"
+    | "/assignments/$assignmentId/review/$submissionId";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | '/login'
-    | '/attendance'
-    | '/classes'
-    | '/dashboard'
-    | '/my-attendance'
-    | '/my-subject-attendance'
-    | '/reports'
-    | '/settings'
-    | '/students'
-    | '/subject-attendance'
-    | '/subject-reports'
-    | '/subjects'
-    | '/teachers'
-    | '/teaching'
-    | '/tasks/$assignmentId'
-    | '/assignments'
-    | '/tasks'
-    | '/assignments/$assignmentId/questions'
-    | '/assignments/$assignmentId/submissions'
-    | '/assignments/$assignmentId/review/$submissionId'
+    | "/"
+    | "/login"
+    | "/attendance"
+    | "/classes"
+    | "/dashboard"
+    | "/my-attendance"
+    | "/reports"
+    | "/settings"
+    | "/students"
+    | "/subjects"
+    | "/teachers"
+    | "/teaching"
+    | "/tasks/$assignmentId"
+    | "/assignments"
+    | "/tasks"
+    | "/assignments/$assignmentId/questions"
+    | "/assignments/$assignmentId/submissions"
+    | "/assignments/$assignmentId/review/$submissionId";
   id:
-    | '__root__'
-    | '/'
-    | '/_app'
-    | '/login'
-    | '/_app/attendance'
-    | '/_app/classes'
-    | '/_app/dashboard'
-    | '/_app/my-attendance'
-    | '/_app/my-subject-attendance'
-    | '/_app/reports'
-    | '/_app/settings'
-    | '/_app/students'
-    | '/_app/subject-attendance'
-    | '/_app/subject-reports'
-    | '/_app/subjects'
-    | '/_app/teachers'
-    | '/_app/teaching'
-    | '/_app/tasks/$assignmentId'
-    | '/_app/assignments/'
-    | '/_app/tasks/'
-    | '/_app/assignments/$assignmentId/questions'
-    | '/_app/assignments/$assignmentId/submissions'
-    | '/_app/assignments/$assignmentId/review/$submissionId'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/_app"
+    | "/login"
+    | "/_app/attendance"
+    | "/_app/classes"
+    | "/_app/dashboard"
+    | "/_app/my-attendance"
+    | "/_app/reports"
+    | "/_app/settings"
+    | "/_app/students"
+    | "/_app/subjects"
+    | "/_app/teachers"
+    | "/_app/teaching"
+    | "/_app/tasks/$assignmentId"
+    | "/_app/assignments/"
+    | "/_app/tasks/"
+    | "/_app/assignments/$assignmentId/questions"
+    | "/_app/assignments/$assignmentId/submissions"
+    | "/_app/assignments/$assignmentId/review/$submissionId";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRouteWithChildren
-  LoginRoute: typeof LoginRoute
+  IndexRoute: typeof IndexRoute;
+  AppRoute: typeof AppRouteWithChildren;
+  LoginRoute: typeof LoginRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/attendance': {
-      id: '/_app/attendance'
-      path: '/attendance'
-      fullPath: '/attendance'
-      preLoaderRoute: typeof AppAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/classes': {
-      id: '/_app/classes'
-      path: '/classes'
-      fullPath: '/classes'
-      preLoaderRoute: typeof AppClassesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-attendance': {
-      id: '/_app/my-attendance'
-      path: '/my-attendance'
-      fullPath: '/my-attendance'
-      preLoaderRoute: typeof AppMyAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-subject-attendance': {
-      id: '/_app/my-subject-attendance'
-      path: '/my-subject-attendance'
-      fullPath: '/my-subject-attendance'
-      preLoaderRoute: typeof AppMySubjectAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/reports': {
-      id: '/_app/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/students': {
-      id: '/_app/students'
-      path: '/students'
-      fullPath: '/students'
-      preLoaderRoute: typeof AppStudentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/subject-attendance': {
-      id: '/_app/subject-attendance'
-      path: '/subject-attendance'
-      fullPath: '/subject-attendance'
-      preLoaderRoute: typeof AppSubjectAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/subject-reports': {
-      id: '/_app/subject-reports'
-      path: '/subject-reports'
-      fullPath: '/subject-reports'
-      preLoaderRoute: typeof AppSubjectReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/subjects': {
-      id: '/_app/subjects'
-      path: '/subjects'
-      fullPath: '/subjects'
-      preLoaderRoute: typeof AppSubjectsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/teachers': {
-      id: '/_app/teachers'
-      path: '/teachers'
-      fullPath: '/teachers'
-      preLoaderRoute: typeof AppTeachersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/teaching': {
-      id: '/_app/teaching'
-      path: '/teaching'
-      fullPath: '/teaching'
-      preLoaderRoute: typeof AppTeachingRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/assignments/': {
-      id: '/_app/assignments/'
-      path: '/assignments'
-      fullPath: '/assignments/'
-      preLoaderRoute: typeof AppAssignmentsIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/tasks/': {
-      id: '/_app/tasks/'
-      path: '/tasks'
-      fullPath: '/tasks/'
-      preLoaderRoute: typeof AppTasksIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/tasks/$assignmentId': {
-      id: '/_app/tasks/$assignmentId'
-      path: '/tasks/$assignmentId'
-      fullPath: '/tasks/$assignmentId'
-      preLoaderRoute: typeof AppTasksAssignmentIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/assignments/$assignmentId/questions': {
-      id: '/_app/assignments/$assignmentId/questions'
-      path: '/assignments/$assignmentId/questions'
-      fullPath: '/assignments/$assignmentId/questions'
-      preLoaderRoute: typeof AppAssignmentsAssignmentIdQuestionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/assignments/$assignmentId/submissions': {
-      id: '/_app/assignments/$assignmentId/submissions'
-      path: '/assignments/$assignmentId/submissions'
-      fullPath: '/assignments/$assignmentId/submissions'
-      preLoaderRoute: typeof AppAssignmentsAssignmentIdSubmissionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/assignments/$assignmentId/review/$submissionId': {
-      id: '/_app/assignments/$assignmentId/review/$submissionId'
-      path: '/assignments/$assignmentId/review/$submissionId'
-      fullPath: '/assignments/$assignmentId/review/$submissionId'
-      preLoaderRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport
-      parentRoute: typeof AppRoute
-    }
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_app": {
+      id: "/_app";
+      path: "";
+      fullPath: "/";
+      preLoaderRoute: typeof AppRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_app/attendance": {
+      id: "/_app/attendance";
+      path: "/attendance";
+      fullPath: "/attendance";
+      preLoaderRoute: typeof AppAttendanceRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/classes": {
+      id: "/_app/classes";
+      path: "/classes";
+      fullPath: "/classes";
+      preLoaderRoute: typeof AppClassesRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/dashboard": {
+      id: "/_app/dashboard";
+      path: "/dashboard";
+      fullPath: "/dashboard";
+      preLoaderRoute: typeof AppDashboardRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/my-attendance": {
+      id: "/_app/my-attendance";
+      path: "/my-attendance";
+      fullPath: "/my-attendance";
+      preLoaderRoute: typeof AppMyAttendanceRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/reports": {
+      id: "/_app/reports";
+      path: "/reports";
+      fullPath: "/reports";
+      preLoaderRoute: typeof AppReportsRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/settings": {
+      id: "/_app/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof AppSettingsRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/students": {
+      id: "/_app/students";
+      path: "/students";
+      fullPath: "/students";
+      preLoaderRoute: typeof AppStudentsRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/subjects": {
+      id: "/_app/subjects";
+      path: "/subjects";
+      fullPath: "/subjects";
+      preLoaderRoute: typeof AppSubjectsRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/teachers": {
+      id: "/_app/teachers";
+      path: "/teachers";
+      fullPath: "/teachers";
+      preLoaderRoute: typeof AppTeachersRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/teaching": {
+      id: "/_app/teaching";
+      path: "/teaching";
+      fullPath: "/teaching";
+      preLoaderRoute: typeof AppTeachingRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/assignments/": {
+      id: "/_app/assignments/";
+      path: "/assignments";
+      fullPath: "/assignments/";
+      preLoaderRoute: typeof AppAssignmentsIndexRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/tasks/": {
+      id: "/_app/tasks/";
+      path: "/tasks";
+      fullPath: "/tasks/";
+      preLoaderRoute: typeof AppTasksIndexRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/tasks/$assignmentId": {
+      id: "/_app/tasks/$assignmentId";
+      path: "/tasks/$assignmentId";
+      fullPath: "/tasks/$assignmentId";
+      preLoaderRoute: typeof AppTasksAssignmentIdRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/assignments/$assignmentId/questions": {
+      id: "/_app/assignments/$assignmentId/questions";
+      path: "/assignments/$assignmentId/questions";
+      fullPath: "/assignments/$assignmentId/questions";
+      preLoaderRoute: typeof AppAssignmentsAssignmentIdQuestionsRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/assignments/$assignmentId/submissions": {
+      id: "/_app/assignments/$assignmentId/submissions";
+      path: "/assignments/$assignmentId/submissions";
+      fullPath: "/assignments/$assignmentId/submissions";
+      preLoaderRoute: typeof AppAssignmentsAssignmentIdSubmissionsRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/assignments/$assignmentId/review/$submissionId": {
+      id: "/_app/assignments/$assignmentId/review/$submissionId";
+      path: "/assignments/$assignmentId/review/$submissionId";
+      fullPath: "/assignments/$assignmentId/review/$submissionId";
+      preLoaderRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport;
+      parentRoute: typeof AppRoute;
+    };
   }
 }
 
 interface AppRouteChildren {
-  AppAttendanceRoute: typeof AppAttendanceRoute
-  AppClassesRoute: typeof AppClassesRoute
-  AppDashboardRoute: typeof AppDashboardRoute
-  AppMyAttendanceRoute: typeof AppMyAttendanceRoute
-  AppMySubjectAttendanceRoute: typeof AppMySubjectAttendanceRoute
-  AppReportsRoute: typeof AppReportsRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppStudentsRoute: typeof AppStudentsRoute
-  AppSubjectAttendanceRoute: typeof AppSubjectAttendanceRoute
-  AppSubjectReportsRoute: typeof AppSubjectReportsRoute
-  AppSubjectsRoute: typeof AppSubjectsRoute
-  AppTeachersRoute: typeof AppTeachersRoute
-  AppTeachingRoute: typeof AppTeachingRoute
-  AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute
-  AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
-  AppTasksIndexRoute: typeof AppTasksIndexRoute
-  AppAssignmentsAssignmentIdQuestionsRoute: typeof AppAssignmentsAssignmentIdQuestionsRoute
-  AppAssignmentsAssignmentIdSubmissionsRoute: typeof AppAssignmentsAssignmentIdSubmissionsRoute
-  AppAssignmentsAssignmentIdReviewSubmissionIdRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
+  AppAttendanceRoute: typeof AppAttendanceRoute;
+  AppClassesRoute: typeof AppClassesRoute;
+  AppDashboardRoute: typeof AppDashboardRoute;
+  AppMyAttendanceRoute: typeof AppMyAttendanceRoute;
+  AppReportsRoute: typeof AppReportsRoute;
+  AppSettingsRoute: typeof AppSettingsRoute;
+  AppStudentsRoute: typeof AppStudentsRoute;
+  AppSubjectsRoute: typeof AppSubjectsRoute;
+  AppTeachersRoute: typeof AppTeachersRoute;
+  AppTeachingRoute: typeof AppTeachingRoute;
+  AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute;
+  AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute;
+  AppTasksIndexRoute: typeof AppTasksIndexRoute;
+  AppAssignmentsAssignmentIdQuestionsRoute: typeof AppAssignmentsAssignmentIdQuestionsRoute;
+  AppAssignmentsAssignmentIdSubmissionsRoute: typeof AppAssignmentsAssignmentIdSubmissionsRoute;
+  AppAssignmentsAssignmentIdReviewSubmissionIdRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute;
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -481,12 +421,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppClassesRoute: AppClassesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
-  AppMySubjectAttendanceRoute: AppMySubjectAttendanceRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRoute,
-  AppSubjectAttendanceRoute: AppSubjectAttendanceRoute,
-  AppSubjectReportsRoute: AppSubjectReportsRoute,
   AppSubjectsRoute: AppSubjectsRoute,
   AppTeachersRoute: AppTeachersRoute,
   AppTeachingRoute: AppTeachingRoute,
@@ -499,24 +436,25 @@ const AppRouteChildren: AppRouteChildren = {
     AppAssignmentsAssignmentIdSubmissionsRoute,
   AppAssignmentsAssignmentIdReviewSubmissionIdRoute:
     AppAssignmentsAssignmentIdReviewSubmissionIdRoute,
-}
+};
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
+import type { createStart } from "@tanstack/react-start";
+
+import type { getRouter } from "./router.tsx";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

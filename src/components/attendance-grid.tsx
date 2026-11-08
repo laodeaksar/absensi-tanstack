@@ -15,13 +15,6 @@ import { gridSchema } from "~/lib/attendance-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 
-/* type Row = {
-  student_id: string;
-  nis: string;
-  full_name: string;
-  status: string;
-  notes: string;
-}; */
 type Row = Omit<AttendanceEntry, "attendance_id">;
 const col = columnHelperFor<Row>();
 

@@ -57,10 +57,11 @@ function SubjectsPage() {
   };
 
   const toggle = useMutation({
-    mutationFn: (s: Subject) => api.saveSubject({ 
-      subject_id: s.subject_id, 
-      is_active: !s.is_active 
-    }),
+    mutationFn: (s: Subject) =>
+      api.saveSubject({
+        subject_id: s.subject_id,
+        is_active: !s.is_active,
+      }),
     onSuccess: (r) => {
       toast.success(r.message);
       refresh();

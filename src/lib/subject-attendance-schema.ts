@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { makeFilterSchema } from "./attendance-schema";
 import { isRealDate } from "./date";
 import { rangeIssue } from "./validation";
 
@@ -21,27 +20,6 @@ const pairField = (pairs: string[]) =>
       (k) => !k || pairs.includes(k),
       "Kelas dan mata pelajaran tidak tersedia untuk akun Anda",
     );
-
-export interface SubjectFilterRules {
-  /** Pasangan yang boleh dipilih, dalam bentuk pairKey */
-  pairs: string[];
-  /** true untuk guru: tidak boleh tanggal masa depan dan dibatasi jendela edit */
-  restricted: boolean;
-  editWindowDays: number;
-  tzOffsetMinutes?: number;
-}
-
-/** Filter absensi mapel: aturan tanggal sama dengan absensi harian, kelas diganti pasangan kelas + mapel. */
-export function makeSubjectFilterSchema(rules: SubjectFilterRules) {
-  return makeFilterSchema({
-    classIds: [],
-    restricted: rules.restricted,
-    editWindowDays: rules.editWindowDays,
-    tzOffsetMinutes: rules.tzOffsetMinutes,
-  })
-    .pick({ date: true })
-    .extend({ pair: pairField(rules.pairs) });
-}
 
 /** Filter rekap mapel: pasangan kelas + mapel wajib, rentang tanggal wajib dan dibatasi. */
 export function makeSubjectReportFilterSchema(rules: { pairs: string[] }) {

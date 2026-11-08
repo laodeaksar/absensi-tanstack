@@ -7,6 +7,7 @@ export { SearchBox } from "./search-box";
 export { Modal } from "./modal";
 export { ConfirmDialog } from "./confirm-dialog";
 export {
+  FieldShell,
   TextField,
   PasswordField,
   SelectField,

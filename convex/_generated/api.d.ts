@@ -26,6 +26,7 @@ import type * as master from "../master.js";
 import type * as rules from "../rules.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
+import type * as subjects from "../subjects.js";
 
 declare const fullApi: ApiFromModules<{
   assignment: typeof assignment;
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   rules: typeof rules;
   seed: typeof seed;
   settings: typeof settings;
+  subjects: typeof subjects;
 }>;
 
 /**

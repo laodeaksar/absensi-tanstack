@@ -15,11 +15,12 @@ import {
   Trash2,
   Inbox,
 } from "lucide-react";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 
 import type { Question, QuestionInput } from "~/lib/types";
 
 import { BackLink } from "~/components/back-link";
+import { OptionListField } from "~/components/option-list-field";
 import { HeaderButton, PageHeader } from "~/components/status-icons";
 import {
   ActionMenu,
@@ -39,7 +40,6 @@ import { allowRoles } from "~/lib/auth";
 import { assignmentDetailQuery, qk } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
-import { firstMessage } from "~/lib/validation";
 
 export const Route = createFileRoute(
   "/_app/assignments/$assignmentId/questions",
@@ -204,27 +204,6 @@ function createQuestionColumns({
   ]);
 }
 
-function CorrectOptionRadio({
-  index,
-  checked,
-  onSelect,
-}: Readonly<{
-  index: number;
-  checked: boolean;
-  onSelect: (value: string) => void;
-}>) {
-  return (
-    <input
-      type="radio"
-      name="correct"
-      className="radio radio-primary radio-sm mt-9"
-      aria-label={`Jawaban benar: pilihan ${letter(index)}`}
-      checked={checked}
-      onChange={() => onSelect(String(index))}
-    />
-  );
-}
-
 function QuestionsPage() {
   const { assignmentId } = Route.useParams();
   const qc = useQueryClient();
@@ -370,8 +349,6 @@ function QuestionsPage() {
   );
 }
 
-const newKey = () => Math.random().toString(36).slice(2);
-
 function QuestionForm({
   assignmentId,
   question,
@@ -384,10 +361,6 @@ function QuestionForm({
   onCancel: () => void;
 }>) {
   const schema = useMemo(() => makeQuestionSchema(), []);
-
-  // Kunci stabil per baris pilihan: tidak boleh memakai teks pilihan, karena berubah tiap ketikan
-  // dan membuat input dipasang ulang (fokus hilang setelah satu karakter)
-  const optionKeys = useRef<string[]>([]);
 
   const save = useMutation({
     mutationFn: (v: QuestionInput) => api.saveQuestion(v),
@@ -495,104 +468,31 @@ function QuestionForm({
               name="options"
               mode="array"
             >
-              {(opts) => {
-                const count = opts.state.value.length;
-                while (optionKeys.current.length < count)
-                  optionKeys.current.push(newKey());
-                const listMsg = opts.state.meta.isTouched
-                  ? firstMessage(opts.state.meta.errors)
-                  : "";
-                const removeAt = (i: number) => {
-                  optionKeys.current.splice(i, 1);
-                  opts.removeValue(i);
-                  const ci = form.getFieldValue("correct_index");
-                  if (ci !== "") {
-                    const n = Number(ci);
-                    if (n === i) form.setFieldValue("correct_index", "");
-                    else if (n > i)
-                      form.setFieldValue("correct_index", String(n - 1));
-                  }
-                };
-                return (
-                  <fieldset className="fieldset">
-                    <legend className="fieldset-legend">
-                      Pilihan Jawaban (pilih yang benar)
-                    </legend>
-                    <div className="space-y-1">
-                      {opts.state.value.map((_, i) => (
-                        <div
-                          key={optionKeys.current[i]}
-                          className="flex items-start gap-2"
-                        >
-                          <form.Field name="correct_index">
-                            {(cf) => (
-                              <CorrectOptionRadio
-                                index={i}
-                                checked={cf.state.value === String(i)}
-                                onSelect={cf.handleChange}
-                              />
-                            )}
-                          </form.Field>
-                          <div className="flex-1">
-                            <form.Field name={`options[${i}]` as const}>
-                              {(f) => (
-                                <TextField
-                                  label={`Pilihan ${letter(i)}`}
-                                  field={f}
-                                  maxLength={LIMITS.optionText + 10}
-                                />
-                              )}
-                            </form.Field>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm mt-8"
-                            disabled={count <= LIMITS.optionsMin}
-                            onClick={() => removeAt(i)}
-                            aria-label={`Hapus pilihan ${letter(i)}`}
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm w-fit text-primary"
-                      disabled={count >= LIMITS.optionsMax}
-                      onClick={() => {
-                        optionKeys.current.push(newKey());
-                        opts.pushValue("");
-                      }}
-                    >
-                      <Plus className="size-4" /> Tambah pilihan
-                    </button>
-                    {listMsg ? (
-                      <p
-                        role="alert"
-                        className="text-xs text-error"
-                      >
-                        {listMsg}
-                      </p>
-                    ) : null}
-                    <form.Field name="correct_index">
-                      {(cf) => {
-                        const m = cf.state.meta.isTouched
-                          ? firstMessage(cf.state.meta.errors)
-                          : "";
-                        return m ? (
-                          <p
-                            role="alert"
-                            className="text-xs text-error"
-                          >
-                            {m}
-                          </p>
-                        ) : null;
-                      }}
-                    </form.Field>
-                  </fieldset>
-                );
-              }}
+              {(opts) => (
+                <form.Field name="correct_index">
+                  {(cf) => (
+                    <OptionListField
+                      label="Pilihan Jawaban (pilih yang benar)"
+                      field={opts}
+                      correctField={cf}
+                      min={LIMITS.optionsMin}
+                      max={LIMITS.optionsMax}
+                      optionLabel={(i) => `Pilihan ${letter(i)}`}
+                      renderOption={(i) => (
+                        <form.Field name={`options[${i}]` as const}>
+                          {(f) => (
+                            <TextField
+                              label={`Pilihan ${letter(i)}`}
+                              field={f}
+                              maxLength={LIMITS.optionText + 10}
+                            />
+                          )}
+                        </form.Field>
+                      )}
+                    />
+                  )}
+                </form.Field>
+              )}
             </form.Field>
           ) : (
             <p className="rounded-box bg-base-200 p-3 text-sm text-base-content/70">

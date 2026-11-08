@@ -12,7 +12,6 @@ import {
 } from "@tanstack/react-router";
 import {
   BarChart3,
-  BookMarked,
   BookOpenCheck,
   CalendarCheck,
   ClipboardCheck,
@@ -21,7 +20,6 @@ import {
   GraduationCap,
   LayoutDashboard,
   Library,
-  ListChecks,
   LogOut,
   Menu,
   School,
@@ -59,10 +57,7 @@ type NavTo =
   | "/teachers"
   | "/subjects"
   | "/teaching"
-  | "/subject-attendance"
-  | "/subject-reports"
   | "/my-attendance"
-  | "/my-subject-attendance"
   | "/settings";
 
 function NavItem({
@@ -180,12 +175,6 @@ function AppLayout() {
                   onNavigate={close}
                 />
                 <NavItem
-                  to="/subject-attendance"
-                  icon={<BookMarked className={ic} />}
-                  label="Absensi Mapel"
-                  onNavigate={close}
-                />
-                <NavItem
                   to="/assignments"
                   icon={<ClipboardList className={ic} />}
                   label="Tugas"
@@ -195,12 +184,6 @@ function AppLayout() {
                   to="/reports"
                   icon={<BarChart3 className={ic} />}
                   label="Laporan"
-                  onNavigate={close}
-                />
-                <NavItem
-                  to="/subject-reports"
-                  icon={<ListChecks className={ic} />}
-                  label="Rekap Mapel"
                   onNavigate={close}
                 />
               </>
@@ -246,12 +229,6 @@ function AppLayout() {
                   to="/my-attendance"
                   icon={<CalendarCheck className={ic} />}
                   label="Kehadiran Saya"
-                  onNavigate={close}
-                />
-                <NavItem
-                  to="/my-subject-attendance"
-                  icon={<BookMarked className={ic} />}
-                  label="Kehadiran Mapel"
                   onNavigate={close}
                 />
                 <NavItem

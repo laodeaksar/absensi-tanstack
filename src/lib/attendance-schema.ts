@@ -5,6 +5,11 @@ import { STATUS_VALUES } from "~/convex/rules";
 
 import { isRealDate, shiftDays, todayStr } from "./date";
 
+// Dipakai halaman absensi harian dan absensi mata pelajaran
+export { STATUS_VALUES, needsNotes };
+/** Panjang minimal keterangan untuk status Sakit/Izin */
+export const NOTES_MIN = LIMITS.notesMin;
+
 /* ---------- filter (tanggal + kelas): aturan bergantung peran, kelas, dan pengaturan ---------- */
 
 export interface FilterRules {
@@ -91,4 +96,46 @@ export function firstMessage(errors: unknown[]): string {
   return typeof e === "string"
     ? e
     : ((e as { message?: string }).message ?? "");
+}
+
+/* ---------- pilihan jenis absensi (harian atau mata pelajaran) ---------- */
+
+/** "classId" = absensi harian; "classId|subjectId" = absensi mata pelajaran. */
+export const targetKey = (classId: string, subjectId?: string) =>
+  subjectId ? `${classId}|${subjectId}` : classId;
+
+export function parseTarget(key: string): {
+  classId: string;
+  subjectId?: string;
+} {
+  const [classId = "", subjectId = ""] = key.split("|");
+  return { classId, subjectId: subjectId || undefined };
+}
+
+export interface TargetFilterRules {
+  /** Pilihan yang boleh dipakai akun ini, dalam bentuk targetKey */
+  targets: string[];
+  restricted: boolean;
+  editWindowDays: number;
+  tzOffsetMinutes?: number;
+}
+
+/** Filter halaman absensi: aturan tanggal sama untuk harian dan mapel, kelas/mapel dipilih lewat satu nilai. */
+export function makeTargetFilterSchema(rules: TargetFilterRules) {
+  return makeFilterSchema({
+    classIds: [],
+    restricted: rules.restricted,
+    editWindowDays: rules.editWindowDays,
+    tzOffsetMinutes: rules.tzOffsetMinutes,
+  })
+    .pick({ date: true })
+    .extend({
+      target: z
+        .string()
+        .min(1, "Pilih kelas atau mata pelajaran")
+        .refine(
+          (k) => !k || rules.targets.includes(k),
+          "Pilihan tidak tersedia untuk akun Anda",
+        ),
+    });
 }

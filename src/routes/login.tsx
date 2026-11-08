@@ -38,15 +38,18 @@ function useCountdown(until: number) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     // Segarkan `now` dulu: nilai lama (mis. sejak halaman dibuka) membuat hitungan mundur terlalu besar sesaat
-    setNow(Date.now());
     if (until <= Date.now()) return;
-
+    const tick = () => setNow(Date.now());
+    const first = setTimeout(tick, 0); // segarkan lewat timer, bukan sinkron
     const id = setInterval(() => {
-      setNow(Date.now());
+      tick();
       if (Date.now() >= until) clearInterval(id);
     }, 1000);
 
-    return () => clearInterval(id);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
   }, [until]);
   return Math.max(0, Math.ceil((until - now) / 1000));
 }
@@ -65,12 +68,7 @@ function LoginPage() {
   const locked = lockLeft > 0;
 
   // Kunci berakhir: hapus pesan "terlalu banyak percobaan" supaya tidak menggantung
-  useEffect(() => {
-    if (lockedUntil > 0 && lockLeft === 0) {
-      setLockedUntil(0);
-      setServerError((m) => (isLockMessage(m) ? "" : m));
-    }
-  }, [lockedUntil, lockLeft]);
+  const shownError = !locked && isLockMessage(serverError) ? "" : serverError;
 
   const login = useMutation({
     mutationFn: async (v: { username: string; password: string }) => {
@@ -157,8 +155,8 @@ function LoginPage() {
             <ErrorAlert
               message={
                 locked
-                  ? `${serverError} Coba lagi sekitar ${mmss(lockLeft)}.`
-                  : serverError
+                  ? `${shownError} Coba lagi sekitar ${mmss(lockLeft)}.`
+                  : shownError
               }
             />
 

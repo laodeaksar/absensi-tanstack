@@ -405,11 +405,15 @@ function TaskForm({
       : Infinity;
   });
 
+  // Nilai awal `left` sudah dihitung oleh initializer di atas, jadi effect hanya perlu
+  // memperbaruinya tiap detik (tanpa memanggil setState secara sinkron di dalam effect)
   useEffect(() => {
-    if (!session.deadline) return;
-    const tick = () => setLeft(session.deadline - (Date.now() + offset));
-    tick();
-    const timer = setInterval(tick, 1000);
+    const deadline = session.deadline;
+    if (!deadline) return;
+    const timer = setInterval(
+      () => setLeft(deadline - (Date.now() + offset)),
+      1000,
+    );
     return () => clearInterval(timer);
   }, [session.deadline, offset]);
 

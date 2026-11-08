@@ -437,9 +437,19 @@ export interface MySubjectAttendance {
 
 export interface MySubjectAttendance {
   summary: {
-    subject_id: string; subject_name: string;
-    hadir: number; sakit: number; izin: number; alpa: number;
-    total: number; persentase: number;
+    subject_id: string;
+    subject_name: string;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpa: number;
+    total: number;
+    persentase: number;
   }[];
-  records: { date: string; subject_name: string; status: string; notes: string }[];
+  records: {
+    date: string;
+    subject_name: string;
+    status: string;
+    notes: string;
+  }[];
 }

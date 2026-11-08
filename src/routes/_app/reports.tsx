@@ -12,6 +12,7 @@ import {
   HeaderButton,
   PageHeader,
 } from "~/components/status-icons";
+import { SubjectReportView } from "~/components/subject-report-view";
 import {
   DataTable,
   ErrorAlert,
@@ -22,7 +23,12 @@ import {
 } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
 import { formatDate } from "~/lib/date";
-import { classesQuery, reportQuery, settingsQuery } from "~/lib/queries";
+import {
+  classesQuery,
+  reportQuery,
+  settingsQuery,
+  teachingQuery,
+} from "~/lib/queries";
 import { makeReportFilterSchema } from "~/lib/report-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { isActive } from "~/lib/types";
@@ -33,12 +39,16 @@ export const Route = createFileRoute("/_app/reports")({
     startDate: typeof s.startDate === "string" ? s.startDate : undefined,
     endDate: typeof s.endDate === "string" ? s.endDate : undefined,
     classId: typeof s.classId === "string" ? s.classId : undefined,
+    // tab "mapel": rekap per mata pelajaran; pair = "classId|subjectId"
+    tab: s.tab === "mapel" ? ("mapel" as const) : undefined,
+    pair: typeof s.pair === "string" ? s.pair : undefined,
     go: s.go === true || s.go === "true" ? true : undefined,
   }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.query(classesQuery),
       context.queryClient.query(settingsQuery),
+      context.queryClient.query(teachingQuery),
     ]),
   component: ReportsPage,
 });
@@ -80,7 +90,68 @@ const columns = col.columns([
   }),
 ]);
 
+const NO_SEARCH = {
+  startDate: undefined,
+  endDate: undefined,
+  classId: undefined,
+  tab: undefined,
+  pair: undefined,
+  go: undefined,
+};
+
 function ReportsPage() {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const tab = search.tab === "mapel" ? "mapel" : "harian";
+  // Rentang tanggal dibawa antar tab; filter lain dan hasil pencarian dimulai ulang
+  const switchTo = (t: "harian" | "mapel") =>
+    void navigate({
+      to: "/reports",
+      search: {
+        ...NO_SEARCH,
+        tab: t === "mapel" ? "mapel" : undefined,
+      },
+    });
+
+  return (
+    <div className="space-y-4">
+      <div className="join no-print">
+        <button
+          type="button"
+          className={`btn join-item btn-sm ${tab === "harian" ? "btn-primary" : ""}`}
+          onClick={() => switchTo("harian")}
+        >
+          Harian
+        </button>
+        <button
+          type="button"
+          className={`btn join-item btn-sm ${tab === "mapel" ? "btn-primary" : ""}`}
+          onClick={() => switchTo("mapel")}
+        >
+          Per Mata Pelajaran
+        </button>
+      </div>
+      {tab === "harian" ? (
+        <DailyReportView />
+      ) : (
+        <SubjectReportView
+          search={search}
+          onSearch={() =>
+            void navigate({
+              to: "/reports",
+              search: {
+                ...NO_SEARCH,
+                tab: "mapel",
+              },
+            })
+          }
+        />
+      )}
+    </div>
+  );
+}
+
+function DailyReportView() {
   const { me } = Route.useRouteContext();
   const search = Route.useSearch();
   const navigate = useNavigate();
@@ -146,10 +217,8 @@ function ReportsPage() {
       void navigate({
         to: "/reports",
         search: {
+          ...NO_SEARCH,
           startDate: value.startDate || undefined,
-          endDate: value.endDate || undefined,
-          classId: value.classId || undefined,
-          go: true,
         },
       });
     },

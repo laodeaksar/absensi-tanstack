@@ -1,11 +1,12 @@
 import { useForm } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
 import type { MyAttendance } from "~/lib/types";
 
+import { MySubjectAttendanceView } from "~/components/my-subject-attendance-view";
 import {
   DataTable,
   ErrorAlert,
@@ -16,12 +17,16 @@ import {
 } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
 import { monthStart, todayStr } from "~/lib/date";
-import { myAttendanceQuery } from "~/lib/queries";
+import { myAttendanceQuery, settingsQuery } from "~/lib/queries";
 import { makeMyRangeSchema } from "~/lib/report-schema";
 import { columnHelperFor, features } from "~/lib/table";
 
 export const Route = createFileRoute("/_app/my-attendance")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["siswa"]),
+  // tab "mapel": kehadiran per mata pelajaran; kosong = harian
+  validateSearch: (s: Record<string, unknown>) => ({
+    tab: s.tab === "mapel" ? ("mapel" as const) : undefined,
+  }),
   component: MyAttendancePage,
 });
 
@@ -40,11 +45,124 @@ const columns = col.columns([
   }),
 ]);
 
+type Range = { startDate: string; endDate: string };
+
 function MyAttendancePage() {
-  const [range, setRange] = useState({
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const { data: settings } = useSuspenseQuery(settingsQuery);
+  // "Hari ini" mengikuti zona waktu sekolah (sama dengan server), bukan jam perangkat
+  const tzRaw = settings.tz_offset_minutes;
+  const tz =
+    tzRaw !== "" && Number.isFinite(Number(tzRaw)) ? Number(tzRaw) : undefined;
+
+  const tab = search.tab === "mapel" ? "mapel" : "harian";
+  // Rentang tanggal dipakai bersama kedua tab
+  const [range, setRange] = useState<Range>(() => ({
     startDate: monthStart(),
-    endDate: todayStr(),
+    endDate: todayStr(tz),
+  }));
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold">Kehadiran Saya</h2>
+
+      <div className="join">
+        <button
+          type="button"
+          className={`btn join-item btn-sm ${tab === "harian" ? "btn-primary" : ""}`}
+          onClick={() =>
+            void navigate({ to: "/my-attendance", search: { tab: undefined } })
+          }
+        >
+          Harian
+        </button>
+        <button
+          type="button"
+          className={`btn join-item btn-sm ${tab === "mapel" ? "btn-primary" : ""}`}
+          onClick={() =>
+            void navigate({ to: "/my-attendance", search: { tab: "mapel" } })
+          }
+        >
+          Per Mata Pelajaran
+        </button>
+      </div>
+
+      <RangeForm
+        range={range}
+        onRange={setRange}
+        tz={tz}
+      />
+
+      {tab === "harian" ? (
+        <DailyAttendanceView range={range} />
+      ) : (
+        <MySubjectAttendanceView range={range} />
+      )}
+    </div>
+  );
+}
+
+function RangeForm({
+  range,
+  onRange,
+  tz,
+}: Readonly<{ range: Range; onRange: (r: Range) => void; tz?: number }>) {
+  // Aturan: tanggal wajib, awal <= akhir, akhir tidak di masa depan, rentang dibatasi
+  const schema = useMemo(() => makeMyRangeSchema(tz), [tz]);
+
+  const form = useForm({
+    defaultValues: range,
+    validators: {
+      onChange: schema,
+      onSubmit: schema,
+    },
+    onSubmit: ({ value }) => onRange(value),
   });
+
+  return (
+    <div className="card border border-base-300 bg-base-100">
+      <form
+        noValidate
+        className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void form.handleSubmit();
+        }}
+      >
+        <form.Field name="startDate">
+          {(f) => (
+            <TextField
+              label="Dari Tanggal"
+              field={f}
+              type="date"
+              max={todayStr(tz)}
+            />
+          )}
+        </form.Field>
+        <form.Field name="endDate">
+          {(f) => (
+            <TextField
+              label="Sampai Tanggal"
+              field={f}
+              type="date"
+              max={todayStr(tz)}
+            />
+          )}
+        </form.Field>
+        <button
+          type="submit"
+          className="btn btn-primary mt-6 w-full"
+        >
+          Tampilkan
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function DailyAttendanceView({ range }: Readonly<{ range: Range }>) {
   const q = useQuery(myAttendanceQuery(range));
   const data = q.data?.records ?? [];
   const table = useTable({
@@ -56,31 +174,16 @@ function MyAttendancePage() {
     },
   });
 
-  // Aturan: tanggal wajib, awal <= akhir, akhir tidak di masa depan, rentang dibatasi
-  const schema = useMemo(() => makeMyRangeSchema(), []);
-
-  const form = useForm({
-    defaultValues: range,
-    validators: {
-      onChange: schema,
-      onSubmit: schema,
-    },
-    onSubmit: ({ value }) => setRange(value),
-  });
-
   const p = q.data?.profile;
   const s = q.data?.summary;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold">Kehadiran Saya</h2>
-        {p ? (
-          <p className="text-sm text-base-content/60">
-            {p.full_name} - NIS {p.nis || "-"} - Kelas {p.class_name || "-"}
-          </p>
-        ) : null}
-      </div>
+    <>
+      {p ? (
+        <p className="text-sm text-base-content/60">
+          {p.full_name} - NIS {p.nis || "-"} - Kelas {p.class_name || "-"}
+        </p>
+      ) : null}
 
       <div className="card border border-base-300 bg-base-100">
         <div className="card-body flex-row items-center justify-between gap-4 p-5">
@@ -102,45 +205,6 @@ function MyAttendancePage() {
             }
           />
         </div>
-      </div>
-
-      <div className="card border border-base-300 bg-base-100">
-        <form
-          noValidate
-          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void form.handleSubmit();
-          }}
-        >
-          <form.Field name="startDate">
-            {(f) => (
-              <TextField
-                label="Dari Tanggal"
-                field={f}
-                type="date"
-                max={todayStr()}
-              />
-            )}
-          </form.Field>
-          <form.Field name="endDate">
-            {(f) => (
-              <TextField
-                label="Sampai Tanggal"
-                field={f}
-                type="date"
-                max={todayStr()}
-              />
-            )}
-          </form.Field>
-          <button
-            type="submit"
-            className="btn btn-primary mt-6 w-full"
-          >
-            Tampilkan
-          </button>
-        </form>
       </div>
 
       {q.isPending ? <PageSpinner /> : null}
@@ -180,6 +244,6 @@ function MyAttendancePage() {
         />
         <Pager table={table} />
       </div>
-    </div>
+    </>
   );
 }

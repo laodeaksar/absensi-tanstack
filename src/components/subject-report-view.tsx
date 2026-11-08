@@ -1,6 +1,5 @@
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Printer } from "lucide-react";
 import { useMemo } from "react";
@@ -16,7 +15,6 @@ import {
   SelectField,
   TextField,
 } from "~/components/ui";
-import { allowRoles } from "~/lib/auth";
 import { formatDate, monthStart, todayStr } from "~/lib/date";
 import {
   settingsQuery,
@@ -29,22 +27,6 @@ import {
   parsePair,
 } from "~/lib/subject-attendance-schema";
 import { columnHelperFor, features } from "~/lib/table";
-
-export const Route = createFileRoute("/_app/subject-reports")({
-  beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
-  validateSearch: (s: Record<string, unknown>) => ({
-    pair: typeof s.pair === "string" ? s.pair : undefined,
-    startDate: typeof s.startDate === "string" ? s.startDate : undefined,
-    endDate: typeof s.endDate === "string" ? s.endDate : undefined,
-    go: s.go === true || s.go === "true" ? true : undefined,
-  }),
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.query(teachingQuery),
-      context.queryClient.query(settingsQuery),
-    ]),
-  component: SubjectReportsPage,
-});
 
 const col = columnHelperFor<SubjectReportRow>();
 const num = (v: number) => <span className="tabular-nums">{v}</span>;
@@ -83,9 +65,22 @@ const columns = col.columns([
   }),
 ]);
 
-function SubjectReportsPage() {
-  const search = Route.useSearch();
-  const navigate = useNavigate();
+/**
+ * Rekap absensi per mata pelajaran (tab pada halaman Laporan).
+ * Parameter pencarian dan pemindahan halaman dikelola halaman pemanggil lewat props.
+ */
+export function SubjectReportView({
+  search,
+  onSearch,
+}: Readonly<{
+  search: {
+    pair?: string;
+    startDate?: string;
+    endDate?: string;
+    go?: boolean;
+  };
+  onSearch: (v: { pair: string; startDate: string; endDate: string }) => void;
+}>) {
   // Guru: hanya pengampu miliknya. Admin: semua pengampu yang terdaftar.
   const { data: teaching } = useSuspenseQuery(teachingQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
@@ -138,17 +133,7 @@ function SubjectReportsPage() {
       endDate: search.endDate ?? todayStr(tz),
     },
     validators: { onChange: schema, onSubmit: schema },
-    onSubmit: ({ value }) => {
-      void navigate({
-        to: "/subject-reports",
-        search: {
-          pair: value.pair,
-          startDate: value.startDate,
-          endDate: value.endDate,
-          go: true,
-        },
-      });
-    },
+    onSubmit: ({ value }) => onSearch(value),
   });
 
   const table = useTable({
@@ -211,7 +196,12 @@ function SubjectReportsPage() {
                 label="Kelas dan Mata Pelajaran"
                 field={f}
               >
-                <option disabled value="">-- Pilih --</option>
+                <option
+                  disabled
+                  value=""
+                >
+                  -- Pilih --
+                </option>
                 {options.map((t) => (
                   <option
                     key={t.teaching_id}

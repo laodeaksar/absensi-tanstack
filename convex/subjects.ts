@@ -45,9 +45,9 @@ const attendanceRow = v.object({
   notes: v.string(),
 });
 
-const myRange = v.object({ 
-  startDate: v.string(), 
-  endDate: v.string()
+const myRange = v.object({
+  startDate: v.string(),
+  endDate: v.string(),
 });
 
 const subjectReportFilters = v.object({
@@ -533,13 +533,13 @@ export const getMySubjectAttendance = query({
     if (startDate > endDate)
       fail("Tanggal mulai tidak boleh setelah tanggal akhir.");
     const days = (Date.parse(endDate) - Date.parse(startDate)) / 86_400_000 + 1;
-    if (days > MAX_RANGE_DAYS)
-      fail(`Rentang maksimal ${MAX_RANGE_DAYS} hari.`);
+    if (days > MAX_RANGE_DAYS) fail(`Rentang maksimal ${MAX_RANGE_DAYS} hari.`);
 
     const recs = await ctx.db
       .query("subject_attendance")
       .withIndex("by_student_date", (q) =>
-        q.eq("student_id", sid)
+        q
+          .eq("student_id", sid)
           .gte("attendance_date", startDate)
           .lte("attendance_date", endDate),
       )
@@ -549,13 +549,19 @@ export const getMySubjectAttendance = query({
       fail("Data terlalu banyak. Persempit rentang tanggal.");
 
     const names = new Map(
-      (await ctx.db.query("subjects").collect()).map((s) => [s.subject_id, s.name]),
+      (await ctx.db.query("subjects").collect()).map((s) => [
+        s.subject_id,
+        s.name,
+      ]),
     );
     type Tally = { hadir: number; sakit: number; izin: number; alpa: number };
     const tally = new Map<string, Tally>();
     for (const r of recs) {
       let t = tally.get(r.subject_id);
-      if (!t) { t = { hadir: 0, sakit: 0, izin: 0, alpa: 0 }; tally.set(r.subject_id, t); }
+      if (!t) {
+        t = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
+        tally.set(r.subject_id, t);
+      }
       if (r.status === "Hadir") t.hadir++;
       else if (r.status === "Sakit") t.sakit++;
       else if (r.status === "Izin") t.izin++;

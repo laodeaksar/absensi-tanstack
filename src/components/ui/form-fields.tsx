@@ -14,7 +14,7 @@ import { useValidity } from "~/hooks/use-validity";
 import { errorText } from "~/utils/form";
 
 /* Field TanStack Form dengan validator daisyUI (kelas `validator` + `validator-hint`). */
-function FieldShell({
+export function FieldShell({
   label,
   hint,
   message,

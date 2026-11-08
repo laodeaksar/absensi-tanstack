@@ -1,4 +1,4 @@
-import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import {
   useQuery,
   useQueryClient,
@@ -6,8 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-
-import type { AttendanceEntry } from "~/lib/types";
+// import type { AttendanceEntry } from "~/lib/types";
 
 import { AttendanceGrid } from "~/components/attendance-grid";
 import {
@@ -17,7 +16,12 @@ import {
   TextField,
 } from "~/components/ui";
 import { api } from "~/lib/api";
-import { earliestDate, makeFilterSchema } from "~/lib/attendance-schema";
+import {
+  earliestDate,
+  makeTargetFilterSchema,
+  parseTarget,
+  targetKey,
+} from "~/lib/attendance-schema";
 import { allowRoles } from "~/lib/auth";
 import { todayStr } from "~/lib/date";
 import {
@@ -25,6 +29,7 @@ import {
   classesQuery,
   qk,
   settingsQuery,
+  teachingQuery,
 } from "~/lib/queries";
 import { isActive } from "~/lib/types";
 
@@ -33,11 +38,14 @@ export const Route = createFileRoute("/_app/attendance")({
   validateSearch: (s: Record<string, unknown>) => ({
     date: typeof s.date === "string" ? s.date : undefined,
     classId: typeof s.classId === "string" ? s.classId : undefined,
+    // diisi bila yang dipilih absensi mata pelajaran
+    subjectId: typeof s.subjectId === "string" ? s.subjectId : undefined,
   }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.query(classesQuery),
       context.queryClient.query(settingsQuery),
+      context.queryClient.query(teachingQuery),
     ]),
   component: AttendancePage,
 });
@@ -49,6 +57,8 @@ function AttendancePage() {
   const qc = useQueryClient();
   const { data: classes } = useSuspenseQuery(classesQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
+  // Guru: pengampu miliknya. Admin: semua pengampu yang terdaftar.
+  const { data: teaching } = useSuspenseQuery(teachingQuery);
 
   // Aturan dinamis: bergantung peran, kelas yang diampu, dan pengaturan jendela edit
   const restricted = me.role !== "admin";
@@ -58,41 +68,57 @@ function AttendancePage() {
   const tz =
     tzRaw !== "" && Number.isFinite(Number(tzRaw)) ? Number(tzRaw) : undefined;
 
-  const options = useMemo(() => {
+  // Absensi harian: kelas yang diampu (guru) atau semua kelas aktif (admin)
+  const dailyOptions = useMemo(() => {
     const mine = me.role === "guru" ? me.assigned_classes : null;
     return classes.filter(
       (c) => isActive(c.is_active) && (!mine || mine.includes(c.class_id)),
     );
   }, [classes, me.role, me.assigned_classes]);
 
-  const rules = useMemo(
-    () => ({
-      classIds: options.map((c) => c.class_id),
-      restricted,
-      editWindowDays,
-      tzOffsetMinutes: tz,
-    }),
-    [options, restricted, editWindowDays, tz],
+  // Absensi mata pelajaran: pasangan kelas + mapel yang keduanya masih aktif
+  const subjectOptions = useMemo(
+    () => teaching.filter((t) => t.class_active && t.subject_active),
+    [teaching],
   );
-  const filterSchema = useMemo(() => makeFilterSchema(rules), [rules]);
+
+  const targets = useMemo(
+    () => [
+      ...dailyOptions.map((c) => targetKey(c.class_id)),
+      ...subjectOptions.map((t) => targetKey(t.class_id, t.subject_id)),
+    ],
+    [dailyOptions, subjectOptions],
+  );
+
+  const rules = useMemo(
+    () => ({ restricted, editWindowDays, tzOffsetMinutes: tz }),
+    [restricted, editWindowDays, tz],
+  );
+  const filterSchema = useMemo(
+    () => makeTargetFilterSchema({ targets, ...rules }),
+    [targets, rules],
+  );
   const minDate = earliestDate(rules);
 
   const form = useForm({
     defaultValues: {
       date: search.date ?? todayStr(tz),
-      classId: search.classId ?? "",
+      target: targetKey(search.classId ?? "", search.subjectId),
     },
-    validationLogic: revalidateLogic(),
-    validators: { onDynamic: filterSchema },
+    validators: {
+      onChange: filterSchema,
+      onSubmit: filterSchema,
+    },
     onSubmit: ({ value }) => {
-      void qc.invalidateQueries({
-        queryKey: qk.attendance,
-      });
+      const t = parseTarget(value.target);
+      void qc.invalidateQueries({ queryKey: qk.attendance });
+      void qc.invalidateQueries({ queryKey: qk.subjectAttendance });
       void navigate({
         to: "/attendance",
         search: {
           date: value.date,
-          classId: value.classId,
+          classId: t.classId,
+          subjectId: t.subjectId,
         },
       });
     },
@@ -104,11 +130,18 @@ function AttendancePage() {
       search.date || search.classId
         ? filterSchema.safeParse({
             date: search.date ?? "",
-            classId: search.classId ?? "",
+            target: targetKey(search.classId ?? "", search.subjectId),
           })
         : null,
-    [filterSchema, search.date, search.classId],
+    [filterSchema, search.date, search.classId, search.subjectId],
   );
+  const picked = urlCheck?.success ? parseTarget(urlCheck.data.target) : null;
+  const pickedSubject = picked?.subjectId
+    ? subjectOptions.find(
+        (t) =>
+          t.class_id === picked.classId && t.subject_id === picked.subjectId,
+      )
+    : undefined;
 
   return (
     <div className="space-y-4">
@@ -140,32 +173,56 @@ function AttendancePage() {
               />
             )}
           </form.Field>
-          <form.Field name="classId">
+          <form.Field name="target">
             {(f) => (
               <SelectField
-                label="Kelas"
+                label="Kelas / Mata Pelajaran"
                 field={f}
               >
-                <option disabled value="">-- Pilih Kelas --</option>
-                {options.map((c) => (
-                  <option key={c.class_id} value={c.class_id}>
-                    {c.class_name}
-                  </option>
-                ))}
+                <option
+                  disabled
+                  value=""
+                >
+                  -- Pilih --
+                </option>
+                {dailyOptions.length > 0 ? (
+                  <optgroup label="Absensi Harian">
+                    {dailyOptions.map((c) => (
+                      <option
+                        key={c.class_id}
+                        value={targetKey(c.class_id)}
+                      >
+                        {c.class_name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+                {subjectOptions.length > 0 ? (
+                  <optgroup label="Mata Pelajaran">
+                    {subjectOptions.map((t) => (
+                      <option
+                        key={t.teaching_id}
+                        value={targetKey(t.class_id, t.subject_id)}
+                      >
+                        {t.subject_name} · {t.class_name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
               </SelectField>
             )}
           </form.Field>
-          {options.length === 0 ? (
+          {targets.length === 0 ? (
             <p className="text-warning text-sm md:col-span-full">
               {me.role === "guru"
-                ? "Anda belum mengampu kelas aktif. Hubungi admin untuk menambahkan kelas."
-                : "Belum ada kelas aktif. Tambahkan kelas terlebih dahulu."}
+                ? "Anda belum mengampu kelas atau mata pelajaran. Hubungi admin untuk mengaturnya."
+                : "Belum ada kelas aktif atau pengampu mata pelajaran. Atur di menu Data Kelas dan Pengampu Mapel."}
             </p>
           ) : null}
           <button
             type="submit"
             className="btn btn-neutral mt-6 w-full"
-            disabled={options.length === 0}
+            disabled={targets.length === 0}
           >
             Tampilkan Daftar Siswa
           </button>
@@ -175,11 +232,20 @@ function AttendancePage() {
       {urlCheck && !urlCheck.success ? (
         <ErrorAlert message={urlCheck.error.issues[0]?.message} />
       ) : null}
-      {urlCheck?.success ? (
-        <AttendanceSection
-          date={urlCheck.data.date}
-          classId={urlCheck.data.classId}
-        />
+      {urlCheck?.success && picked ? (
+        <>
+          {pickedSubject ? (
+            <p className="text-sm text-base-content/70">
+              {pickedSubject.subject_name} · {pickedSubject.class_name} ·
+              Pengampu: {pickedSubject.teacher_name}
+            </p>
+          ) : null}
+          <AttendanceSection
+            date={urlCheck.data.date}
+            classId={picked.classId}
+            subjectId={picked.subjectId}
+          />
+        </>
       ) : null}
     </div>
   );
@@ -188,16 +254,61 @@ function AttendancePage() {
 function AttendanceSection({
   date,
   classId,
-}: Readonly<{ date: string; classId: string }>) {
-  const q = useQuery(attendanceFormQuery(date, classId));
+  subjectId,
+}: Readonly<{
+  date: string;
+  classId: string;
+  subjectId?: string;
+}>) {
+  const q = useQuery(attendanceFormQuery(date, classId, subjectId));
+  const qc = useQueryClient();
+
+  if (q.isPending) return <PageSpinner />;
+  if (q.error) return <ErrorAlert message={q.error.message} />;
+
+  return (
+    <AttendanceGrid
+      key={`${date}|${classId}|${subjectId ?? ""}|${q.dataUpdatedAt}`}
+      entries={q.data}
+      save={(payload) =>
+        subjectId
+          ? api.submitSubjectAttendance(date, classId, subjectId, payload)
+          : api.submitAttendance(date, classId, payload)
+      }
+      onSaved={() => {
+        if (subjectId) {
+          void qc.invalidateQueries({ queryKey: qk.subjectAttendance });
+          void qc.invalidateQueries({ queryKey: qk.subjectReport });
+          void qc.invalidateQueries({ queryKey: qk.mySubjectAttendance });
+        } else {
+          void qc.invalidateQueries({ queryKey: qk.attendance });
+          void qc.invalidateQueries({ queryKey: qk.dashboard });
+          void qc.invalidateQueries({ queryKey: qk.report });
+        }
+      }}
+    />
+  );
+}
+
+/* function AttendanceSection({
+  date,
+  classId,
+  subjectId,
+}: Readonly<{
+  date: string;
+  classId: string;
+  subjectId?: string;
+}>) {
+  const q = useQuery(attendanceFormQuery(date, classId, subjectId));
   if (q.isPending) return <PageSpinner />;
   if (q.error) return <ErrorAlert message={q.error.message} />;
   // dataUpdatedAt: form dimuat ulang dengan data server setelah penyimpanan
   return (
     <AttendanceForm
-      key={`${date}|${classId}|${q.dataUpdatedAt}`}
+      key={`${date}|${classId}|${subjectId ?? ""}|${q.dataUpdatedAt}`}
       date={date}
       classId={classId}
+      subjectId={subjectId}
       entries={q.data}
     />
   );
@@ -206,22 +317,35 @@ function AttendanceSection({
 function AttendanceForm({
   date,
   classId,
+  subjectId,
   entries,
 }: Readonly<{
   date: string;
   classId: string;
+  subjectId?: string;
   entries: AttendanceEntry[];
 }>) {
   const qc = useQueryClient();
   return (
     <AttendanceGrid
       entries={entries}
-      save={(payload) => api.submitAttendance(date, classId, payload)}
+      save={(payload) =>
+        subjectId
+          ? api.submitSubjectAttendance(date, classId, subjectId, payload)
+          : api.submitAttendance(date, classId, payload)
+      }
       onSaved={() => {
-        void qc.invalidateQueries({ queryKey: qk.attendance });
-        void qc.invalidateQueries({ queryKey: qk.dashboard });
-        void qc.invalidateQueries({ queryKey: qk.report });
+        if (subjectId) {
+          void qc.invalidateQueries({ queryKey: qk.subjectAttendance });
+          void qc.invalidateQueries({ queryKey: qk.subjectReport });
+          void qc.invalidateQueries({ queryKey: qk.mySubjectAttendance });
+        } else {
+          void qc.invalidateQueries({ queryKey: qk.attendance });
+          void qc.invalidateQueries({ queryKey: qk.dashboard });
+          void qc.invalidateQueries({ queryKey: qk.report });
+        }
       }}
     />
   );
 }
+ */

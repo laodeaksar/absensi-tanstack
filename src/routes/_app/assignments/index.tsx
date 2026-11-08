@@ -390,7 +390,7 @@ function AssignmentForm({
         label: item.subject_name,
       });
     return rows;
-  }, [teaching, item?.class_id, item?.subject_id, item?.subject_name]);
+  }, [teaching, item]);
 
   const questionCount = item?.question_count ?? 0;
   const schema = useMemo(
@@ -500,10 +500,21 @@ function AssignmentForm({
       ) : (
         <form.Field name="class_id">
           {(f) => (
-            <SelectField label="Kelas" field={f}>
-              <option disabled value="">-- Pilih Kelas --</option>
+            <SelectField
+              label="Kelas"
+              field={f}
+            >
+              <option
+                disabled
+                value=""
+              >
+                -- Pilih Kelas --
+              </option>
               {options.map((c) => (
-                <option key={c.class_id} value={c.class_id}>
+                <option
+                  key={c.class_id}
+                  value={c.class_id}
+                >
                   {c.class_name}
                 </option>
               ))}
@@ -519,7 +530,10 @@ function AssignmentForm({
           >
             <option value="">-- Tanpa Mata Pelajaran --</option>
             {choicesForClass.map((r) => (
-              <option key={r.id} value={r.id}>
+              <option
+                key={r.id}
+                value={r.id}
+              >
                 {r.label}
               </option>
             ))}
