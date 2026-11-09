@@ -28,5 +28,6 @@
       "style",
       "unknown"
     ]
-  }
+  },
+  "ignorePatterns": ["dist/**", "routeTree.gen.ts", "_generated/*"]
 }

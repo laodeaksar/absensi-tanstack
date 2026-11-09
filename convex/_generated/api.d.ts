@@ -8,12 +8,6 @@
  * @module
  */
 
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from "convex/server";
-
 import type * as assignment from "../assignment.js";
 import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
@@ -27,6 +21,12 @@ import type * as rules from "../rules.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
 import type * as subjects from "../subjects.js";
+
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
 
 declare const fullApi: ApiFromModules<{
   assignment: typeof assignment;

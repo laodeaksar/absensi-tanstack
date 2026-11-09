@@ -11,6 +11,7 @@ import { useMemo, useRef, useState, useLayoutEffect } from "react";
 
 import type { Teacher, TeacherInput } from "~/lib/types";
 
+import { CheckboxGroupField } from "~/components/checkbox-group-field";
 import { PasswordStrength } from "~/components/password-strength";
 import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
@@ -32,7 +33,6 @@ import { columnHelperFor, features } from "~/lib/table";
 import { makeTeacherSchema } from "~/lib/teacher-schema";
 import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
-import { firstMessage } from "~/lib/validation";
 
 export const Route = createFileRoute("/_app/teachers")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
@@ -453,64 +453,24 @@ function TeacherForm({
       </form.Subscribe>
 
       <form.Field name="assigned_classes">
-        {(f) => {
-          const msg = f.state.meta.isTouched
-            ? firstMessage(f.state.meta.errors)
-            : "";
-          return (
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Kelas yang Diampu</legend>
-              <div
-                className={`max-h-40 space-y-2 overflow-y-auto rounded-box border p-3 ${msg ? "border-error" : "border-base-300"}`}
-              >
-                {visibleClasses.length === 0 ? (
-                  <p className="text-sm text-base-content/60">
-                    Belum ada kelas aktif.
-                  </p>
-                ) : (
-                  visibleClasses.map((c) => {
-                    const checked = f.state.value.includes(c.class_id);
-                    return (
-                      <label
-                        key={c.class_id}
-                        className="flex cursor-pointer items-center gap-2 text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm checkbox-primary"
-                          checked={checked}
-                          onChange={() =>
-                            f.handleChange(
-                              checked
-                                ? f.state.value.filter(
-                                    (id) => id !== c.class_id,
-                                  )
-                                : [...f.state.value, c.class_id],
-                            )
-                          }
-                        />
-                        <span>
-                          {c.class_name}{" "}
-                          <span className="text-base-content/40">
-                            ({c.academic_year || "-"})
-                          </span>
-                        </span>
-                      </label>
-                    );
-                  })
-                )}
-              </div>
-              {msg ? (
-                <p
-                  role="alert"
-                  className="mt-1 text-xs text-error"
-                >
-                  {msg}
-                </p>
-              ) : null}
-            </fieldset>
-          );
-        }}
+        {(f) => (
+          <CheckboxGroupField
+            label="Kelas yang Diampu"
+            field={f}
+            emptyText="Belum ada kelas aktif."
+            options={visibleClasses.map((c) => ({
+              value: c.class_id,
+              label: (
+                <>
+                  {c.class_name}{" "}
+                  <span className="text-base-content/40">
+                    ({c.academic_year || "-"})
+                  </span>
+                </>
+              ),
+            }))}
+          />
+        )}
       </form.Field>
 
       <form.Field name="is_active">
