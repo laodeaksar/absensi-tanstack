@@ -254,7 +254,11 @@ export async function callConvex<T = any>(
   const route: ConvexRoute | undefined = CONVEX_ROUTES[fn];
   if (!route) throw new Error("Fungsi tidak dikenal.");
 
-  const url = process.env.CONVEX_URL;
+  // CONVEX_URL (server) atau VITE_CONVEX_URL yang dipakai browser: cukup salah satu
+  const url =
+    process.env.CONVEX_URL ??
+    process.env.VITE_CONVEX_URL ??
+    (import.meta.env.VITE_CONVEX_URL as string | undefined);
   if (!url) throw new Error("Server belum dikonfigurasi (CONVEX_URL).");
 
   const client = new ConvexHttpClient(url);
