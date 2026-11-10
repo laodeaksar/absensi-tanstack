@@ -9,7 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Clock, Hourglass, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { AnswerInput, TaskSession } from "~/lib/types";
+import type { AnswerInput, MyTask, TaskSession } from "~/lib/types";
 
 import { BackLink } from "~/components/back-link";
 import {
@@ -342,8 +342,11 @@ function TaskForm({
       // sudah ditutup (waktu habis / sudah dikumpulkan), keluar dari form. Bila jaringan bermasalah,
       // tetap di halaman agar siswa bisa mencoba lagi.
       try {
-        const tasks = await qc.fetchQuery(myTasksQuery);
-        const t = tasks.find((x) => x.assignment_id === id);
+        // fetchQuery mengembalikan data mentah Convex ({ data }); `select` hanya berlaku di hook
+        const res = (await qc.fetchQuery(myTasksQuery)) as unknown as {
+          data: MyTask[];
+        };
+        const t = res.data.find((x) => x.assignment_id === id);
         if (t && t.status !== "berlangsung") onFinished();
       } catch {
         /* abaikan */

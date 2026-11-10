@@ -253,7 +253,7 @@ export const submitAttendanceBatch = mutation({
 /* ---------- dashboard ---------- */
 
 export const getDashboardStats = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     const user = await requireAuth(ctx, token);
     const today = todayStr(0);
@@ -483,7 +483,7 @@ export const getReportData = query({
 /* ---------- kehadiran siswa sendiri ---------- */
 
 export const getMyAttendance = query({
-  args: { token: v.string(), filters: myFilters },
+  args: { token: v.optional(v.string()), filters: myFilters },
   handler: async (ctx, { token, filters }) => {
     const user = await requireAuth(ctx, token, {
       allowStudent: true,

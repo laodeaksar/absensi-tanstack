@@ -7,7 +7,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { KeyRound, Plus, Pencil, ArrowRightLeft } from "lucide-react";
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 
 import type { Student, StudentClass, StudentInput } from "~/lib/types";
@@ -57,6 +57,97 @@ type StudentRow = Student & {
 };
 const col = columnHelperFor<StudentRow>();
 
+function StudentNameCell({ name }: Readonly<{ name: string }>) {
+  return <span className="font-medium">{name}</span>;
+}
+
+function StudentClassCell({ name }: Readonly<{ name?: string | null }>) {
+  return <span className="whitespace-nowrap">{name || "-"}</span>;
+}
+
+type Handlers = {
+  onEdit: (student: Student) => void;
+  onReset: (student: Student) => void;
+  onMove: (student: StudentRow) => void;
+};
+
+function StudentActionsCell({
+  student,
+  onEdit,
+  onMove,
+  onReset,
+}: Readonly<{ student: StudentRow } & Handlers>) {
+  return (
+    <ActionMenu>
+      <li>
+        <button
+          type="button"
+          onClick={() => onEdit(student)}
+        >
+          <Pencil className="size-4" /> Edit
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          onClick={() => onReset(student)}
+        >
+          <KeyRound className="size-4" /> Reset Akun
+        </button>
+      </li>
+      <li className={isActive(student.is_active) ? undefined : "menu-disabled"}>
+        <button
+          type="button"
+          disabled={!isActive(student.is_active)}
+          onClick={() => onMove(student)}
+        >
+          <ArrowRightLeft className="size-4" /> Pindah Kelas
+        </button>
+      </li>
+    </ActionMenu>
+  );
+}
+
+function createStudentColumns({ onEdit, onReset, onMove }: Readonly<Handlers>) {
+  return col.columns([
+    col.accessor("nis", {
+      header: "NIS",
+      cell: (i) => `${i.getValue() || "-"}`,
+    }),
+    col.accessor("nisn", {
+      header: "NISN",
+      cell: (i) => `${i.getValue() || "-"}`,
+    }),
+    col.accessor("full_name", {
+      header: "Nama Lengkap",
+      cell: (i) => <StudentNameCell name={i.getValue()} />,
+    }),
+    col.accessor("class_name", {
+      header: "Kelas",
+      cell: (i) => <StudentClassCell name={i.getValue()} />,
+    }),
+    col.accessor("gender", { header: "L/P" }),
+    col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
+      id: "status",
+      header: "Status",
+      cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <StudentActionsCell
+          student={row.original}
+          onEdit={onEdit}
+          onReset={onReset}
+          onMove={onMove}
+        />
+      ),
+    }),
+  ]);
+}
+
 function StudentsPage() {
   const qc = useQueryClient();
   const { data: students } = useSuspenseQuery(studentsQuery);
@@ -82,89 +173,22 @@ function StudentsPage() {
   });
 
   // Handler terbaru lewat ref agar definisi kolom tetap stabil
-  const actions = useRef({
-    edit: (_s: Student) => {},
-    reset: (_s: Student) => {},
-    move: (_s: StudentRow) => {},
-  });
-  useLayoutEffect(() => {
-    actions.current.edit = (s) => setModal({ open: true, student: s });
-    actions.current.reset = async (s) => {
-      const ok = await confirm(
-        `Buat atau reset akun ${s.full_name}?\nUsername = NIS, password = NISN. Siswa diminta menggantinya saat login.`,
-      );
-      if (ok) reset.mutate(s.student_id);
-    };
-    actions.current.move = (s) => setMoving(s);
-  }, [confirm, reset]);
+  const resetAccount = reset.mutate; // stabil, berbeda dari objek `reset` yang baru tiap render
 
   const columns = useMemo(
     () =>
-      col.columns([
-        col.accessor("nis", {
-          header: "NIS",
-          cell: (i) => `${i.getValue() || "-"}`,
-        }),
-        col.accessor("nisn", {
-          header: "NISN",
-          cell: (i) => `${i.getValue() || "-"}`,
-        }),
-        col.accessor("full_name", {
-          header: "Nama Lengkap",
-          cell: (i) => <span className="font-medium">{i.getValue()}</span>,
-        }),
-        col.accessor("class_name", {
-          header: "Kelas",
-          cell: (i) => (
-            <span className="whitespace-nowrap">{i.getValue() || "-"}</span>
-          ),
-        }),
-        col.accessor("gender", { header: "L/P" }),
-        col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
-          id: "status",
-          header: "Status",
-          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => (
-            <ActionMenu>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => actions.current.edit(row.original)}
-                >
-                  <Pencil className="size-4" /> Edit
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => actions.current.reset(row.original)}
-                >
-                  <KeyRound className="size-4" /> Reset Akun
-                </button>
-              </li>
-              <li
-                className={
-                  isActive(row.original.is_active) ? undefined : "menu-disabled"
-                }
-              >
-                <button
-                  type="button"
-                  disabled={!isActive(row.original.is_active)}
-                  onClick={() => actions.current.move(row.original)}
-                >
-                  <ArrowRightLeft className="size-4" /> Pindah Kelas
-                </button>
-              </li>
-            </ActionMenu>
-          ),
-        }),
-      ]),
-    [],
+      createStudentColumns({
+        onEdit: (student) => setModal({ open: true, student }),
+        onReset: (student) => {
+          void confirm(
+            `Buat atau reset akun ${student.full_name}?\nUsername = NIS, password = NISN. Siswa diminta menggantinya saat login.`,
+          ).then((confirmed) => {
+            if (confirmed) resetAccount(student.student_id);
+          });
+        },
+        onMove: (student) => setMoving(student),
+      }),
+    [confirm, resetAccount],
   );
 
   const rows = useMemo<StudentRow[]>(() => {

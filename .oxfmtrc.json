@@ -29,5 +29,5 @@
       "unknown"
     ]
   },
-  "ignorePatterns": ["dist/**", "routeTree.gen.ts", "_generated/*"]
+  "ignorePatterns": ["dist/**", "routeTree.gen.ts", "**/_generated/*"]
 }

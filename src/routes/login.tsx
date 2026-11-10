@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 
 import { ErrorAlert, TextField, PasswordField } from "~/components/ui";
 import { homeFor } from "~/lib/auth";
+import { authenticateConvex } from "~/lib/convex-auth";
 import { isLockMessage, loginSchema } from "~/lib/login-schema";
 import { meQuery, publicSettingsQuery, qk } from "~/lib/queries";
 import { toast } from "~/lib/toast";
@@ -60,6 +61,7 @@ const mmss = (s: number) =>
 function LoginPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { convexQueryClient } = Route.useRouteContext();
   const { data: pub } = useSuspenseQuery(publicSettingsQuery);
   const [serverError, setServerError] = useState("");
   // Perkiraan waktu buka kunci dari server (dihitung sejak pesan kunci diterima)
@@ -76,8 +78,11 @@ function LoginPage() {
       if (!r.ok) throw new LoginError(r.message, r.retry_after_ms);
       return r.user;
     },
-    onSuccess: (user) => {
+    onSuccess: async (user) => {
       qc.setQueryData(qk.me, user);
+      // Cookie sesi baru sudah terpasang: minta JWT dan tunggu konfirmasi Convex sebelum
+      // pindah halaman, agar query realtime di halaman tujuan langsung terautentikasi.
+      await authenticateConvex(convexQueryClient.convexClient);
       toast.success("Login berhasil");
       navigate({
         to: user.must_change_password ? "/settings" : homeFor(user),

@@ -13,6 +13,8 @@ import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as debug from "../debug.js";
+import type * as http from "../http.js";
+import type * as jwt from "../jwt.js";
 import type * as lib from "../lib.js";
 import type * as limits from "../limits.js";
 import type * as maintenance from "../maintenance.js";
@@ -34,6 +36,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   debug: typeof debug;
+  http: typeof http;
+  jwt: typeof jwt;
   lib: typeof lib;
   limits: typeof limits;
   maintenance: typeof maintenance;

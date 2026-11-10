@@ -7,7 +7,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { TeachingRow } from "~/lib/types";
 
@@ -50,6 +50,102 @@ export const Route = createFileRoute("/_app/teaching")({
 
 const col = columnHelperFor<TeachingRow>();
 
+function TeachingClassCell({ teaching }: Readonly<{ teaching: TeachingRow }>) {
+  return (
+    <span className="font-medium">
+      {teaching.class_name}
+      <Inactive show={!teaching.class_active} />
+    </span>
+  );
+}
+
+function TeachingSubjectCell({
+  teaching,
+}: Readonly<{ teaching: TeachingRow }>) {
+  return (
+    <span>
+      <span className="font-mono text-xs text-base-content/60">
+        {teaching.subject_code}
+      </span>{" "}
+      {teaching.subject_name}
+      <Inactive show={!teaching.subject_active} />
+    </span>
+  );
+}
+
+function TeachingTeacherCell({
+  teaching,
+}: Readonly<{ teaching: TeachingRow }>) {
+  return (
+    <span>
+      {teaching.teacher_name}
+      <Inactive show={!teaching.teacher_active} />
+    </span>
+  );
+}
+
+type Handlers = {
+  onEdit: (teaching: TeachingRow) => void;
+  onRemove: (teaching: TeachingRow) => void;
+};
+
+function TeachingActionsCell({
+  teaching,
+  onEdit,
+  onRemove,
+}: Readonly<{ teaching: TeachingRow } & Handlers>) {
+  return (
+    <ActionMenu>
+      <li>
+        <button
+          type="button"
+          onClick={() => onEdit(teaching)}
+        >
+          <Pencil className="size-4" /> Ganti Guru
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          className="text-error"
+          onClick={() => onRemove(teaching)}
+        >
+          <Trash2 className="size-4" /> Hapus
+        </button>
+      </li>
+    </ActionMenu>
+  );
+}
+
+function createTeachingColumns({ onEdit, onRemove }: Readonly<Handlers>) {
+  return col.columns([
+    col.accessor("class_name", {
+      header: "Kelas",
+      cell: ({ row }) => <TeachingClassCell teaching={row.original} />,
+    }),
+    col.accessor("subject_name", {
+      header: "Mata Pelajaran",
+      cell: ({ row }) => <TeachingSubjectCell teaching={row.original} />,
+    }),
+    col.accessor("teacher_name", {
+      header: "Guru Pengampu",
+      cell: ({ row }) => <TeachingTeacherCell teaching={row.original} />,
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <TeachingActionsCell
+          teaching={row.original}
+          onEdit={onEdit}
+          onRemove={onRemove}
+        />
+      ),
+    }),
+  ]);
+}
+
 /** Tanda kecil bila kelas, mapel, atau guru pada baris ini sudah nonaktif. */
 function Inactive({ show }: Readonly<{ show: boolean }>) {
   return show ? (
@@ -82,83 +178,21 @@ function TeachingPage() {
     onError: (e) => toast.error(e.message),
   });
 
-  const actions = useRef({
-    edit: (_r: TeachingRow) => {},
-    remove: (_r: TeachingRow) => {},
-  });
-  useLayoutEffect(() => {
-    actions.current.edit = (r) => setModal({ open: true, row: r });
-    actions.current.remove = async (r) => {
-      if (
-        await confirm(
-          `Hapus pengampu ${r.subject_name} di ${r.class_name} (${r.teacher_name})?\nGuru tidak lagi dapat mengelola tugas dan absensi mapel ini di kelas tersebut.`,
-        )
-      )
-        remove.mutate(r.teaching_id);
-    };
-  }, [confirm, remove]);
+  const removeTeaching = remove.mutate; // stabil, berbeda dari objek `remove` yang baru tiap render
 
   const columns = useMemo(
     () =>
-      col.columns([
-        col.accessor("class_name", {
-          header: "Kelas",
-          cell: (i) => (
-            <span className="font-medium">
-              {i.getValue()}
-              <Inactive show={!i.row.original.class_active} />
-            </span>
-          ),
-        }),
-        col.accessor("subject_name", {
-          header: "Mata Pelajaran",
-          cell: (i) => (
-            <span>
-              <span className="font-mono text-xs text-base-content/60">
-                {i.row.original.subject_code}
-              </span>{" "}
-              {i.getValue()}
-              <Inactive show={!i.row.original.subject_active} />
-            </span>
-          ),
-        }),
-        col.accessor("teacher_name", {
-          header: "Guru Pengampu",
-          cell: (i) => (
-            <span>
-              {i.getValue()}
-              <Inactive show={!i.row.original.teacher_active} />
-            </span>
-          ),
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => (
-            <ActionMenu>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => actions.current.edit(row.original)}
-                >
-                  <Pencil className="size-4" /> Ganti Guru
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="text-error"
-                  onClick={() => actions.current.remove(row.original)}
-                >
-                  <Trash2 className="size-4" /> Hapus
-                </button>
-              </li>
-            </ActionMenu>
-          ),
-        }),
-      ]),
-    [],
+      createTeachingColumns({
+        onEdit: (teaching) => setModal({ open: true, row: teaching }),
+        onRemove: (teaching) => {
+          void confirm(
+            `Hapus pengampu ${teaching.subject_name} di ${teaching.class_name} (${teaching.teacher_name})?\nGuru tidak lagi dapat mengelola tugas dan absensi mapel ini di kelas tersebut.`,
+          ).then((confirmed) => {
+            if (confirmed) removeTeaching(teaching.teaching_id);
+          });
+        },
+      }),
+    [confirm, removeTeaching],
   );
 
   const data = useMemo(() => {

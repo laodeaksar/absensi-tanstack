@@ -57,7 +57,7 @@ const teacherInput = v.object({
 /* ---------- baca ---------- */
 
 export const fetchMasterData = query({
-  args: { token: v.string(), type: v.string() },
+  args: { token: v.optional(v.string()), type: v.string() },
   handler: async (ctx, { token, type }) => {
     const user = await requireAuth(ctx, token);
     if (type === "teachers") {
@@ -271,7 +271,7 @@ export const saveStudent = mutation({
 
 /** Kelas aktif tiap siswa, diambil dari riwayat kelas yang belum ditutup. */
 export const listStudentClasses = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     await requireAuth(ctx, token, { admin: true });
     const hist = await ctx.db.query("student_class_history").collect();

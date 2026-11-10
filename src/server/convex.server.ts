@@ -53,6 +53,7 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
   ),
   logout: mutationRoute(api.auth.logout),
   getMe: queryRoute(api.auth.getMe),
+  issueJwt: mutationRoute(api.auth.issueJwt),
   changePassword: mutationRoute(
     api.auth.changePassword,
     ([oldPassword, newPassword]) => ({
@@ -229,6 +230,7 @@ const DEDICATED = [
   "logout",
   "getMe",
   "getPublicSettings",
+  "issueJwt",
 ] as const satisfies readonly RouteName[];
 
 export type RpcName = Exclude<RouteName, (typeof DEDICATED)[number]>;

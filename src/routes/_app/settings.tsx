@@ -195,7 +195,7 @@ function SchoolSettings() {
 }
 
 function PasswordCard() {
-  const { me } = Route.useRouteContext();
+  const { me, convexQueryClient } = Route.useRouteContext();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -218,6 +218,8 @@ function PasswordCard() {
       // pindah halaman, baru kosongkan sisa cache (saat layout sudah tidak aktif,
       // supaya query yang masih terpasang tidak memuat ulang tanpa cookie).
       qc.removeQueries({ queryKey: qk.me });
+      // Sesi lama sudah dicabut server: hentikan langganan realtime-nya sekarang
+      convexQueryClient.convexClient.clearAuth();
       await navigate({ to: "/login" });
       qc.clear();
     },

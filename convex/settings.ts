@@ -110,7 +110,7 @@ export const getPublicSettings = query({
 });
 
 export const getSettings = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     const user = await requireAuth(ctx, token, {
       allowStudent: true,

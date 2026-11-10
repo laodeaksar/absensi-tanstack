@@ -7,7 +7,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Pencil, Plus, Power, PowerOff, Trash2 } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { Subject, SubjectInput } from "~/lib/types";
 
@@ -39,6 +39,97 @@ export const Route = createFileRoute("/_app/subjects")({
 });
 
 const col = columnHelperFor<Subject>();
+
+function SubjectCodeCell({ code }: Readonly<{ code: string }>) {
+  return <span className="font-mono text-sm">{code}</span>;
+}
+
+function SubjectNameCell({ name }: Readonly<{ name: string }>) {
+  return <span className="font-medium">{name}</span>;
+}
+
+type Handlers = {
+  onEdit: (subject: Subject) => void;
+  onToggle: (subject: Subject) => void;
+  onRemove: (subject: Subject) => void;
+};
+
+function SubjectActionsCell({
+  subject,
+  onEdit,
+  onToggle,
+  onRemove,
+}: Readonly<{ subject: Subject } & Handlers>) {
+  return (
+    <ActionMenu>
+      <li>
+        <button
+          type="button"
+          onClick={() => onEdit(subject)}
+        >
+          <Pencil className="size-4" /> Edit
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          onClick={() => onToggle(subject)}
+        >
+          {subject.is_active ? (
+            <PowerOff className="size-4" />
+          ) : (
+            <Power className="size-4" />
+          )}
+          {subject.is_active ? "Nonaktifkan" : "Aktifkan"}
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          className="text-error"
+          onClick={() => onRemove(subject)}
+        >
+          <Trash2 className="size-4" /> Hapus
+        </button>
+      </li>
+    </ActionMenu>
+  );
+}
+
+function createSubjectColumns({
+  onEdit,
+  onToggle,
+  onRemove,
+}: Readonly<Handlers>) {
+  return col.columns([
+    col.accessor("code", {
+      header: "Kode",
+      cell: (i) => <SubjectCodeCell code={i.getValue()} />,
+    }),
+    col.accessor("name", {
+      header: "Mata Pelajaran",
+      cell: (i) => <SubjectNameCell name={i.getValue()} />,
+    }),
+    col.accessor((r) => (r.is_active ? "Aktif" : "Nonaktif"), {
+      id: "status",
+      header: "Status",
+      cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <SubjectActionsCell
+          subject={row.original}
+          onEdit={onEdit}
+          onToggle={onToggle}
+          onRemove={onRemove}
+        />
+      ),
+    }),
+  ]);
+}
 
 function SubjectsPage() {
   const qc = useQueryClient();
@@ -77,91 +168,29 @@ function SubjectsPage() {
     onError: (e) => toast.error(e.message),
   });
 
-  const actions = useRef({
-    edit: (_s: Subject) => {},
-    toggle: (_s: Subject) => {},
-    remove: (_s: Subject) => {},
-  });
-  useLayoutEffect(() => {
-    actions.current.edit = (s) => setModal({ open: true, subject: s });
-    actions.current.toggle = async (s) => {
-      const message = s.is_active
-        ? `Nonaktifkan mata pelajaran "${s.name}"?\nTidak muncul lagi di pilihan baru; pengampu, tugas, dan absensi yang sudah ada tetap tersimpan.`
-        : `Aktifkan kembali mata pelajaran "${s.name}"?`;
-      if (await confirm(message)) toggle.mutate(s);
-    };
-    actions.current.remove = async (s) => {
-      if (
-        await confirm(
-          `Hapus mata pelajaran "${s.name}"?\nHanya bisa bila belum dipakai pengampu, tugas, atau absensi.`,
-        )
-      )
-        remove.mutate(s.subject_id);
-    };
-  }, [confirm, toggle, remove]);
+  const toggleSubject = toggle.mutate; // stabil, berbeda dari objek mutation yang baru tiap render
+  const removeSubject = remove.mutate;
 
   const columns = useMemo(
     () =>
-      col.columns([
-        col.accessor("code", {
-          header: "Kode",
-          cell: (i) => (
-            <span className="font-mono text-sm">{i.getValue()}</span>
-          ),
-        }),
-        col.accessor("name", {
-          header: "Mata Pelajaran",
-          cell: (i) => <span className="font-medium">{i.getValue()}</span>,
-        }),
-        col.accessor((r) => (r.is_active ? "Aktif" : "Nonaktif"), {
-          id: "status",
-          header: "Status",
-          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => {
-            const s = row.original;
-            return (
-              <ActionMenu>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => actions.current.edit(s)}
-                  >
-                    <Pencil className="size-4" /> Edit
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => actions.current.toggle(s)}
-                  >
-                    {s.is_active ? (
-                      <PowerOff className="size-4" />
-                    ) : (
-                      <Power className="size-4" />
-                    )}
-                    {s.is_active ? "Nonaktifkan" : "Aktifkan"}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => actions.current.remove(s)}
-                  >
-                    <Trash2 className="size-4" /> Hapus
-                  </button>
-                </li>
-              </ActionMenu>
-            );
-          },
-        }),
-      ]),
-    [],
+      createSubjectColumns({
+        onEdit: (subject) => setModal({ open: true, subject }),
+        onToggle: async (subject) => {
+          const message = subject.is_active
+            ? `Nonaktifkan mata pelajaran "${subject.name}"?\nTidak muncul lagi di pilihan baru; pengampu, tugas, dan absensi yang sudah ada tetap tersimpan.`
+            : `Aktifkan kembali mata pelajaran "${subject.name}"?`;
+          if (await confirm(message)) toggleSubject(subject);
+        },
+        onRemove: async (subject) => {
+          if (
+            await confirm(
+              `Hapus mata pelajaran "${subject.name}"?\nHanya bisa bila belum dipakai pengampu, tugas, atau absensi.`,
+            )
+          )
+            removeSubject(subject.subject_id);
+        },
+      }),
+    [confirm, toggleSubject, removeSubject],
   );
 
   const data = useMemo(() => {

@@ -158,17 +158,30 @@ export interface AuthOpts {
   allowPending?: boolean;
 }
 
+/**
+ * `token` diisi = jalur lama (token sesi sebagai argumen, lewat server TanStack Start).
+ * `token` kosong = jalur baru: JWT dari ConvexReactClient, klaim `sid` menunjuk ke baris sesi.
+ * Sesi tetap dicek di database, jadi pencabutan (ganti password, logout) langsung berlaku.
+ */
 export async function requireAuth(
   ctx: QueryCtx,
-  token: string,
+  token: string | undefined,
   opts: AuthOpts = {},
 ): Promise<Doc<"users">> {
-  if (!token) fail("AUTH_FAILED");
-  const tokenHash = await sha256Hex(token);
-  const sess = await ctx.db
-    .query("sessions")
-    .withIndex("by_token", (q) => q.eq("token_hash", tokenHash))
-    .unique();
+  let sess: Doc<"sessions"> | null = null;
+  if (token) {
+    const tokenHash = await sha256Hex(token);
+    sess = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token_hash", tokenHash))
+      .unique();
+  } else {
+    const identity = await ctx.auth.getUserIdentity();
+    const sid = (identity as { sid?: unknown } | null)?.sid;
+    const id =
+      typeof sid === "string" ? ctx.db.normalizeId("sessions", sid) : null;
+    sess = id ? await ctx.db.get(id) : null;
+  }
   if (!sess || sess.expires_at < Date.now()) fail("AUTH_FAILED");
   const user = await ctx.db
     .query("users")

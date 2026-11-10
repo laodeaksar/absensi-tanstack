@@ -1,10 +1,41 @@
+import { convexQuery } from "@convex-dev/react-query";
 import { queryOptions } from "@tanstack/react-query";
 
+import { api as convexApi } from "~/convex/_generated/api";
 import { getMeFn, getPublicSettingsFn } from "~/server/functions";
 
-import type { ReportFilters, SubjectReportFilters } from "./types";
+import type {
+  Assignment,
+  ClassRow,
+  DashboardData,
+  MyAttendance,
+  MyResult,
+  MySubjectAttendance,
+  MyTask,
+  ReportFilters,
+  Settings,
+  Student,
+  StudentClass,
+  Subject,
+  SubjectReportFilters,
+  SubmissionList,
+  Teacher,
+  TeachingRow,
+} from "./types";
 
 import { api } from "./api";
+
+/**
+ * Query bertanda "realtime" memakai convexQuery(): berlangganan lewat websocket, jadi data
+ * ikut berubah saat ada tulisan baru dan tidak perlu invalidateQueries. Auth lewat JWT
+ * (lihat router.tsx), bukan token argumen.
+ *
+ * Tetap lewat RPC (api.*) dengan sengaja:
+ *  - form yang diedit pengguna (absensi, penilaian): pembaruan realtime bisa menimpa isian,
+ *  - laporan besar: langganan akan dihitung ulang di setiap tulisan absensi,
+ *  - me / pengaturan publik: dipakai guard rute di SSR dan harus mengembalikan null, bukan error.
+ */
+const unwrap = <T>(r: { data: unknown }) => r.data as T;
 
 export const qk = {
   me: ["me"] as const,
@@ -43,32 +74,29 @@ export const publicSettingsQuery = queryOptions({
 });
 
 export const settingsQuery = queryOptions({
-  queryKey: [...qk.settings, "private"],
-  queryFn: () => api.settings(),
-  staleTime: 5 * 60_000,
+  ...convexQuery(convexApi.settings.getSettings, {}),
+  select: (r): Settings => r.settings as unknown as Settings,
 });
 
 export const studentsQuery = queryOptions({
-  queryKey: qk.students,
-  queryFn: () => api.students(),
+  ...convexQuery(convexApi.master.fetchMasterData, { type: "students" }),
+  select: unwrap<Student[]>,
 });
 export const studentClassesQuery = queryOptions({
-  queryKey: qk.studentClasses,
-  queryFn: () => api.studentClasses(),
-  staleTime: 60_000,
+  ...convexQuery(convexApi.master.listStudentClasses, {}),
+  select: (r): StudentClass[] => r as StudentClass[],
 });
 export const classesQuery = queryOptions({
-  queryKey: qk.classes,
-  queryFn: () => api.classes(),
+  ...convexQuery(convexApi.master.fetchMasterData, { type: "classes" }),
+  select: unwrap<ClassRow[]>,
 });
 export const teachersQuery = queryOptions({
-  queryKey: qk.teachers,
-  queryFn: () => api.teachers(),
+  ...convexQuery(convexApi.master.fetchMasterData, { type: "teachers" }),
+  select: unwrap<Teacher[]>,
 });
 export const dashboardQuery = queryOptions({
-  queryKey: qk.dashboard,
-  queryFn: () => api.dashboard(),
-  staleTime: 15_000,
+  ...convexQuery(convexApi.attendance.getDashboardStats, {}),
+  select: (r): DashboardData => r as DashboardData,
 });
 
 export const attendanceFormQuery = (
@@ -96,15 +124,13 @@ export const reportQuery = (f: ReportFilters) =>
 
 export const myAttendanceQuery = (f: { startDate: string; endDate: string }) =>
   queryOptions({
-    queryKey: [...qk.my, f],
-    queryFn: () => api.myAttendance(f),
-    staleTime: 0,
+    ...convexQuery(convexApi.attendance.getMyAttendance, { filters: f }),
+    select: (r): MyAttendance => r as MyAttendance,
   });
 
 export const assignmentsQuery = queryOptions({
-  queryKey: qk.list,
-  queryFn: () => api.list(),
-  staleTime: 10_000,
+  ...convexQuery(convexApi.assignment.listAssignments, {}),
+  select: unwrap<Assignment[]>,
 });
 
 export const assignmentDetailQuery = (id: string) =>
@@ -116,9 +142,8 @@ export const assignmentDetailQuery = (id: string) =>
 
 export const submissionsQuery = (id: string) =>
   queryOptions({
-    queryKey: qk.subs(id),
-    queryFn: () => api.submissions(id),
-    staleTime: 0,
+    ...convexQuery(convexApi.assignment.listSubmissions, { assignmentId: id }),
+    select: (r): SubmissionList => r as SubmissionList,
   });
 
 export const reviewQuery = (submissionId: string) =>
@@ -129,26 +154,24 @@ export const reviewQuery = (submissionId: string) =>
   });
 
 export const myTasksQuery = queryOptions({
-  queryKey: qk.myTasks,
-  queryFn: () => api.myTasks(),
-  staleTime: 0,
+  ...convexQuery(convexApi.assignment.listMyTasks, {}),
+  select: unwrap<MyTask[]>,
 });
 
 export const myResultQuery = (id: string) =>
   queryOptions({
-    queryKey: qk.result(id),
-    queryFn: () => api.myResult(id),
-    staleTime: 0,
+    ...convexQuery(convexApi.assignment.getMyResult, { assignmentId: id }),
+    select: (r): MyResult => r as unknown as MyResult,
   });
 
 export const subjectsQuery = queryOptions({
-  queryKey: qk.subjects,
-  queryFn: () => api.subjects(),
+  ...convexQuery(convexApi.subjects.listSubjects, {}),
+  select: unwrap<Subject[]>,
 });
 
 export const teachingQuery = queryOptions({
-  queryKey: qk.teaching,
-  queryFn: () => api.teaching(),
+  ...convexQuery(convexApi.subjects.listTeaching, {}),
+  select: unwrap<TeachingRow[]>,
 });
 
 export const subjectAttendanceFormQuery = (
@@ -174,7 +197,6 @@ export const mySubjectAttendanceQuery = (f: {
   endDate: string;
 }) =>
   queryOptions({
-    queryKey: [...qk.mySubjectAttendance, f],
-    queryFn: () => api.mySubjectAttendance(f),
-    staleTime: 0,
+    ...convexQuery(convexApi.subjects.getMySubjectAttendance, { filters: f }),
+    select: (r): MySubjectAttendance => r as MySubjectAttendance,
   });

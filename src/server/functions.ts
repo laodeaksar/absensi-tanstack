@@ -42,6 +42,8 @@ function sessionCookieOptions() {
   };
 }
 
+const clearSession = () => deleteCookie(SESSION_COOKIE, { path: "/" });
+
 export type { RpcName }; // agar api.ts tetap mengimpor dari '~/server/functions'
 
 const authMiddleware = createMiddleware({
@@ -67,18 +69,10 @@ export const rpcFn = createServerFn({
     try {
       const res = await callConvex<any>(data.fn, data.args, context.token);
       // Setelah ganti password, semua sesi dibatalkan di backend
-      if (data.fn === "changePassword")
-        deleteCookie(SESSION_COOKIE, {
-          path: "/",
-        });
+      if (data.fn === "changePassword") clearSession();
       return res;
     } catch (e) {
-      if (isAuthFailed(e)) {
-        //if (e instanceof Error && e.message.includes("AUTH_FAILED")) {
-        deleteCookie(SESSION_COOKIE, {
-          path: "/",
-        });
-      }
+      if (isAuthFailed(e)) clearSession();
       throw e;
     }
   });
@@ -125,7 +119,7 @@ export const logoutFn = createServerFn({
       /* abaikan: cookie tetap dihapus */
     }
   }
-  deleteCookie(SESSION_COOKIE, { path: "/" });
+  clearSession();
   return { ok: true };
 });
 
@@ -142,10 +136,7 @@ export const getMeFn = createServerFn({
     return res.user;
   } catch (e) {
     if (isAuthFailed(e)) {
-      // if (e instanceof Error && e.message.includes("AUTH_FAILED")) {
-      deleteCookie(SESSION_COOKIE, {
-        path: "/",
-      });
+      clearSession();
       return null;
     }
     throw e;
@@ -162,5 +153,23 @@ export const getPublicSettingsFn = createServerFn({
     return res.settings;
   } catch {
     return { school_name: "EduAbsen" };
+  }
+});
+
+/**
+ * JWT jangka pendek untuk ConvexReactClient (langganan realtime dari browser).
+ * Cookie sesi tetap httpOnly; hanya JWT ini yang dikirim ke browser.
+ */
+export const getConvexJwtFn = createServerFn({
+  method: "GET",
+}).handler(async (): Promise<string | null> => {
+  const token = getCookie(SESSION_COOKIE);
+  if (!token) return null;
+  try {
+    const res = await callConvex<{ jwt: string }>("issueJwt", [], token);
+    return res.jwt;
+  } catch (e) {
+    if (isAuthFailed(e)) clearSession(); //deleteCookie(SESSION_COOKIE, { path: "/" });
+    return null;
   }
 });

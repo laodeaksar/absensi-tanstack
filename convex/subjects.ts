@@ -74,7 +74,7 @@ async function assertTeaches(
 /* ---------- mata pelajaran ---------- */
 
 export const listSubjects = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     await requireAuth(ctx, token); // siswa -> FORBIDDEN
     const rows = await ctx.db.query("subjects").collect();
@@ -175,7 +175,7 @@ export const deleteSubject = mutation({
 
 /** Admin: semua baris. Guru: hanya baris miliknya (dipakai form tugas dan absensi mapel). */
 export const listTeaching = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     const user = await requireAuth(ctx, token);
     const rows =
@@ -521,7 +521,7 @@ export const getSubjectReportData = query({
 
 /** Siswa melihat kehadiran per mata pelajaran miliknya sendiri dalam rentang tanggal. */
 export const getMySubjectAttendance = query({
-  args: { token: v.string(), filters: myRange },
+  args: { token: v.optional(v.string()), filters: myRange },
   handler: async (ctx, { token, filters }) => {
     const user = await requireAuth(ctx, token, { allowStudent: true });
     if (user.role !== "siswa" || !user.student_id) fail("FORBIDDEN");

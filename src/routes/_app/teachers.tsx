@@ -7,7 +7,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Pencil, Plus, UserCheck, UserX } from "lucide-react";
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useMemo, useState } from "react";
 
 import type { Teacher, TeacherInput } from "~/lib/types";
 
@@ -50,6 +50,125 @@ type Row = Teacher & {
 };
 const col = columnHelperFor<Row>();
 
+function TeacherNameCell({ teacher }: Readonly<{ teacher: Row }>) {
+  return (
+    <>
+      <div className="font-medium">{teacher.full_name}</div>
+      {teacher.nip ? (
+        <div className="text-xs text-base-content/60">NIP {teacher.nip}</div>
+      ) : null}
+    </>
+  );
+}
+
+function TeacherContactCell({ teacher }: Readonly<{ teacher: Row }>) {
+  if (!teacher.phone && !teacher.email)
+    return <span className="text-base-content/40">-</span>;
+  return (
+    <>
+      {teacher.phone ? <div>{teacher.phone}</div> : null}
+      {teacher.email ? (
+        <div className="text-xs text-base-content/60">{teacher.email}</div>
+      ) : null}
+    </>
+  );
+}
+
+function TeacherClassesCell({ teacher }: Readonly<{ teacher: Row }>) {
+  if (!teacher.class_names.length)
+    return <span className="text-base-content/40">-</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {teacher.class_names.map((name) => (
+        <span
+          key={name}
+          className="badge badge-ghost badge-sm"
+        >
+          {name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+type Handlers = {
+  onEdit: (teacher: Teacher) => void;
+  onToggle: (teacher: Row) => void;
+};
+
+function TeacherActionsCell({
+  teacher,
+  onEdit,
+  onToggle,
+}: Readonly<{ teacher: Row } & Handlers>) {
+  return (
+    <ActionMenu>
+      <li>
+        <button
+          type="button"
+          onClick={() => onEdit(teacher)}
+        >
+          <Pencil className="size-4" /> Edit
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          onClick={() => onToggle(teacher)}
+        >
+          {teacher.active ? (
+            <UserX className="size-4" />
+          ) : (
+            <UserCheck className="size-4" />
+          )}
+          {teacher.active ? "Nonaktifkan" : "Aktifkan"}
+        </button>
+      </li>
+    </ActionMenu>
+  );
+}
+
+function createTeacherColumns({ onEdit, onToggle }: Readonly<Handlers>) {
+  return col.columns([
+    col.accessor("full_name", {
+      header: "Nama Lengkap",
+      cell: ({ row }) => <TeacherNameCell teacher={row.original} />,
+    }),
+    col.accessor("username", {
+      header: "Username",
+    }),
+    col.display({
+      id: "contact",
+      header: "Kontak",
+      enableSorting: false,
+      cell: ({ row }) => <TeacherContactCell teacher={row.original} />,
+    }),
+    col.display({
+      id: "classes",
+      header: "Kelas Diampu",
+      enableSorting: false,
+      cell: ({ row }) => <TeacherClassesCell teacher={row.original} />,
+    }),
+    col.accessor((r) => (r.active ? "Aktif" : "Nonaktif"), {
+      id: "status",
+      header: "Status",
+      cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <TeacherActionsCell
+          teacher={row.original}
+          onEdit={onEdit}
+          onToggle={onToggle}
+        />
+      ),
+    }),
+  ]);
+}
+
 function TeachersPage() {
   const qc = useQueryClient();
   const { data: teachers } = useSuspenseQuery(teachersQuery);
@@ -78,123 +197,27 @@ function TeachersPage() {
     onError: (e) => toast.error(e.message),
   });
 
-  const actions = useRef({
-    edit: (_t: Teacher) => {},
-    toggle: (_t: Row) => {},
-  });
-  useLayoutEffect(() => {
-    actions.current.edit = (t) => setModal({ open: true, teacher: t });
-    actions.current.toggle = async (t) => {
-      const ok = await confirm(
-        t.active
-          ? `Nonaktifkan akun ${t.full_name}?\nGuru tidak dapat login sampai diaktifkan kembali.`
-          : `Aktifkan kembali akun ${t.full_name}?`,
-      );
-      if (ok)
-        toggle.mutate({
-          user_id: t.user_id,
-          is_active: !t.active,
-        });
-    };
-  }, [confirm, toggle]);
+  const toggleTeacher = toggle.mutate; // stabil, berbeda dari objek `toggle` yang baru tiap render
 
   const columns = useMemo(
     () =>
-      col.columns([
-        col.accessor("full_name", {
-          header: "Nama Lengkap",
-          cell: (i) => (
-            <>
-              <div className="font-medium">{i.getValue()}</div>
-              {i.row.original.nip ? (
-                <div className="text-xs text-base-content/60">
-                  NIP {i.row.original.nip}
-                </div>
-              ) : null}
-            </>
-          ),
-        }),
-        col.accessor("username", {
-          header: "Username",
-        }),
-        col.display({
-          id: "contact",
-          header: "Kontak",
-          enableSorting: false,
-          cell: ({ row }) => {
-            const t = row.original;
-            if (!t.phone && !t.email)
-              return <span className="text-base-content/40">-</span>;
-            return (
-              <>
-                {t.phone ? <div>{t.phone}</div> : null}
-                {t.email ? (
-                  <div className="text-xs text-base-content/60">{t.email}</div>
-                ) : null}
-              </>
-            );
-          },
-        }),
-        col.display({
-          id: "classes",
-          header: "Kelas Diampu",
-          enableSorting: false,
-          cell: ({ row }) =>
-            row.original.class_names.length ? (
-              <div className="flex flex-wrap gap-1">
-                {row.original.class_names.map((n) => (
-                  <span
-                    key={n}
-                    className="badge badge-ghost badge-sm"
-                  >
-                    {n}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-base-content/40">-</span>
-            ),
-        }),
-        col.accessor((r) => (r.active ? "Aktif" : "Nonaktif"), {
-          id: "status",
-          header: "Status",
-          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => {
-            const t = row.original;
-            return (
-              <ActionMenu>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => actions.current.edit(row.original)}
-                  >
-                    <Pencil className="size-4" /> Edit
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => actions.current.toggle(row.original)}
-                  >
-                    {t.active ? (
-                      <UserX className="size-4" />
-                    ) : (
-                      <UserCheck className="size-4" />
-                    )}
-                    {t.active ? "Nonaktifkan" : "Aktifkan"}
-                  </button>
-                </li>
-              </ActionMenu>
-            );
-          },
-        }),
-      ]),
-    [],
+      createTeacherColumns({
+        onEdit: (teacher) => setModal({ open: true, teacher }),
+        onToggle: async (teacher) => {
+          void confirm(
+            teacher.active
+              ? `Nonaktifkan akun ${teacher.full_name}?\nGuru tidak dapat login sampai diaktifkan kembali.`
+              : `Aktifkan kembali akun ${teacher.full_name}?`,
+          ).then((confirmed) => {
+            if (confirmed)
+              toggleTeacher({
+                user_id: teacher.user_id,
+                is_active: !teacher.active,
+              });
+          });
+        },
+      }),
+    [confirm, toggleTeacher],
   );
 
   const data = useMemo<Row[]>(() => {

@@ -54,28 +54,41 @@ export const Route = createFileRoute("/_app/reports")({
 });
 
 const col = columnHelperFor<ReportRow>();
-const nowrap = (v: string) => <span className="whitespace-nowrap">{v}</span>;
+
+function NoWrapCell({ value }: Readonly<{ value: string }>) {
+  return <span className="whitespace-nowrap">{value}</span>;
+}
+
+function ReportDateCell({ date }: Readonly<{ date: string }>) {
+  return (
+    <span className="whitespace-nowrap tabular-nums">{formatDate(date)}</span>
+  );
+}
+
+function ReportStudentCell({ name }: Readonly<{ name: string }>) {
+  return <span className="font-medium">{name}</span>;
+}
+
+function ReportNotesCell({ notes }: Readonly<{ notes: string }>) {
+  return <span className="block min-w-40 wrap-anywhere">{notes}</span>;
+}
 
 const columns = col.columns([
   col.accessor("date", {
     header: "Tanggal",
-    cell: (i) => (
-      <span className="whitespace-nowrap tabular-nums">
-        {formatDate(i.getValue())}
-      </span>
-    ),
+    cell: (i) => <ReportDateCell date={i.getValue()} />,
   }),
   col.accessor("nis", {
     header: "NIS",
-    cell: (i) => nowrap(i.getValue()),
+    cell: (i) => <NoWrapCell value={i.getValue()} />,
   }),
   col.accessor("student_name", {
     header: "Nama Siswa",
-    cell: (i) => <span className="font-medium">{i.getValue()}</span>,
+    cell: (i) => <ReportStudentCell name={i.getValue()} />,
   }),
   col.accessor("class_name", {
     header: "Kelas",
-    cell: (i) => nowrap(i.getValue()),
+    cell: (i) => <NoWrapCell value={i.getValue()} />,
   }),
   col.accessor("status", {
     header: "Status",
@@ -84,9 +97,7 @@ const columns = col.columns([
   col.accessor("notes", {
     header: "Keterangan",
     enableSorting: false,
-    cell: (i) => (
-      <span className="block min-w-40 wrap-anywhere">{i.getValue()}</span>
-    ),
+    cell: (i) => <ReportNotesCell notes={i.getValue()} />,
   }),
 ]);
 
@@ -219,6 +230,9 @@ function DailyReportView() {
         search: {
           ...NO_SEARCH,
           startDate: value.startDate || undefined,
+          endDate: value.endDate || undefined,
+          classId: value.classId || undefined,
+          go: true, // tanpa ini urlCheck null, query laporan tidak pernah aktif
         },
       });
     },

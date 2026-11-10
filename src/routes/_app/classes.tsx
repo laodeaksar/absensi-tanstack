@@ -7,7 +7,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Pencil, Plus } from "lucide-react";
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useMemo, useState } from "react";
 
 import type { ClassInput, ClassRow } from "~/lib/types";
 
@@ -46,6 +46,59 @@ export const Route = createFileRoute("/_app/classes")({
 type Row = ClassRow & { homeroom_name: string };
 const col = columnHelperFor<Row>();
 
+type Handlers = {
+  onEdit: (cls: ClassRow) => void;
+};
+
+function ClassActionsCell({ cls, onEdit }: Readonly<{ cls: Row } & Handlers>) {
+  return (
+    <Tip tip="Edit">
+      <button
+        type="button"
+        aria-label="Edit"
+        className="btn btn-ghost btn-xs text-primary"
+        onClick={() => onEdit(cls)}
+      >
+        <Pencil className="size-4" />
+      </button>
+    </Tip>
+  );
+}
+
+function createClassColumns({ onEdit }: Readonly<Handlers>) {
+  return col.columns([
+    col.accessor("class_name", {
+      header: "Nama Kelas",
+      cell: (i) => <span className="font-medium">{i.getValue()}</span>,
+    }),
+    col.accessor("grade_level", {
+      header: "Tingkat",
+    }),
+    col.accessor("academic_year", {
+      header: "Tahun Ajaran",
+    }),
+    col.accessor("homeroom_name", {
+      header: "Wali Kelas",
+    }),
+    col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
+      id: "status",
+      header: "Status",
+      cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <ClassActionsCell
+          cls={row.original}
+          onEdit={onEdit}
+        />
+      ),
+    }),
+  ]);
+}
+
 function ClassesPage() {
   const qc = useQueryClient();
   const { data: classes } = useSuspenseQuery(classesQuery);
@@ -59,52 +112,11 @@ function ClassesPage() {
     cls: null,
   });
 
-  const actions = useRef({
-    edit: (_c: ClassRow) => {},
-  });
-  useLayoutEffect(() => {
-    actions.current.edit = (c) => setModal({ open: true, cls: c });
-  }, []);
-
   const columns = useMemo(
     () =>
-      col.columns([
-        col.accessor("class_name", {
-          header: "Nama Kelas",
-          cell: (i) => <span className="font-medium">{i.getValue()}</span>,
-        }),
-        col.accessor("grade_level", {
-          header: "Tingkat",
-        }),
-        col.accessor("academic_year", {
-          header: "Tahun Ajaran",
-        }),
-        col.accessor("homeroom_name", {
-          header: "Wali Kelas",
-        }),
-        col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
-          id: "status",
-          header: "Status",
-          cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => (
-            <Tip tip="Edit">
-              <button
-                type="button"
-                aria-label="Edit"
-                className="btn btn-ghost btn-xs text-primary"
-                onClick={() => actions.current.edit(row.original)}
-              >
-                <Pencil className="size-4" />
-              </button>
-            </Tip>
-          ),
-        }),
-      ]),
+      createClassColumns({
+        onEdit: (cls) => setModal({ open: true, cls }),
+      }),
     [],
   );
 

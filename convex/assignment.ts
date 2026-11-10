@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
 import {
   canAccessClass,
+  canTeach,
   classById,
   dueMs,
   fail,
@@ -17,6 +18,8 @@ import {
   round1,
   round2,
   studentById,
+  subjectById,
+  teachingRowOf,
 } from "./lib";
 import { LIMITS } from "./limits";
 
@@ -29,6 +32,7 @@ const assignmentInput = v.object({
   title: v.string(),
   description: v.string(),
   class_id: v.string(),
+  subject_id: v.optional(v.string()), // "" = tanpa mata pelajaran
   due_at: v.string(),
   duration_minutes: v.number(),
   is_published: v.boolean(),
@@ -55,11 +59,11 @@ const answerInput = v.object({
   answer: v.string(),
 });
 
-async function staff(ctx: QueryCtx, token: string) {
+async function staff(ctx: QueryCtx, token: string | undefined) {
   return requireAuth(ctx, token); // siswa -> FORBIDDEN
 }
 
-async function student(ctx: QueryCtx, token: string) {
+async function student(ctx: QueryCtx, token: string | undefined) {
   const user = await requireAuth(ctx, token, {
     allowStudent: true,
   });
@@ -164,10 +168,15 @@ async function myClassIds(ctx: QueryCtx, studentId: string) {
  * ========================================== */
 
 export const listAssignments = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     const user = await staff(ctx, token);
     const classes = await classNameMap(ctx);
+    const subjectNames = new Map(
+      (await ctx.db.query("subjects").collect()).map(
+        (s) => [s.subject_id, s.name] as const,
+      ),
+    );
     // Admin melihat semua; guru hanya kelas yang diampu (lewat index by_class, tanpa memindai tabel)
     const pool =
       user.role === "admin"
@@ -199,6 +208,10 @@ export const listAssignments = query({
         description: a.description,
         class_id: a.class_id,
         class_name: classes.get(a.class_id) ?? "-",
+        subject_id: a.subject_id ?? "",
+        subject_name: a.subject_id
+          ? (subjectNames.get(a.subject_id) ?? "-")
+          : "",
         due_at: a.due_at,
         duration_minutes: a.duration_minutes,
         is_published: a.is_published,
@@ -255,6 +268,22 @@ export const saveAssignment = mutation({
       : null;
     const now = nowIso();
 
+    // Mapel opsional. Diperiksa hanya bila mapel atau kelas berubah, agar tugas lama yang
+    // pengampunya sudah berganti tetap bisa diedit tanpa mengubah mapelnya.
+    const subjectId = String(d.subject_id ?? "").trim();
+    if (
+      subjectId &&
+      (subjectId !== (existing?.subject_id ?? "") ||
+        classId !== existing?.class_id)
+    ) {
+      const subj = await subjectById(ctx, subjectId);
+      if (!subj || !subj.is_active) fail("Mata pelajaran tidak valid.");
+      if (!(await teachingRowOf(ctx, classId, subjectId)))
+        fail("Mata pelajaran ini belum diampu di kelas tersebut.");
+      if (!(await canTeach(ctx, user, classId, subjectId)))
+        fail("Anda bukan guru pengampu mata pelajaran ini di kelas tersebut.");
+    }
+
     if (publish) {
       const count = existing
         ? (await questionsOf(ctx, existing.assignment_id)).length
@@ -274,6 +303,7 @@ export const saveAssignment = mutation({
         title,
         description,
         class_id: classId,
+        subject_id: subjectId || undefined, // undefined pada patch = hapus field
         due_at: dueAt,
         duration_minutes: duration,
         is_published: publish,
@@ -291,6 +321,7 @@ export const saveAssignment = mutation({
       title,
       description,
       class_id: classId,
+      subject_id: subjectId || undefined,
       due_at: dueAt,
       duration_minutes: duration,
       is_published: false,
@@ -368,6 +399,7 @@ export const getAssignmentDetail = query({
     const qs = await questionsOf(ctx, assignmentId);
     const subs = await submissionsOf(ctx, assignmentId);
     const classes = await classNameMap(ctx);
+    const subject = a.subject_id ? await subjectById(ctx, a.subject_id) : null;
     return {
       assignment: {
         assignment_id: a.assignment_id,
@@ -375,6 +407,8 @@ export const getAssignmentDetail = query({
         description: a.description,
         class_id: a.class_id,
         class_name: classes.get(a.class_id) ?? "-",
+        subject_id: a.subject_id ?? "",
+        subject_name: a.subject_id ? (subject?.name ?? "-") : "",
         due_at: a.due_at,
         duration_minutes: a.duration_minutes,
         is_published: a.is_published,
@@ -563,7 +597,7 @@ export const deleteQuestion = mutation({
 
 export const listSubmissions = query({
   args: {
-    token: v.string(),
+    token: v.optional(v.string()),
     assignmentId: v.string(),
   },
   handler: async (ctx, { token, assignmentId }) => {
@@ -768,11 +802,16 @@ export const gradeSubmission = mutation({
  * ========================================== */
 
 export const listMyTasks = query({
-  args: { token: v.string() },
+  args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
     const user = await student(ctx, token);
     const mine = new Set(await myClassIds(ctx, user.student_id));
     const classes = await classNameMap(ctx);
+    const subjectNames = new Map(
+      (await ctx.db.query("subjects").collect()).map(
+        (s) => [s.subject_id, s.name] as const,
+      ),
+    );
     // Per kelas lewat index by_class, bukan memindai seluruh tabel tugas
     const assignments = (
       await Promise.all(
@@ -805,6 +844,9 @@ export const listMyTasks = query({
         title: a.title,
         description: a.description,
         class_name: classes.get(a.class_id) ?? "-",
+        subject_name: a.subject_id
+          ? (subjectNames.get(a.subject_id) ?? "-")
+          : "",
         due_at: a.due_at,
         duration_minutes: a.duration_minutes,
         question_count: qs.length,
@@ -1184,7 +1226,7 @@ export const scheduleOpenSubmissions = internalMutation({
 
 export const getMyResult = query({
   args: {
-    token: v.string(),
+    token: v.optional(v.string()),
     assignmentId: v.string(),
   },
   handler: async (ctx, { token, assignmentId }) => {

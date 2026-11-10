@@ -4,6 +4,7 @@ import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { mutation, query } from "./_generated/server";
+import { signJwt } from "./jwt";
 import {
   PBKDF2_ITERATIONS,
   assertStrongPassword,
@@ -218,6 +219,28 @@ export const logout = mutation({
       .unique();
     if (s) await ctx.db.delete(s._id);
     return { ok: true };
+  },
+});
+
+/**
+ * Tukar sesi (token dari cookie httpOnly, dikirim server TanStack Start) dengan JWT jangka pendek
+ * untuk ConvexReactClient di browser. Token sesi itu sendiri tidak pernah sampai ke browser.
+ */
+export const issueJwt = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const th = await sha256Hex(token);
+    const sess = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token_hash", th))
+      .unique();
+    if (!sess || sess.expires_at < Date.now()) fail("AUTH_FAILED");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_user_id", (q) => q.eq("user_id", sess!.user_id))
+      .unique();
+    if (!user || !user.is_active) fail("AUTH_FAILED");
+    return { jwt: await signJwt({ sub: user!.user_id, sid: sess!._id }) };
   },
 });
 
