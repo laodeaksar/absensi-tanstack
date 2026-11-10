@@ -15,7 +15,7 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { Assignment } from "~/lib/types";
 
@@ -67,6 +67,163 @@ export const Route = createFileRoute("/_app/assignments/")({
 const col = columnHelperFor<Assignment>();
 const published = (v: unknown) => v === true || v === "TRUE" || v === "true";
 
+type Handlers = {
+  onPublish: (assignment: Assignment) => void;
+  onEdit: (assignment: Assignment) => void;
+  onRemove: (assignment: Assignment) => void;
+};
+
+function AssignmentTitleCell({
+  assignment,
+}: Readonly<{ assignment: Assignment }>) {
+  return (
+    <>
+      <div className="font-medium">{assignment.title}</div>
+      {assignment.description ? (
+        <div className="line-clamp-1 max-w-xs text-xs text-base-content/60">
+          {assignment.description}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function AssignmentSubjectCell({ name }: Readonly<{ name?: string | null }>) {
+  return name || <span className="text-base-content/50">-</span>;
+}
+
+function AssignmentDueCell({ dueAt }: Readonly<{ dueAt: string }>) {
+  return <span className="whitespace-nowrap">{formatDateTime(dueAt)}</span>;
+}
+
+function AssignmentSubmissionsCell({
+  assignment,
+}: Readonly<{ assignment: Assignment }>) {
+  return (
+    <div className="flex items-center gap-1 whitespace-nowrap">
+      <span>{assignment.submitted_count}</span>
+      {assignment.pending_count > 0 ? (
+        <span className="badge badge-warning badge-sm">
+          {assignment.pending_count} perlu dinilai
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function AssignmentActionsCell({
+  assignment,
+  onPublish,
+  onEdit,
+  onRemove,
+}: Readonly<{ assignment: Assignment } & Handlers>) {
+  const id = assignment.assignment_id;
+  const isPub = published(assignment.is_published);
+  const cannotPublish = !isPub && assignment.question_count === 0;
+  return (
+    <ActionMenu>
+      <li>
+        <Link
+          to="/assignments/$assignmentId/questions"
+          params={{ assignmentId: id }}
+        >
+          <ListChecks className="size-4" /> Soal
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/assignments/$assignmentId/submissions"
+          params={{ assignmentId: id }}
+        >
+          <Inbox className="size-4" /> Pengumpulan
+        </Link>
+      </li>
+      <li>
+        <button
+          type="button"
+          disabled={cannotPublish}
+          title={cannotPublish ? "Tambahkan soal dulu" : undefined}
+          onClick={() => onPublish(assignment)}
+        >
+          {isPub ? <Undo2 className="size-4" /> : <Send className="size-4" />}
+          {isPub ? "Tarik ke Draft" : "Terbitkan"}
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          onClick={() => onEdit(assignment)}
+        >
+          <Pencil className="size-4" /> Edit
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          className="text-error"
+          onClick={() => onRemove(assignment)}
+        >
+          <Trash2 className="size-4" /> Hapus
+        </button>
+      </li>
+    </ActionMenu>
+  );
+}
+
+function createAssignmentColumns({
+  onPublish,
+  onEdit,
+  onRemove,
+}: Readonly<Handlers>) {
+  return col.columns([
+    col.accessor("title", {
+      header: "Judul",
+      cell: ({ row }) => <AssignmentTitleCell assignment={row.original} />,
+    }),
+    col.accessor("class_name", {
+      header: "Kelas",
+    }),
+    col.accessor("subject_name", {
+      header: "Mapel",
+      cell: (i) => <AssignmentSubjectCell name={i.getValue()} />,
+    }),
+    col.accessor((r) => r.due_at, {
+      id: "due",
+      header: "Tenggat",
+      cell: (i) => <AssignmentDueCell dueAt={i.getValue()} />,
+    }),
+    col.accessor("question_count", {
+      header: "Soal",
+    }),
+    col.accessor((r) => (published(r.is_published) ? "Terbit" : "Draft"), {
+      id: "status",
+      header: "Status",
+      cell: (i) => <PublishStatusIcon published={i.getValue() === "Terbit"} />,
+    }),
+    col.display({
+      id: "subs",
+      header: "Pengumpulan",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <AssignmentSubmissionsCell assignment={row.original} />
+      ),
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <AssignmentActionsCell
+          assignment={row.original}
+          onPublish={onPublish}
+          onEdit={onEdit}
+          onRemove={onRemove}
+        />
+      ),
+    }),
+  ]);
+}
+
 function AssignmentsPage() {
   const qc = useQueryClient();
   const { data: items } = useSuspenseQuery(assignmentsQuery);
@@ -99,166 +256,44 @@ function AssignmentsPage() {
     onError: (e) => toast.error(e.message),
   });
 
-  const actions = useRef({
-    edit: (_a: Assignment) => {},
-    remove: (_a: Assignment) => {},
-    publish: (_a: Assignment) => {},
-  });
-  useLayoutEffect(() => {
-    actions.current.publish = async (a) => {
-      const unpublishing = published(a.is_published);
-      // Menarik tugas yang sudah dikerjakan siswa perlu konfirmasi: tugas hilang dari daftar siswa
-      if (
-        unpublishing &&
-        a.started_count > 0 &&
-        !(await confirm(
-          `Tarik tugas "${a.title}" ke draft?\n${a.started_count} siswa sudah mulai mengerjakan; tugas tidak lagi tampil di daftar siswa sampai diterbitkan kembali.`,
-        ))
-      )
-        return;
-      publish.mutate({
-        id: a.assignment_id,
-        published: !unpublishing,
-      });
-    };
-    actions.current.edit = (a) => setModal({ open: true, item: a });
-    actions.current.remove = async (a) => {
-      const extra =
-        a.started_count > 0
-          ? `\n${a.started_count} siswa sudah mulai mengerjakan; jawaban dan nilai mereka ikut terhapus.`
-          : "";
-      if (
-        await confirm(
-          `Hapus tugas "${a.title}" beserta seluruh soalnya?${extra}`,
-        )
-      )
-        remove.mutate(a.assignment_id);
-    };
-  }, [confirm, remove, publish]);
+  const publishAssignment = publish.mutate; // stabil, berbeda dari objek `publish` yang baru tiap render
+  const removeAssignment = remove.mutate;
 
   const columns = useMemo(
     () =>
-      col.columns([
-        col.accessor("title", {
-          header: "Judul",
-          cell: (i) => (
-            <>
-              <div className="font-medium">{i.getValue()}</div>
-              {i.row.original.description ? (
-                <div className="line-clamp-1 max-w-xs text-xs text-base-content/60">
-                  {i.row.original.description}
-                </div>
-              ) : null}
-            </>
-          ),
-        }),
-        col.accessor("class_name", {
-          header: "Kelas",
-        }),
-        col.accessor("subject_name", {
-          header: "Mapel",
-          cell: (i) =>
-            i.getValue() || <span className="text-base-content/50">-</span>,
-        }),
-        col.accessor((r) => r.due_at, {
-          id: "due",
-          header: "Tenggat",
-          cell: (i) => (
-            <span className="whitespace-nowrap">
-              {formatDateTime(i.getValue())}
-            </span>
-          ),
-        }),
-        col.accessor("question_count", {
-          header: "Soal",
-        }),
-        col.accessor((r) => (published(r.is_published) ? "Terbit" : "Draft"), {
-          id: "status",
-          header: "Status",
-          cell: (i) => (
-            <PublishStatusIcon published={i.getValue() === "Terbit"} />
-          ),
-        }),
-        col.display({
-          id: "subs",
-          header: "Pengumpulan",
-          enableSorting: false,
-          cell: ({ row }) => (
-            <div className="flex items-center gap-1 whitespace-nowrap">
-              <span>{row.original.submitted_count}</span>
-              {row.original.pending_count > 0 ? (
-                <span className="badge badge-warning badge-sm">
-                  {row.original.pending_count} perlu dinilai
-                </span>
-              ) : null}
-            </div>
-          ),
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => {
-            const a = row.original;
-            const id = a.assignment_id;
-            const isPub = published(a.is_published);
-            const cannotPublish = !isPub && a.question_count === 0;
-            return (
-              <ActionMenu>
-                <li>
-                  <Link
-                    to="/assignments/$assignmentId/questions"
-                    params={{ assignmentId: id }}
-                  >
-                    <ListChecks className="size-4" /> Soal
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/assignments/$assignmentId/submissions"
-                    params={{ assignmentId: id }}
-                  >
-                    <Inbox className="size-4" /> Pengumpulan
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    disabled={cannotPublish}
-                    title={cannotPublish ? "Tambahkan soal dulu" : undefined}
-                    onClick={() => actions.current.publish(a)}
-                  >
-                    {isPub ? (
-                      <Undo2 className="size-4" />
-                    ) : (
-                      <Send className="size-4" />
-                    )}
-                    {isPub ? "Tarik ke Draft" : "Terbitkan"}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => actions.current.edit(row.original)}
-                  >
-                    <Pencil className="size-4" /> Edit
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => actions.current.remove(row.original)}
-                  >
-                    <Trash2 className="size-4" /> Hapus
-                  </button>
-                </li>
-              </ActionMenu>
-            );
-          },
-        }),
-      ]),
-    [],
+      createAssignmentColumns({
+        onPublish: (assignment) => {
+          const unpublishing = published(assignment.is_published);
+          const run = () =>
+            publishAssignment({
+              id: assignment.assignment_id,
+              published: !unpublishing,
+            });
+          // Menarik tugas yang sudah dikerjakan siswa perlu konfirmasi: tugas hilang dari daftar siswa
+          if (unpublishing && assignment.started_count > 0) {
+            void confirm(
+              `Tarik tugas "${assignment.title}" ke draft?\n${assignment.started_count} siswa sudah mulai mengerjakan; tugas tidak lagi tampil di daftar siswa sampai diterbitkan kembali.`,
+            ).then((confirmed) => {
+              if (confirmed) run();
+            });
+            return;
+          }
+          run();
+        },
+        onEdit: (assignment) => setModal({ open: true, item: assignment }),
+        onRemove: async (assignment) => {
+          const extra =
+            assignment.started_count > 0
+              ? `\n${assignment.started_count} siswa sudah mulai mengerjakan; jawaban dan nilai mereka ikut terhapus.`
+              : "";
+          void confirm(
+            `Hapus tugas "${assignment.title}" beserta seluruh soalnya?${extra}`,
+          ).then((confirmed) => {
+            if (confirmed) removeAssignment(assignment.assignment_id);
+          });
+        },
+      }),
+    [confirm, publishAssignment, removeAssignment],
   );
 
   const data = useMemo(() => {

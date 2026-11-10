@@ -86,7 +86,7 @@ function NavItem({
 }
 
 function AppLayout() {
-  const { me } = Route.useRouteContext();
+  const { me, convexQueryClient } = Route.useRouteContext();
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -104,6 +104,7 @@ function AppLayout() {
       // Hapus cache sesi dulu agar /login tidak mengira pengguna masih masuk, pindah halaman,
       // lalu kosongkan sisa cache saat layout sudah tidak aktif (tanpa memuat ulang query tanpa cookie)
       qc.removeQueries({ queryKey: qk.me });
+      convexQueryClient.convexClient.clearAuth(); // hentikan langganan realtime sesi ini
       await navigate({ to: "/login" });
       qc.clear();
     },

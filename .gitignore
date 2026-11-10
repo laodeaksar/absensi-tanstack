@@ -18,6 +18,8 @@ dist-ssr
 # src/routeTree.gen.ts
 .agents/
 .claude
+jwks.json
+private.pem
 
 # Editor directories and files
 .vscode/*

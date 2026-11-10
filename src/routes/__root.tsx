@@ -12,7 +12,6 @@ import {
 } from "@tanstack/react-router";
 
 import { Toaster } from "~/components/toaster";
-import { getConvexJwtFn } from "~/server/functions";
 
 import appCss from "~/styles.css?url";
 
@@ -20,13 +19,6 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
   convexQueryClient: ConvexQueryClient;
 }>()({
-  // SSR: query Convex di loader dijalankan lewat HTTP client di server, yang belum punya
-  // identitas. Tukar cookie sesi dengan JWT pendek dan pasang ke klien itu (per permintaan).
-  beforeLoad: async ({ context }) => {
-    if (typeof window !== "undefined") return; // di browser, ConvexReactClient.setAuth (router.tsx)
-    const jwt = await getConvexJwtFn();
-    if (jwt) context.convexQueryClient.serverHttpClient?.setAuth(jwt);
-  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

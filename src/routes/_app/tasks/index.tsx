@@ -76,78 +76,82 @@ function TaskActionCell({
 
 const col = columnHelperFor<MyTask>();
 
+function TaskTitleCell({ task }: Readonly<{ task: MyTask }>) {
+  return (
+    <>
+      <div className="font-medium">{task.title}</div>
+      <div className="text-xs text-base-content/60">
+        {task.subject_name ? `${task.subject_name} · ` : ""}
+        {task.question_count} soal - {task.max_score} poin
+      </div>
+    </>
+  );
+}
+
+function TaskDueCell({ dueAt }: Readonly<{ dueAt: string }>) {
+  return <span className="whitespace-nowrap">{formatDateTime(dueAt)}</span>;
+}
+
+function TaskScoreCell({ task }: Readonly<{ task: MyTask }>) {
+  // Nilai hanya ada setelah status "dinilai" (esai sudah direview)
+  return task.status === "dinilai" ? (
+    <span className="font-semibold">{task.nilai}</span>
+  ) : (
+    <span className="text-base-content/40">-</span>
+  );
+}
+
+function createTaskColumns(tz: number) {
+  return col.columns([
+    col.accessor("title", {
+      header: "Tugas",
+      cell: ({ row }) => <TaskTitleCell task={row.original} />,
+    }),
+    col.accessor((r) => r.due_at, {
+      id: "due",
+      header: "Tenggat",
+      cell: (i) => <TaskDueCell dueAt={i.getValue()} />,
+    }),
+    col.accessor((r) => r.duration_minutes, {
+      id: "duration",
+      header: "Durasi",
+      cell: (i) => (i.getValue() > 0 ? `${i.getValue()} menit` : "Bebas"),
+    }),
+    col.accessor("status", {
+      header: "Status",
+      cell: ({ row }) => (
+        <SubmissionStatusIcon
+          status={row.original.status}
+          late={isLate(row.original, tz)}
+        />
+      ),
+    }),
+    col.display({
+      id: "nilai",
+      header: "Nilai",
+      enableSorting: false,
+      cell: ({ row }) => <TaskScoreCell task={row.original} />,
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <TaskActionCell
+          task={row.original}
+          late={isLate(row.original, tz)}
+        />
+      ),
+    }),
+  ]);
+}
+
 function TasksPage() {
   const { data } = useSuspenseQuery(myTasksQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const tz = Number(settings.tz_offset_minutes);
 
-  const columns = useMemo(
-    () =>
-      col.columns([
-        col.accessor("title", {
-          header: "Tugas",
-          cell: (i) => (
-            <>
-              <div className="font-medium">{i.getValue()}</div>
-              <div className="text-xs text-base-content/60">
-                {i.row.original.subject_name
-                  ? `${i.row.original.subject_name} · `
-                  : ""}
-                {i.row.original.question_count} soal -{" "}
-                {i.row.original.max_score} poin
-              </div>
-            </>
-          ),
-        }),
-        col.accessor((r) => r.due_at, {
-          id: "due",
-          header: "Tenggat",
-          cell: (i) => (
-            <span className="whitespace-nowrap">
-              {formatDateTime(i.getValue())}
-            </span>
-          ),
-        }),
-        col.accessor((r) => r.duration_minutes, {
-          id: "duration",
-          header: "Durasi",
-          cell: (i) => (i.getValue() > 0 ? `${i.getValue()} menit` : "Bebas"),
-        }),
-        col.accessor("status", {
-          header: "Status",
-          cell: (i) => (
-            <SubmissionStatusIcon
-              status={i.row.original.status}
-              late={isLate(i.row.original, tz)}
-            />
-          ),
-        }),
-        // Nilai hanya ada setelah status "dinilai" (esai sudah direview)
-        col.display({
-          id: "nilai",
-          header: "Nilai",
-          enableSorting: false,
-          cell: ({ row }) =>
-            row.original.status === "dinilai" ? (
-              <span className="font-semibold">{row.original.nilai}</span>
-            ) : (
-              <span className="text-base-content/40">-</span>
-            ),
-        }),
-        col.display({
-          id: "actions",
-          header: "Aksi",
-          enableSorting: false,
-          cell: ({ row }) => (
-            <TaskActionCell
-              task={row.original}
-              late={isLate(row.original, tz)}
-            />
-          ),
-        }),
-      ]),
-    [tz],
-  );
+  const columns = useMemo(() => createTaskColumns(tz), [tz]);
 
   const table = useTable({
     features,
