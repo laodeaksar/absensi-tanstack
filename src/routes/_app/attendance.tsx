@@ -112,8 +112,12 @@ function AttendancePage() {
 
   // Pilihan mata pelajaran untuk satu kelas: absensi harian (bila boleh) + mapel yang diampu
   const subjectValuesFor = (classId: string) => [
-    ...(dailyOptions.some((c) => c.class_id === classId) ? [DAILY_SUBJECT] : []),
-    ...subjectOptions.filter((t) => t.class_id === classId).map((t) => t.subject_id),
+    ...(dailyOptions.some((c) => c.class_id === classId)
+      ? [DAILY_SUBJECT]
+      : []),
+    ...subjectOptions
+      .filter((t) => t.class_id === classId)
+      .map((t) => t.subject_id),
   ];
   // Hanya satu pilihan = langsung terisi, tidak perlu memilih lagi
   const onlySubjectFor = (classId: string) => {

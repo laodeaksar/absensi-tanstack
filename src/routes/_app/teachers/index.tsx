@@ -4,10 +4,10 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Pencil, Plus, UserCheck, UserX } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Eye, Pencil, Plus, UserCheck, UserX } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 
 import type { Teacher, TeacherInput } from "~/lib/types";
 
@@ -34,8 +34,12 @@ import { makeTeacherSchema } from "~/lib/teacher-schema";
 import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
 
-export const Route = createFileRoute("/_app/teachers")({
+export const Route = createFileRoute("/_app/teachers/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
+  validateSearch: (s: Record<string, unknown>) => ({
+    // id guru yang langsung dibuka di form Edit (dipakai tombol Edit di halaman detail)
+    edit: typeof s.edit === "string" ? s.edit : undefined,
+  }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.query(teachersQuery),
@@ -53,7 +57,13 @@ const col = columnHelperFor<Row>();
 function TeacherNameCell({ teacher }: Readonly<{ teacher: Row }>) {
   return (
     <>
-      <div className="font-medium">{teacher.full_name}</div>
+      <Link
+        to="/teachers/$teacherId"
+        params={{ teacherId: teacher.user_id }}
+        className="link link-hover font-medium"
+      >
+        {teacher.full_name}
+      </Link>
       {teacher.nip ? (
         <div className="text-xs text-base-content/60">NIP {teacher.nip}</div>
       ) : null}
@@ -103,6 +113,14 @@ function TeacherActionsCell({
 }: Readonly<{ teacher: Row } & Handlers>) {
   return (
     <ActionMenu>
+      <li>
+        <Link
+          to="/teachers/$teacherId"
+          params={{ teacherId: teacher.user_id }}
+        >
+          <Eye className="size-4" /> Detail
+        </Link>
+      </li>
       <li>
         <button
           type="button"
@@ -170,6 +188,8 @@ function createTeacherColumns({ onEdit, onToggle }: Readonly<Handlers>) {
 }
 
 function TeachersPage() {
+  const { edit } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const { data: teachers } = useSuspenseQuery(teachersQuery);
   const { data: classes } = useSuspenseQuery(classesQuery);
@@ -182,6 +202,26 @@ function TeachersPage() {
     teacher: null,
   });
   const { confirm, dialog } = useConfirm();
+
+  // ?edit=<id> membuka form Edit guru itu, baik saat halaman baru dibuka (dari halaman detail)
+  // maupun saat parameternya berubah ketika halaman sudah terbuka. Menyesuaikan state saat render
+  // dengan syarat (pola dari dokumentasi React), bukan setState di dalam efek.
+  const [seenEdit, setSeenEdit] = useState<string | undefined>(undefined);
+  if (edit !== seenEdit) {
+    setSeenEdit(edit);
+    const t = edit ? teachers.find((x) => x.user_id === edit) : undefined;
+    if (t) setModal({ open: true, teacher: t });
+  }
+
+  // Hapus parameter dari URL agar refresh atau tombol kembali tidak membukanya lagi
+  useEffect(() => {
+    if (edit)
+      void navigate({
+        to: "/teachers",
+        search: { edit: undefined },
+        replace: true,
+      });
+  }, [edit, navigate]);
 
   const toggle = useMutation({
     mutationFn: (v: { user_id: string; is_active: boolean }) =>

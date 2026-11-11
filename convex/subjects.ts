@@ -266,6 +266,17 @@ export const saveTeaching = mutation({
     )
       fail("Guru pengampu tidak valid.");
 
+    // Guru hanya bisa ditugaskan di kelas yang ia ampu ("Kelas yang diampu"), karena akses tugas
+    // dan absensinya mengikuti daftar itu. Dicek untuk penugasan baru atau saat guru diganti,
+    // supaya baris lama yang kelasnya sudah dicabut tetap bisa disimpan.
+    if (
+      (!existing || changedTeacher) &&
+      !(teacher?.assigned_classes ?? []).includes(classId)
+    )
+      fail(
+        "Guru ini belum mengampu kelas tersebut. Tambahkan kelasnya di data guru.",
+      );
+
     const dup = await teachingRowOf(ctx, classId, subjectId);
     if (dup && dup.teaching_id !== id)
       fail(

@@ -20,11 +20,12 @@ import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppStudentsRouteImport } from './routes/_app/students'
 import { Route as AppSubjectsRouteImport } from './routes/_app/subjects'
-import { Route as AppTeachersRouteImport } from './routes/_app/teachers'
 import { Route as AppTeachingRouteImport } from './routes/_app/teaching'
 import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignments/index'
 import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
 import { Route as AppTasksAssignmentIdRouteImport } from './routes/_app/tasks/$assignmentId'
+import { Route as AppTeachersIndexRouteImport } from './routes/_app/teachers/index'
+import { Route as AppTeachersTeacherIdRouteImport } from './routes/_app/teachers/$teacherId'
 import { Route as AppAssignmentsAssignmentIdQuestionsRouteImport } from './routes/_app/assignments/$assignmentId/questions'
 import { Route as AppAssignmentsAssignmentIdSubmissionsRouteImport } from './routes/_app/assignments/$assignmentId/submissions'
 import { Route as AppAssignmentsAssignmentIdReviewSubmissionIdRouteImport } from './routes/_app/assignments/$assignmentId/review.$submissionId'
@@ -83,11 +84,6 @@ const AppSubjectsRoute = AppSubjectsRouteImport.update({
   path: '/subjects',
   getParentRoute: () => AppRoute,
 } as any)
-const AppTeachersRoute = AppTeachersRouteImport.update({
-  id: '/teachers',
-  path: '/teachers',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppTeachingRoute = AppTeachingRouteImport.update({
   id: '/teaching',
   path: '/teaching',
@@ -106,6 +102,16 @@ const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
 const AppTasksAssignmentIdRoute = AppTasksAssignmentIdRouteImport.update({
   id: '/tasks/$assignmentId',
   path: '/tasks/$assignmentId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeachersIndexRoute = AppTeachersIndexRouteImport.update({
+  id: '/teachers/',
+  path: '/teachers/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeachersTeacherIdRoute = AppTeachersTeacherIdRouteImport.update({
+  id: '/teachers/$teacherId',
+  path: '/teachers/$teacherId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssignmentsAssignmentIdQuestionsRoute =
@@ -138,11 +144,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/students': typeof AppStudentsRoute
   '/subjects': typeof AppSubjectsRoute
-  '/teachers': typeof AppTeachersRoute
   '/teaching': typeof AppTeachingRoute
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
+  '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments/': typeof AppAssignmentsIndexRoute
   '/tasks/': typeof AppTasksIndexRoute
+  '/teachers/': typeof AppTeachersIndexRoute
   '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
   '/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
   '/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
@@ -158,11 +165,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/students': typeof AppStudentsRoute
   '/subjects': typeof AppSubjectsRoute
-  '/teachers': typeof AppTeachersRoute
   '/teaching': typeof AppTeachingRoute
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
+  '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments': typeof AppAssignmentsIndexRoute
   '/tasks': typeof AppTasksIndexRoute
+  '/teachers': typeof AppTeachersIndexRoute
   '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
   '/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
   '/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
@@ -180,11 +188,12 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/students': typeof AppStudentsRoute
   '/_app/subjects': typeof AppSubjectsRoute
-  '/_app/teachers': typeof AppTeachersRoute
   '/_app/teaching': typeof AppTeachingRoute
   '/_app/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
+  '/_app/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/_app/assignments/': typeof AppAssignmentsIndexRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
+  '/_app/teachers/': typeof AppTeachersIndexRoute
   '/_app/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
   '/_app/assignments/$assignmentId/submissions': typeof AppAssignmentsAssignmentIdSubmissionsRoute
   '/_app/assignments/$assignmentId/review/$submissionId': typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
@@ -202,11 +211,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/students'
     | '/subjects'
-    | '/teachers'
     | '/teaching'
     | '/tasks/$assignmentId'
+    | '/teachers/$teacherId'
     | '/assignments/'
     | '/tasks/'
+    | '/teachers/'
     | '/assignments/$assignmentId/questions'
     | '/assignments/$assignmentId/submissions'
     | '/assignments/$assignmentId/review/$submissionId'
@@ -222,11 +232,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/students'
     | '/subjects'
-    | '/teachers'
     | '/teaching'
     | '/tasks/$assignmentId'
+    | '/teachers/$teacherId'
     | '/assignments'
     | '/tasks'
+    | '/teachers'
     | '/assignments/$assignmentId/questions'
     | '/assignments/$assignmentId/submissions'
     | '/assignments/$assignmentId/review/$submissionId'
@@ -243,11 +254,12 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/students'
     | '/_app/subjects'
-    | '/_app/teachers'
     | '/_app/teaching'
     | '/_app/tasks/$assignmentId'
+    | '/_app/teachers/$teacherId'
     | '/_app/assignments/'
     | '/_app/tasks/'
+    | '/_app/teachers/'
     | '/_app/assignments/$assignmentId/questions'
     | '/_app/assignments/$assignmentId/submissions'
     | '/_app/assignments/$assignmentId/review/$submissionId'
@@ -338,13 +350,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubjectsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/teachers': {
-      id: '/_app/teachers'
-      path: '/teachers'
-      fullPath: '/teachers'
-      preLoaderRoute: typeof AppTeachersRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/teaching': {
       id: '/_app/teaching'
       path: '/teaching'
@@ -371,6 +376,20 @@ declare module '@tanstack/react-router' {
       path: '/tasks/$assignmentId'
       fullPath: '/tasks/$assignmentId'
       preLoaderRoute: typeof AppTasksAssignmentIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/teachers/': {
+      id: '/_app/teachers/'
+      path: '/teachers'
+      fullPath: '/teachers/'
+      preLoaderRoute: typeof AppTeachersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/teachers/$teacherId': {
+      id: '/_app/teachers/$teacherId'
+      path: '/teachers/$teacherId'
+      fullPath: '/teachers/$teacherId'
+      preLoaderRoute: typeof AppTeachersTeacherIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/assignments/$assignmentId/questions': {
@@ -406,11 +425,12 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppStudentsRoute: typeof AppStudentsRoute
   AppSubjectsRoute: typeof AppSubjectsRoute
-  AppTeachersRoute: typeof AppTeachersRoute
   AppTeachingRoute: typeof AppTeachingRoute
   AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute
+  AppTeachersTeacherIdRoute: typeof AppTeachersTeacherIdRoute
   AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
+  AppTeachersIndexRoute: typeof AppTeachersIndexRoute
   AppAssignmentsAssignmentIdQuestionsRoute: typeof AppAssignmentsAssignmentIdQuestionsRoute
   AppAssignmentsAssignmentIdSubmissionsRoute: typeof AppAssignmentsAssignmentIdSubmissionsRoute
   AppAssignmentsAssignmentIdReviewSubmissionIdRoute: typeof AppAssignmentsAssignmentIdReviewSubmissionIdRoute
@@ -425,11 +445,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRoute,
   AppSubjectsRoute: AppSubjectsRoute,
-  AppTeachersRoute: AppTeachersRoute,
   AppTeachingRoute: AppTeachingRoute,
   AppTasksAssignmentIdRoute: AppTasksAssignmentIdRoute,
+  AppTeachersTeacherIdRoute: AppTeachersTeacherIdRoute,
   AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
+  AppTeachersIndexRoute: AppTeachersIndexRoute,
   AppAssignmentsAssignmentIdQuestionsRoute:
     AppAssignmentsAssignmentIdQuestionsRoute,
   AppAssignmentsAssignmentIdSubmissionsRoute:

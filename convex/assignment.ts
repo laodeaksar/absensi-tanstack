@@ -20,6 +20,7 @@ import {
   studentById,
   subjectById,
   teachingRowOf,
+  userById,
 } from "./lib";
 import { LIMITS } from "./limits";
 
@@ -219,6 +220,82 @@ export const listAssignments = query({
         started_count: subs.length,
         submitted_count: subs.filter((s) => s.status !== "berlangsung").length,
         pending_count: subs.filter((s) => s.status === "diserahkan").length,
+        created_at: a.created_at,
+      });
+    }
+    data.sort((x, y) => y.created_at.localeCompare(x.created_at));
+    return { data };
+  },
+});
+
+/** Tugas yang dibuat seorang guru atau berada di kelas dan mapel yang ia ampu. Hanya admin. */
+export const listAssignmentsByTeacher = query({
+  args: { token: v.optional(v.string()), teacherId: v.string() },
+  handler: async (ctx, { token, teacherId }) => {
+    await requireAuth(ctx, token, { admin: true });
+    const classes = await classNameMap(ctx);
+    const subjectNames = new Map(
+      (await ctx.db.query("subjects").collect()).map(
+        (s) => [s.subject_id, s.name] as const,
+      ),
+    );
+
+    // 1) Dibuat guru ini
+    const created = await ctx.db
+      .query("assignments")
+      .withIndex("by_created_by", (q) => q.eq("created_by", teacherId))
+      .collect();
+
+    // 2) Di kelas dan mapel yang diampu: pasangan kelas + mapel harus cocok
+    const teaching = await ctx.db
+      .query("teaching")
+      .withIndex("by_teacher", (q) => q.eq("teacher_id", teacherId))
+      .collect();
+    const classesBySubject = new Map<string, Set<string>>();
+    for (const t of teaching) {
+      const set = classesBySubject.get(t.subject_id) ?? new Set<string>();
+      set.add(t.class_id);
+      classesBySubject.set(t.subject_id, set);
+    }
+    const taught = (
+      await Promise.all(
+        [...classesBySubject.keys()].map((sid) =>
+          ctx.db
+            .query("assignments")
+            .withIndex("by_subject", (q) => q.eq("subject_id", sid))
+            .collect(),
+        ),
+      )
+    )
+      .flat()
+      .filter((a) => classesBySubject.get(a.subject_id ?? "")?.has(a.class_id));
+
+    const byId = new Map(created.map((a) => [a.assignment_id, a] as const));
+    for (const a of taught) byId.set(a.assignment_id, a);
+
+    const nameCache = new Map<string, string>();
+    const creatorName = async (userId: string) => {
+      const hit = nameCache.get(userId);
+      if (hit !== undefined) return hit;
+      const name = (await userById(ctx, userId))?.full_name ?? "-";
+      nameCache.set(userId, name);
+      return name;
+    };
+
+    const data = [];
+    for (const a of byId.values()) {
+      const isCreator = a.created_by === teacherId;
+      data.push({
+        assignment_id: a.assignment_id,
+        title: a.title,
+        class_name: classes.get(a.class_id) ?? "-",
+        subject_name: a.subject_id
+          ? (subjectNames.get(a.subject_id) ?? "-")
+          : "",
+        due_at: a.due_at,
+        is_published: a.is_published,
+        is_creator: isCreator,
+        creator_name: isCreator ? "" : await creatorName(a.created_by),
         created_at: a.created_at,
       });
     }

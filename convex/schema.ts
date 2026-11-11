@@ -211,7 +211,8 @@ export default defineSchema({
   })
     .index("by_assignment_id", ["assignment_id"])
     .index("by_class", ["class_id"])
-    .index("by_subject", ["subject_id"]),
+    .index("by_subject", ["subject_id"])
+    .index("by_created_by", ["created_by"]),
 
   questions: defineTable({
     question_id: v.string(),

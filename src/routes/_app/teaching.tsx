@@ -304,6 +304,22 @@ function TeachingForm({
     [teachers, row?.teacher_id],
   );
 
+  // Guru yang mengampu kelas itu (isian "Kelas yang diampu" di data guru). Pada edit, guru yang
+  // sedang bertugas tetap tersedia walau kelasnya tidak lagi tercantum di sana.
+  const teachersFor = (classId: string) =>
+    classId
+      ? teacherOptions.filter(
+          (t) =>
+            t.assigned_classes.includes(classId) ||
+            t.user_id === row?.teacher_id,
+        )
+      : [];
+  // Penugasan baru dengan hanya satu guru yang cocok: langsung terisi
+  const onlyTeacherFor = (classId: string) => {
+    const list = teachersFor(classId);
+    return !row && list.length === 1 ? list[0]!.user_id : "";
+  };
+
   const schema = useMemo(
     () =>
       makeTeachingSchema({
@@ -368,7 +384,19 @@ function TeachingForm({
         </div>
       ) : (
         <>
-          <form.Field name="class_id">
+          <form.Field
+            name="class_id"
+            listeners={{
+              // Guru bergantung pada kelas: pilihan lama tidak berlaku lagi,
+              // dan bila hanya satu guru yang cocok, langsung terisi
+              onChange: ({ fieldApi }) =>
+                fieldApi.form.setFieldValue(
+                  "teacher_id",
+                  onlyTeacherFor(fieldApi.state.value),
+                  { dontValidate: true },
+                ),
+            }}
+          >
             {(f) => (
               <SelectField
                 label="Kelas"
@@ -417,30 +445,45 @@ function TeachingForm({
         </>
       )}
 
-      <form.Field name="teacher_id">
-        {(f) => (
-          <SelectField
-            label="Guru Pengampu"
-            field={f}
-          >
-            <option
-              disabled
-              value=""
-            >
-              -- Pilih Guru --
-            </option>
-            {teacherOptions.map((t) => (
-              <option
-                key={t.user_id}
-                value={t.user_id}
-              >
-                {t.full_name}
-                {isActive(t.is_active) ? "" : " (nonaktif)"}
-              </option>
-            ))}
-          </SelectField>
-        )}
-      </form.Field>
+      <form.Subscribe selector={(st) => st.values.class_id}>
+        {(classId) => {
+          const list = teachersFor(classId);
+          return (
+            <>
+              <form.Field name="teacher_id">
+                {(f) => (
+                  <SelectField
+                    label="Guru Pengampu"
+                    field={f}
+                  >
+                    <option
+                      disabled
+                      value=""
+                    >
+                      {classId ? "-- Pilih Guru --" : "-- Pilih kelas dulu --"}
+                    </option>
+                    {list.map((t) => (
+                      <option
+                        key={t.user_id}
+                        value={t.user_id}
+                      >
+                        {t.full_name}
+                        {isActive(t.is_active) ? "" : " (nonaktif)"}
+                      </option>
+                    ))}
+                  </SelectField>
+                )}
+              </form.Field>
+              {classId && list.length === 0 ? (
+                <p className="text-xs text-warning">
+                  Belum ada guru aktif yang mengampu kelas ini. Tambahkan kelas
+                  ini pada "Kelas yang diampu" di data guru.
+                </p>
+              ) : null}
+            </>
+          );
+        }}
+      </form.Subscribe>
 
       <ErrorAlert message={save.error?.message} />
 

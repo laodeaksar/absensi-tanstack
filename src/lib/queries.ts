@@ -174,6 +174,24 @@ export const teachingQuery = queryOptions({
   select: unwrap<TeachingRow[]>,
 });
 
+export const teacherAssignmentsQuery = (teacherId: string) =>
+  queryOptions({
+    ...convexQuery(convexApi.assignment.listAssignmentsByTeacher, {
+      teacherId,
+    }),
+    select: unwrap<
+      (Pick<
+        Assignment,
+        | "assignment_id"
+        | "title"
+        | "class_name"
+        | "subject_name"
+        | "due_at"
+        | "is_published"
+      > & { is_creator: boolean; creator_name: string })[]
+    >,
+  });
+
 export const subjectAttendanceFormQuery = (
   date: string,
   classId: string,
