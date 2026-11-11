@@ -4,7 +4,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -34,7 +34,7 @@ import {
 import { columnHelperFor, features } from "~/lib/table";
 import { makeTeachingSchema } from "~/lib/teaching-schema";
 import { toast } from "~/lib/toast";
-import { isActive } from "~/lib/types";
+import { isActive, Teacher } from "~/lib/types";
 
 export const Route = createFileRoute("/_app/teaching")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
@@ -475,10 +475,13 @@ function TeachingForm({
                 )}
               </form.Field>
               {classId && list.length === 0 ? (
-                <p className="text-xs text-warning">
-                  Belum ada guru aktif yang mengampu kelas ini. Tambahkan kelas
-                  ini pada "Kelas yang diampu" di data guru.
-                </p>
+                <NoTeacherHelp
+                  classId={classId}
+                  candidates={teacherOptions.filter(
+                    (t) => !t.assigned_classes.includes(classId),
+                  )}
+                  onAssigned={(id) => form.setFieldValue("teacher_id", id)}
+                />
               ) : null}
             </>
           );
@@ -511,5 +514,76 @@ function TeachingForm({
         </form.Subscribe>
       </div>
     </form>
+  );
+}
+
+function NoTeacherHelp({
+  classId,
+  candidates,
+  onAssigned,
+}: Readonly<{
+  classId: string;
+  candidates: Teacher[];
+  onAssigned: (teacherId: string) => void;
+}>) {
+  const [pick, setPick] = useState("");
+  const assign = useMutation({
+    mutationFn: () => {
+      const t = candidates.find((x) => x.user_id === pick);
+      if (!t) throw new Error("Pilih guru terlebih dahulu.");
+      return api.saveTeacher({
+        user_id: t.user_id,
+        assigned_classes: [...t.assigned_classes, classId],
+      });
+    },
+    onSuccess: () => {
+      toast.success("Guru ditambahkan ke kelas ini.");
+      onAssigned(pick);
+      setPick("");
+    },
+  });
+
+  return (
+    <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+      <p>Belum ada guru yang mengampu kelas ini.</p>
+      {candidates.length ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="select select-bordered select-sm"
+            value={pick}
+            onChange={(e) => setPick(e.target.value)}
+          >
+            <option value="">-- Pilih guru --</option>
+            {candidates.map((t) => (
+              <option
+                key={t.user_id}
+                value={t.user_id}
+              >
+                {t.full_name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            disabled={!pick || assign.isPending}
+            onClick={() => assign.mutate()}
+          >
+            {assign.isPending ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : null}
+            Tambahkan ke kelas ini
+          </button>
+        </div>
+      ) : null}
+      <Link
+        to="/teachers"
+        search={{ add: classId, edit: undefined }}
+        className="btn btn-sm btn-outline"
+      >
+        + Tambah guru baru
+      </Link>
+      <ErrorAlert message={assign.error?.message} />
+    </div>
   );
 }

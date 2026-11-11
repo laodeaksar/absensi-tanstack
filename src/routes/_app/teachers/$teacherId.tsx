@@ -123,7 +123,7 @@ function TeacherDetailPage() {
       >
         <Link
           to="/teachers"
-          search={{ edit: teacher.user_id }}
+          search={{ edit: teacher.user_id, add: undefined }}
           aria-label="Edit"
           className="btn btn-primary btn-sm"
         >

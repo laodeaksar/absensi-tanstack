@@ -37,8 +37,8 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/teachers/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    // id guru yang langsung dibuka di form Edit (dipakai tombol Edit di halaman detail)
     edit: typeof s.edit === "string" ? s.edit : undefined,
+    add: typeof s.add === "string" ? s.add : undefined,
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -188,7 +188,7 @@ function createTeacherColumns({ onEdit, onToggle }: Readonly<Handlers>) {
 }
 
 function TeachersPage() {
-  const { edit } = Route.useSearch();
+  const { edit, add } = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const { data: teachers } = useSuspenseQuery(teachersQuery);
@@ -197,20 +197,24 @@ function TeachersPage() {
   const [modal, setModal] = useState<{
     open: boolean;
     teacher: Teacher | null;
+    presetClassId?: string;
   }>({
     open: false,
     teacher: null,
   });
   const { confirm, dialog } = useConfirm();
 
-  // ?edit=<id> membuka form Edit guru itu, baik saat halaman baru dibuka (dari halaman detail)
-  // maupun saat parameternya berubah ketika halaman sudah terbuka. Menyesuaikan state saat render
-  // dengan syarat (pola dari dokumentasi React), bukan setState di dalam efek.
-  const [seenEdit, setSeenEdit] = useState<string | undefined>(undefined);
-  if (edit !== seenEdit) {
-    setSeenEdit(edit);
+  // ?edit=<id> membuka form Edit; ?add=<idKelas> membuka form Tambah dengan kelas itu terisi.
+  // Disesuaikan saat render (pola dokumentasi React), bukan setState di dalam efek.
+  const [seen, setSeen] = useState<{
+    edit?: string;
+    add?: string;
+  }>({});
+  if (edit !== seen.edit || add !== seen.add) {
+    setSeen({ edit, add });
     const t = edit ? teachers.find((x) => x.user_id === edit) : undefined;
     if (t) setModal({ open: true, teacher: t });
+    else if (add) setModal({ open: true, teacher: null, presetClassId: add });
   }
 
   // Hapus parameter dari URL agar refresh atau tombol kembali tidak membukanya lagi
@@ -218,10 +222,10 @@ function TeachersPage() {
     if (edit)
       void navigate({
         to: "/teachers",
-        search: { edit: undefined },
+        search: { edit: undefined, add: undefined },
         replace: true,
       });
-  }, [edit, navigate]);
+  }, [edit, add, navigate]);
 
   const toggle = useMutation({
     mutationFn: (v: { user_id: string; is_active: boolean }) =>
@@ -322,13 +326,14 @@ function TeachersPage() {
 
       <Modal
         open={modal.open}
-        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        onClose={() => setModal({ open: false, teacher: null })}
         title={modal.teacher ? "Edit Guru" : "Tambah Guru"}
       >
         {modal.open ? (
           <TeacherForm
             key={modal.teacher?.user_id ?? "new"}
             teacher={modal.teacher}
+            presetClassId={modal.presetClassId}
             onDone={() => {
               setModal({
                 open: false,
@@ -339,10 +344,10 @@ function TeachersPage() {
               });
             }}
             onCancel={() =>
-              setModal((m) => ({
-                ...m,
+              setModal({
                 open: false,
-              }))
+                teacher: null,
+              })
             }
           />
         ) : null}
@@ -354,10 +359,12 @@ function TeachersPage() {
 
 function TeacherForm({
   teacher,
+  presetClassId,
   onDone,
   onCancel,
 }: {
   teacher: Teacher | null;
+  presetClassId?: string;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -365,8 +372,9 @@ function TeacherForm({
   const { data: teachers } = useSuspenseQuery(teachersQuery);
   const isNew = !teacher;
   const assigned = useMemo(
-    () => (teacher ? teacher.assigned_classes : []),
-    [teacher],
+    () =>
+      teacher ? teacher.assigned_classes : presetClassId ? [presetClassId] : [],
+    [teacher, presetClassId],
   );
 
   // Kelas yang bisa dipilih: kelas aktif + kelas yang sudah diampu guru ini
