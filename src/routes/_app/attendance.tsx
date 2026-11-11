@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-// import type { AttendanceEntry } from "~/lib/types";
 
 import { AttendanceGrid } from "~/components/attendance-grid";
 import {
@@ -17,9 +16,11 @@ import {
 } from "~/components/ui";
 import { api } from "~/lib/api";
 import {
+  DAILY_SUBJECT,
   earliestDate,
-  makeTargetFilterSchema,
+  makeSplitFilterSchema,
   parseTarget,
+  subjectValue,
   targetKey,
 } from "~/lib/attendance-schema";
 import { allowRoles } from "~/lib/auth";
@@ -82,6 +83,15 @@ function AttendancePage() {
     [teaching],
   );
 
+  // Kelas yang bisa dipilih: kelas absensi harian + kelas tempat ia mengampu mata pelajaran
+  const classChoices = useMemo(() => {
+    const ids = new Set([
+      ...dailyOptions.map((c) => c.class_id),
+      ...subjectOptions.map((t) => t.class_id),
+    ]);
+    return classes.filter((c) => ids.has(c.class_id));
+  }, [classes, dailyOptions, subjectOptions]);
+
   const targets = useMemo(
     () => [
       ...dailyOptions.map((c) => targetKey(c.class_id)),
@@ -95,24 +105,41 @@ function AttendancePage() {
     [restricted, editWindowDays, tz],
   );
   const filterSchema = useMemo(
-    () => makeTargetFilterSchema({ targets, ...rules }),
+    () => makeSplitFilterSchema({ targets, ...rules }),
     [targets, rules],
   );
   const minDate = earliestDate(rules);
 
+  // Pilihan mata pelajaran untuk satu kelas: absensi harian (bila boleh) + mapel yang diampu
+  const subjectValuesFor = (classId: string) => [
+    ...(dailyOptions.some((c) => c.class_id === classId) ? [DAILY_SUBJECT] : []),
+    ...subjectOptions.filter((t) => t.class_id === classId).map((t) => t.subject_id),
+  ];
+  // Hanya satu pilihan = langsung terisi, tidak perlu memilih lagi
+  const onlySubjectFor = (classId: string) => {
+    const v = subjectValuesFor(classId);
+    return v.length === 1 ? v[0]! : "";
+  };
+  const defaultClassId =
+    search.classId ??
+    (classChoices.length === 1 ? classChoices[0]!.class_id : "");
+
   const form = useForm({
     defaultValues: {
       date: search.date ?? todayStr(tz),
-      target: targetKey(search.classId ?? "", search.subjectId),
+      classId: defaultClassId,
+      subjectId: search.classId
+        ? subjectValue(search.subjectId)
+        : onlySubjectFor(defaultClassId),
     },
     validators: {
       onChange: filterSchema,
       onSubmit: filterSchema,
     },
     onSubmit: ({ value }) => {
-      const t = parseTarget(value.target);
       void qc.invalidateQueries({ queryKey: qk.attendance });
       void qc.invalidateQueries({ queryKey: qk.subjectAttendance });
+      const t = parseTarget(value);
       void navigate({
         to: "/attendance",
         search: {
@@ -130,12 +157,13 @@ function AttendancePage() {
       search.date || search.classId
         ? filterSchema.safeParse({
             date: search.date ?? "",
-            target: targetKey(search.classId ?? "", search.subjectId),
+            classId: search.classId ?? "",
+            subjectId: search.classId ? subjectValue(search.subjectId) : "",
           })
         : null,
     [filterSchema, search.date, search.classId, search.subjectId],
   );
-  const picked = urlCheck?.success ? parseTarget(urlCheck.data.target) : null;
+  const picked = urlCheck?.success ? parseTarget(urlCheck.data) : null;
   const pickedSubject = picked?.subjectId
     ? subjectOptions.find(
         (t) =>
@@ -150,7 +178,7 @@ function AttendancePage() {
       <div className="card border border-base-300 bg-base-100">
         <form
           noValidate
-          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-3"
+          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-4"
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -173,45 +201,75 @@ function AttendancePage() {
               />
             )}
           </form.Field>
-          <form.Field name="target">
+          <form.Field
+            name="classId"
+            listeners={{
+              // Mata pelajaran bergantung pada kelas: pilihan lama tidak berlaku lagi,
+              // dan bila kelas itu hanya punya satu pilihan, langsung terisi
+              onChange: ({ fieldApi }) =>
+                fieldApi.form.setFieldValue(
+                  "subjectId",
+                  onlySubjectFor(fieldApi.state.value),
+                  { dontValidate: true },
+                ),
+            }}
+          >
             {(f) => (
               <SelectField
-                label="Kelas / Mata Pelajaran"
+                label="Kelas"
                 field={f}
               >
                 <option
                   disabled
                   value=""
                 >
-                  -- Pilih --
+                  -- Pilih kelas --
                 </option>
-                {dailyOptions.length > 0 ? (
-                  <optgroup label="Absensi Harian">
-                    {dailyOptions.map((c) => (
-                      <option
-                        key={c.class_id}
-                        value={targetKey(c.class_id)}
-                      >
-                        {c.class_name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : null}
-                {subjectOptions.length > 0 ? (
-                  <optgroup label="Mata Pelajaran">
-                    {subjectOptions.map((t) => (
-                      <option
-                        key={t.teaching_id}
-                        value={targetKey(t.class_id, t.subject_id)}
-                      >
-                        {t.subject_name} · {t.class_name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : null}
+                {classChoices.map((c) => (
+                  <option
+                    key={c.class_id}
+                    value={c.class_id}
+                  >
+                    {c.class_name}
+                  </option>
+                ))}
               </SelectField>
             )}
           </form.Field>
+          <form.Subscribe selector={(st) => st.values.classId}>
+            {(classId) => (
+              <form.Field name="subjectId">
+                {(f) => (
+                  <SelectField
+                    label="Mata Pelajaran"
+                    field={f}
+                  >
+                    <option
+                      disabled
+                      value=""
+                    >
+                      {classId ? "-- Pilih --" : "-- Pilih kelas dulu --"}
+                    </option>
+                    {dailyOptions.some((c) => c.class_id === classId) ? (
+                      <option value={DAILY_SUBJECT}>
+                        Absensi Harian (tanpa mata pelajaran)
+                      </option>
+                    ) : null}
+                    {subjectOptions
+                      .filter((t) => t.class_id === classId)
+                      .map((t) => (
+                        <option
+                          key={t.teaching_id}
+                          value={t.subject_id}
+                        >
+                          {t.subject_name}
+                        </option>
+                      ))}
+                  </SelectField>
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
           {targets.length === 0 ? (
             <p className="text-warning text-sm md:col-span-full">
               {me.role === "guru"

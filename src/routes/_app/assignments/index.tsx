@@ -15,7 +15,7 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo,  useState } from "react";
 
 import type { Assignment } from "~/lib/types";
 
@@ -281,7 +281,7 @@ function AssignmentsPage() {
           run();
         },
         onEdit: (assignment) => setModal({ open: true, item: assignment }),
-        onRemove: async (assignment) => {
+        onRemove: (assignment) => {
           const extra =
             assignment.started_count > 0
               ? `\n${assignment.started_count} siswa sudah mulai mengerjakan; jawaban dan nilai mereka ikut terhapus.`
@@ -448,12 +448,21 @@ function AssignmentForm({
     },
   });
 
+  // Tugas baru: bila hanya ada satu kelas, langsung terisi; guru juga langsung mendapat mapelnya
+  // bila di kelas itu ia hanya mengampu satu mapel. Saat mengedit, nilai tugas dipakai apa adanya.
+  const defaultClass =
+    item?.class_id ?? (options.length === 1 ? options[0]!.class_id : "");
+  const onlySubjectFor = (cid: string) => {
+    const rows = subjectChoices.filter((r) => r.classId === cid);
+    return isNew && me.role === "guru" && rows.length === 1 ? rows[0]!.id : "";
+  };
+
   const form = useForm({
     defaultValues: {
       title: item?.title ?? "",
       description: item?.description ?? "",
-      class_id: item?.class_id ?? "",
-      subject_id: item?.subject_id ?? "",
+      class_id: defaultClass,
+      subject_id: item?.subject_id ?? onlySubjectFor(defaultClass),
       due_at: item?.due_at ?? "",
       duration_minutes: String(item?.duration_minutes ?? 0),
       is_published: item ? published(item.is_published) : false,
@@ -490,7 +499,15 @@ function AssignmentForm({
     const cur = form.state.values.subject_id;
     if (cur && !choicesForClass.some((r) => r.id === cur))
       form.setFieldValue("subject_id", "");
-  }, [choicesForClass, form]);
+    // Kelas diganti pada tugas baru: guru dengan satu mapel di kelas itu langsung terisi
+    else if (
+      !cur &&
+      isNew &&
+      me.role === "guru" &&
+      choicesForClass.length === 1
+    )
+      form.setFieldValue("subject_id", choicesForClass[0]!.id);
+  }, [choicesForClass, form, isNew, me.role]);
 
   return (
     <form

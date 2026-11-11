@@ -147,12 +147,16 @@ function ReportsPage() {
       ) : (
         <SubjectReportView
           search={search}
-          onSearch={() =>
+          // Filter dari form SubjectReportView (rentang tanggal, pair) harus ikut ke URL, dan
+          // `go: true` mengaktifkan query; tanpa keduanya daftar tidak pernah dimuat
+          onSearch={(next) =>
             void navigate({
               to: "/reports",
               search: {
                 ...NO_SEARCH,
+                ...next,
                 tab: "mapel",
+                go: true,
               },
             })
           }
@@ -218,7 +222,12 @@ function DailyReportView() {
     defaultValues: {
       startDate: search.startDate ?? "",
       endDate: search.endDate ?? "",
-      classId: search.classId ?? "",
+      // Guru dengan satu kelas: langsung terisi
+      classId:
+        search.classId ??
+        (me.role === "guru" && options.length === 1
+          ? options[0]!.class_id
+          : ""),
     },
     validators: {
       onChange: schema,

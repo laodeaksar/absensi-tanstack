@@ -22,6 +22,7 @@ import {
   teachingQuery,
 } from "~/lib/queries";
 import {
+  makeSplitSubjectReportFilterSchema,
   makeSubjectReportFilterSchema,
   pairKey,
   parsePair,
@@ -95,10 +96,30 @@ export function SubjectReportView({
     () => options.map((t) => pairKey(t.class_id, t.subject_id)),
     [options],
   );
+  // `schema` memvalidasi parameter URL (satu nilai pair); `formSchema` memvalidasi form (dua input)
   const schema = useMemo(
     () => makeSubjectReportFilterSchema({ pairs }),
     [pairs],
   );
+  const formSchema = useMemo(
+    () => makeSplitSubjectReportFilterSchema({ pairs }),
+    [pairs],
+  );
+
+  // Kelas yang bisa dipilih = kelas tempat akun ini mengampu mapel (guru: miliknya saja)
+  const classChoices = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const t of options)
+      if (!seen.has(t.class_id)) seen.set(t.class_id, t.class_name);
+    return [...seen].map(([id, name]) => ({ id, name }));
+  }, [options]);
+  const subjectsOfClass = (classId: string) =>
+    options.filter((t) => t.class_id === classId);
+  // Hanya satu pilihan = langsung terisi, tidak perlu memilih lagi
+  const onlySubjectFor = (classId: string) => {
+    const rows = subjectsOfClass(classId);
+    return rows.length === 1 ? rows[0]!.subject_id : "";
+  };
 
   // Parameter URL divalidasi dengan aturan yang sama sebelum data diminta
   const urlCheck = useMemo(
@@ -126,14 +147,23 @@ export function SubjectReportView({
   const data = useMemo(() => report.data?.data ?? [], [report.data]);
   const meta = report.data?.meta;
 
+  const fromUrl = parsePair(search.pair ?? "");
+  const defaultClassId =
+    fromUrl.classId || (classChoices.length === 1 ? classChoices[0]!.id : "");
   const form = useForm({
     defaultValues: {
-      pair: search.pair ?? "",
+      classId: defaultClassId,
+      subjectId: fromUrl.subjectId || onlySubjectFor(defaultClassId),
       startDate: search.startDate ?? monthStart(),
       endDate: search.endDate ?? todayStr(tz),
     },
-    validators: { onChange: schema, onSubmit: schema },
-    onSubmit: ({ value }) => onSearch(value),
+    validators: { onChange: formSchema, onSubmit: formSchema },
+    onSubmit: ({ value }) =>
+      onSearch({
+        pair: pairKey(value.classId, value.subjectId),
+        startDate: value.startDate,
+        endDate: value.endDate,
+      }),
   });
 
   const table = useTable({
@@ -183,36 +213,75 @@ export function SubjectReportView({
       <div className="card no-print border border-base-300 bg-base-100">
         <form
           noValidate
-          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-4"
+          className="card-body grid grid-cols-1 items-start gap-4 p-5 md:grid-cols-5"
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
             void form.handleSubmit();
           }}
         >
-          <form.Field name="pair">
+          <form.Field
+            name="classId"
+            listeners={{
+              // Mapel bergantung pada kelas: pilihan lama tidak berlaku lagi,
+              // dan bila kelas itu hanya punya satu mapel, langsung terisi
+              onChange: ({ fieldApi }) =>
+                fieldApi.form.setFieldValue(
+                  "subjectId",
+                  onlySubjectFor(fieldApi.state.value),
+                  { dontValidate: true },
+                ),
+            }}
+          >
             {(f) => (
               <SelectField
-                label="Kelas dan Mata Pelajaran"
+                label="Kelas"
                 field={f}
               >
                 <option
                   disabled
                   value=""
                 >
-                  -- Pilih --
+                  -- Pilih kelas --
                 </option>
-                {options.map((t) => (
+                {classChoices.map((c) => (
                   <option
-                    key={t.teaching_id}
-                    value={pairKey(t.class_id, t.subject_id)}
+                    key={c.id}
+                    value={c.id}
                   >
-                    {t.class_name} · {t.subject_name}
+                    {c.name}
                   </option>
                 ))}
               </SelectField>
             )}
           </form.Field>
+          <form.Subscribe selector={(st) => st.values.classId}>
+            {(classId) => (
+              <form.Field name="subjectId">
+                {(f) => (
+                  <SelectField
+                    label="Mata Pelajaran"
+                    field={f}
+                  >
+                    <option
+                      disabled
+                      value=""
+                    >
+                      {classId ? "-- Pilih --" : "-- Pilih kelas dulu --"}
+                    </option>
+                    {subjectsOfClass(classId).map((t) => (
+                      <option
+                        key={t.teaching_id}
+                        value={t.subject_id}
+                      >
+                        {t.subject_name}
+                      </option>
+                    ))}
+                  </SelectField>
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
           <form.Field name="startDate">
             {(f) => (
               <TextField
