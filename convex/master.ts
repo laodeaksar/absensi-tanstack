@@ -21,6 +21,7 @@ import {
 } from "./lib";
 import { LIMITS } from "./limits";
 import { RULES, isAcademicYear } from "./rules";
+import { getSettingsMap } from "./settings";
 
 const classInput = v.object({
   class_id: v.optional(v.string()),
@@ -458,9 +459,20 @@ export const saveClass = mutation({
     if (!data) fail("Data kelas tidak boleh kosong.");
     const d = data as Record<string, unknown>;
 
+    const id = String(d.class_id ?? "");
+    const existing = id ? await classById(ctx, id) : null;
+    if (id && !existing) fail("Kelas tidak ditemukan.");
+
+    // Tahun ajaran aktif terisi: kelas baru memakainya, kelas lama tidak berubah tahunnya.
+    // Kosong: ikut isian form.
+    const active = (await getSettingsMap(ctx)).active_academic_year;
+    const year = active
+      ? (existing?.academic_year ?? active)
+      : String(d.academic_year ?? "").trim();
+    if (!isAcademicYear(year)) fail("Tahun ajaran harus berformat 2025/2026.");
+
     const className = String(d.class_name ?? "").trim();
     const grade = String(d.grade_level ?? "").trim();
-    const year = String(d.academic_year ?? "").trim();
     const homeroom = String(d.homeroom_teacher ?? "").trim();
     if (!className) fail("Nama kelas wajib diisi.");
     if (className.length > LIMITS.className)
@@ -470,9 +482,6 @@ export const saveClass = mutation({
       fail(`Tingkat maksimal ${LIMITS.gradeLevel} karakter.`);
     if (!isAcademicYear(year)) fail("Tahun ajaran harus berformat 2025/2026.");
 
-    const id = String(d.class_id ?? "");
-    const existing = id ? await classById(ctx, id) : null;
-    if (id && !existing) fail("Kelas tidak ditemukan.");
     // Kelas baru selalu aktif; saat edit, status hanya berubah bila dikirim eksplisit
     const nextActive =
       typeof d.is_active === "boolean"

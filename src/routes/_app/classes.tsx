@@ -344,18 +344,26 @@ function ClassForm({
           )}
         </form.Field>
         <form.Field name="academic_year">
-          {(f) => (
-            <TextField
-              label="Tahun Ajaran"
-              field={f}
-              placeholder="2025/2026"
-              hint={
-                settings.active_academic_year
-                  ? `Tahun ajaran aktif: ${settings.active_academic_year}`
-                  : undefined
-              }
-            />
-          )}
+          {(f) => {
+            // Tahun ajaran aktif terisi: input dikunci. Kelas baru mengikuti tahun aktif,
+            // kelas yang diedit mempertahankan tahunnya sendiri.
+            const locked = Boolean(settings.active_academic_year);
+            return (
+              <TextField
+                label="Tahun Ajaran"
+                field={f}
+                placeholder="2025/2026"
+                disabled={locked}
+                hint={
+                  locked
+                    ? cls
+                      ? "Tahun ajaran kelas tidak dapat diubah."
+                      : `Mengikuti tahun ajaran aktif (${settings.active_academic_year}). Ubah di Pengaturan.`
+                    : undefined
+                }
+              />
+            );
+          }}
         </form.Field>
       </div>
       {cls ? (
