@@ -8,4 +8,9 @@ crons.interval(
   { hours: 6 },
   internal.maintenance.cleanup,
 );
+crons.interval(
+  "lanjutkan semester otomatis",
+  { hours: 1 },
+  internal.settings.advanceSemester,
+);
 export default crons;

@@ -166,3 +166,37 @@ export function passwordIssue(
   if (!issue) return null;
   return `Password ${issue.charAt(0).toLowerCase()}${issue.slice(1)}.`;
 }
+
+export type Semester = "ganjil" | "genap";
+export const SEMESTER_LABEL: Record<Semester, string> = {
+  ganjil: "Ganjil",
+  genap: "Genap",
+};
+
+/** "07-15": bulan-tanggal yang nyata (29 Feb sah). */
+export function isMonthDay(v: string) {
+  const m = /^(\d{2})-(\d{2})$/.exec(v.trim());
+  if (!m) return false;
+  const mo = Number(m[1]);
+  const d = Number(m[2]);
+  const dt = new Date(Date.UTC(2024, mo - 1, d)); // 2024 kabisat
+  return dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+
+/**
+ * Semester dan tahun ajaran untuk sebuah tanggal (yyyy-MM-dd).
+ * Syarat: genapStart < ganjilStart dalam satu tahun kalender (mis. "01-12" dan "07-15").
+ */
+export function periodFor(
+  date: string,
+  ganjilStart: string,
+  genapStart: string,
+): { academicYear: string; semester: Semester } {
+  const y = Number(date.slice(0, 4));
+  const md = date.slice(5, 10);
+  if (md >= ganjilStart)
+    return { academicYear: `${y}/${y + 1}`, semester: "ganjil" };
+  if (md >= genapStart)
+    return { academicYear: `${y - 1}/${y}`, semester: "genap" };
+  return { academicYear: `${y - 1}/${y}`, semester: "ganjil" };
+}

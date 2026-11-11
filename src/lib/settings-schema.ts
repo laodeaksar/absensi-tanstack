@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { RULES, isAcademicYear } from "~/convex/rules";
+import { RULES, isAcademicYear, isMonthDay } from "~/convex/rules";
 
 import { passwordIssues } from "./password-policy";
 
@@ -25,6 +25,21 @@ export const schoolSchema = z
         (v) => !v || isAcademicYear(v),
         "Format harus 2025/2026 (tahun berurutan)",
       ),
+    active_semester: z
+      .string()
+      .refine(
+        (v) => v === "" || v === "ganjil" || v === "genap",
+        "Pilih ganjil atau genap",
+      ),
+    auto_semester: z.string().refine((v) => v === "0" || v === "1"),
+    semester_ganjil_start: z
+      .string()
+      .trim()
+      .refine(isMonthDay, "Format BB-HH, mis. 07-15"),
+    semester_genap_start: z
+      .string()
+      .trim()
+      .refine(isMonthDay, "Format BB-HH, mis. 01-12"),
     edit_window_days: z
       .string()
       .trim()
@@ -41,6 +56,16 @@ export const schoolSchema = z
         message: "Nama kepala sekolah wajib diisi jika NIP diisi",
       });
     }
+    if (
+      isMonthDay(v.semester_ganjil_start) &&
+      isMonthDay(v.semester_genap_start) &&
+      v.semester_genap_start >= v.semester_ganjil_start
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["semester_genap_start"],
+        message: "Harus lebih awal dari awal semester ganjil",
+      });
   });
 
 /** Ganti password dengan kebijakan password kuat. Username/nama akun tidak boleh masuk ke password. */

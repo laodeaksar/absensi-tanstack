@@ -8,9 +8,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { PasswordStrength } from "~/components/password-strength";
-import { ErrorAlert, TextField, PasswordField } from "~/components/ui";
+import {
+  ErrorAlert,
+  SelectField,
+  TextField,
+  PasswordField,
+} from "~/components/ui";
 import { LIMITS } from "~/convex/limits";
+import { isMonthDay, periodFor, SEMESTER_LABEL } from "~/convex/rules";
 import { api } from "~/lib/api";
+import { todayStr } from "~/lib/date";
 import { qk, settingsQuery } from "~/lib/queries";
 import { makePasswordSchema, schoolSchema } from "~/lib/settings-schema";
 import { toast } from "~/lib/toast";
@@ -67,6 +74,10 @@ function SchoolSettings() {
       principal_name: s.principal_name ?? "",
       principal_nip: s.principal_nip ?? "",
       active_academic_year: s.active_academic_year ?? "",
+      active_semester: s.active_semester ?? "",
+      auto_semester: s.auto_semester ?? "0",
+      semester_ganjil_start: s.semester_ganjil_start ?? "07-15",
+      semester_genap_start: s.semester_genap_start ?? "01-12",
       edit_window_days: s.edit_window_days ?? "0",
     },
     validators: {
@@ -83,6 +94,10 @@ function SchoolSettings() {
           principal_name: value.principal_name.trim(),
           principal_nip: value.principal_nip.trim(),
           active_academic_year: value.active_academic_year.trim(),
+          active_semester: value.active_semester,
+          auto_semester: value.auto_semester,
+          semester_ganjil_start: value.semester_ganjil_start.trim(),
+          semester_genap_start: value.semester_genap_start.trim(),
           edit_window_days: value.edit_window_days.trim() || "0",
         })
         .catch(() => {});
@@ -148,18 +163,112 @@ function SchoolSettings() {
 
       <div className="card border border-base-300 bg-base-100">
         <div className="card-body">
+          <h3 className="card-title text-base">Tahun Ajaran dan Semester</h3>
+          <form.Field name="auto_semester">
+            {(f) => (
+              <label className="label cursor-pointer justify-start gap-3">
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary"
+                  checked={f.state.value === "1"}
+                  onChange={(e) => f.handleChange(e.target.checked ? "1" : "0")}
+                />
+                <span className="label-text">
+                  Lanjut otomatis ke semester dan tahun ajaran berikutnya
+                </span>
+              </label>
+            )}
+          </form.Field>
+          <form.Subscribe
+            selector={(st) =>
+              [
+                st.values.auto_semester,
+                st.values.semester_ganjil_start,
+                st.values.semester_genap_start,
+              ] as const
+            }
+          >
+            {([auto, ganjil, genap]) => {
+              if (auto !== "1")
+                return (
+                  <div className="grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
+                    <form.Field name="active_academic_year">
+                      {(f) => (
+                        <TextField
+                          label="Tahun Ajaran Aktif"
+                          field={f}
+                          placeholder="2025/2026"
+                          hint="Terisi otomatis saat menambah kelas baru."
+                        />
+                      )}
+                    </form.Field>
+                    <form.Field name="active_semester">
+                      {(f) => (
+                        <SelectField
+                          label="Semester Aktif"
+                          field={f}
+                        >
+                          <option value="">-- Belum diatur --</option>
+                          <option value="ganjil">Ganjil</option>
+                          <option value="genap">Genap</option>
+                        </SelectField>
+                      )}
+                    </form.Field>
+                  </div>
+                );
+              const valid =
+                isMonthDay(ganjil) && isMonthDay(genap) && genap < ganjil;
+              const now = valid
+                ? periodFor(
+                    todayStr(Number(s.tz_offset_minutes ?? 0)),
+                    ganjil,
+                    genap,
+                  )
+                : null;
+              return (
+                <>
+                  <div className="grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
+                    <form.Field name="semester_ganjil_start">
+                      {(f) => (
+                        <TextField
+                          label="Awal Semester Ganjil"
+                          field={f}
+                          placeholder="07-15"
+                          hint="Format bulan-tanggal (BB-HH). Tahun ajaran baru dimulai di sini."
+                        />
+                      )}
+                    </form.Field>
+                    <form.Field name="semester_genap_start">
+                      {(f) => (
+                        <TextField
+                          label="Awal Semester Genap"
+                          field={f}
+                          placeholder="01-12"
+                          hint="Format BB-HH, lebih awal dari semester ganjil dalam satu tahun kalender."
+                        />
+                      )}
+                    </form.Field>
+                  </div>
+                  {now ? (
+                    <p className="text-sm">
+                      Saat ini:{" "}
+                      <b>
+                        Semester {SEMESTER_LABEL[now.semester]}{" "}
+                        {now.academicYear}
+                      </b>
+                    </p>
+                  ) : null}
+                </>
+              );
+            }}
+          </form.Subscribe>
+        </div>
+      </div>
+
+      <div className="card border border-base-300 bg-base-100">
+        <div className="card-body">
           <h3 className="card-title text-base">Absensi</h3>
           <div className="grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
-            <form.Field name="active_academic_year">
-              {(f) => (
-                <TextField
-                  label="Tahun Ajaran Aktif"
-                  field={f}
-                  placeholder="2025/2026"
-                  hint="Terisi otomatis saat menambah kelas baru."
-                />
-              )}
-            </form.Field>
             <form.Field name="edit_window_days">
               {(f) => (
                 <TextField

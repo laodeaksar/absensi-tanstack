@@ -57,6 +57,10 @@ export interface Settings {
   school_address?: string;
   principal_name?: string;
   principal_nip?: string;
+  active_semester?: string;
+  auto_semester?: string;
+  semester_ganjil_start?: string;
+  semester_genap_start?: string;
   edit_window_days?: string;
 }
 

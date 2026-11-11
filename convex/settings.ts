@@ -2,10 +2,10 @@ import { v } from "convex/values";
 
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { fail, nowIso, requireAuth, tzOffsetMinutes } from "./lib";
 import { LIMITS } from "./limits";
-import { RULES, isAcademicYear } from "./rules";
+import { RULES, isAcademicYear, isMonthDay, periodFor } from "./rules";
 
 export const SETTINGS_DEFAULTS: Record<string, string> = {
   school_name: "EduAbsen",
@@ -13,6 +13,10 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   principal_name: "",
   principal_nip: "",
   active_academic_year: "",
+  active_semester: "", // "ganjil" | "genap"
+  auto_semester: "0", // "1" = tahun ajaran dan semester mengikuti kalender
+  semester_ganjil_start: "07-15",
+  semester_genap_start: "01-12",
   edit_window_days: "0", // 0 = guru boleh mengubah absensi tanggal berapa pun
 };
 
@@ -55,6 +59,38 @@ async function upsertSettings(
   }
 }
 
+/** Samakan tahun ajaran dan semester aktif dengan kalender bila mode otomatis menyala. */
+export async function syncSemester(ctx: MutationCtx) {
+  const s = await getSettingsMap(ctx);
+  if (s.auto_semester !== "1") return;
+  if (
+    !isMonthDay(s.semester_ganjil_start) ||
+    !isMonthDay(s.semester_genap_start)
+  )
+    return;
+  // "hari ini" menurut zona waktu sekolah (env TZ_OFFSET_MINUTES), sama dengan yang dipakai klien
+  const today = new Date(Date.now() + tzOffsetMinutes() * 60_000)
+    .toISOString()
+    .slice(0, 10);
+  const p = periodFor(today, s.semester_ganjil_start, s.semester_genap_start);
+  if (
+    s.active_academic_year !== p.academicYear ||
+    s.active_semester !== p.semester
+  )
+    await upsertSettings(ctx, {
+      active_academic_year: p.academicYear,
+      active_semester: p.semester,
+    });
+}
+
+export const advanceSemester = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    await syncSemester(ctx);
+    return null;
+  },
+});
+
 function validateSettings(d: Record<string, unknown>) {
   const out: Record<string, string> = {};
   const str = (k: string) => String(d[k] ?? "").trim();
@@ -96,6 +132,25 @@ function validateSettings(d: Record<string, unknown>) {
       fail(`Batas edit absensi harus 0-${LIMITS.editWindowMaxDays} hari.`);
     out.edit_window_days = String(Number(s));
   }
+  if (d.auto_semester !== undefined) {
+    const s = str("auto_semester") || "0";
+    if (s !== "0" && s !== "1") fail("Mode otomatis semester tidak valid.");
+    out.auto_semester = s;
+  }
+  if (d.active_semester !== undefined) {
+    const s = str("active_semester");
+    if (s !== "" && s !== "ganjil" && s !== "genap")
+      fail("Semester harus ganjil atau genap.");
+    out.active_semester = s;
+  }
+  for (const k of ["semester_ganjil_start", "semester_genap_start"] as const) {
+    if (d[k] !== undefined) {
+      const s = str(k);
+      if (!isMonthDay(s))
+        fail("Awal semester harus berformat BB-HH, mis. 07-15.");
+      out[k] = s;
+    }
+  }
   return out;
 }
 
@@ -123,6 +178,7 @@ export const getSettings = query({
         ? {
             school_name: all.school_name,
             active_academic_year: all.active_academic_year,
+            active_semester: all.active_semester,
             tz_offset_minutes: all.tz_offset_minutes,
           }
         : all;
@@ -137,6 +193,10 @@ const settingsInput = v.object({
   principal_name: v.optional(v.string()),
   principal_nip: v.optional(v.string()),
   active_academic_year: v.optional(v.string()),
+  active_semester: v.optional(v.string()),
+  auto_semester: v.optional(v.string()),
+  semester_ganjil_start: v.optional(v.string()),
+  semester_genap_start: v.optional(v.string()),
   edit_window_days: v.optional(v.string()),
 });
 
@@ -152,6 +212,12 @@ export const saveSettings = mutation({
     const next = { ...(await getSettingsMap(ctx)), ...clean };
     if (next.principal_nip && !next.principal_name)
       fail("Nama kepala sekolah wajib diisi jika NIP diisi.");
+    if (next.semester_genap_start >= next.semester_ganjil_start)
+      fail(
+        "Awal semester genap harus lebih awal dari semester ganjil dalam satu tahun kalender (mis. 01-12 dan 07-15).",
+      );
+    await upsertSettings(ctx, clean);
+    await syncSemester(ctx); // mode otomatis: langsung berlaku tanpa menunggu cron
     await upsertSettings(ctx, clean);
     return {
       message: "Pengaturan berhasil disimpan.",
