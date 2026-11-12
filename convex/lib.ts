@@ -5,7 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { passwordIssue } from "./rules";
 
-export { passwordIssue };
+// export { passwordIssue };
 
 /** Pesan di ConvexError sampai ke klien; error biasa disembunyikan Convex di production. */
 export function fail(message: string): never {

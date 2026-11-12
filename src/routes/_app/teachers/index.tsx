@@ -239,9 +239,9 @@ function TeachersPage() {
     if (!returnTo) return;
     const id = returnTo;
     setReturnTo(null);
-    void navigate({ 
-      to: "/teachers/$teacherId", 
-      params: { teacherId: id } 
+    void navigate({
+      to: "/teachers/$teacherId",
+      params: { teacherId: id },
     });
   };
 
