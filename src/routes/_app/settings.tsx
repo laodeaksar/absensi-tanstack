@@ -13,6 +13,7 @@ import {
   SelectField,
   TextField,
   PasswordField,
+  CheckboxField,
 } from "~/components/ui";
 import { LIMITS } from "~/convex/limits";
 import { isMonthDay, periodFor, SEMESTER_LABEL } from "~/convex/rules";
@@ -75,7 +76,7 @@ function SchoolSettings() {
       principal_nip: s.principal_nip ?? "",
       active_academic_year: s.active_academic_year ?? "",
       active_semester: s.active_semester ?? "",
-      auto_semester: s.auto_semester ?? "0",
+      auto_semester: s.auto_semester === "1",
       semester_ganjil_start: s.semester_ganjil_start ?? "07-15",
       semester_genap_start: s.semester_genap_start ?? "01-12",
       edit_window_days: s.edit_window_days ?? "0",
@@ -95,7 +96,7 @@ function SchoolSettings() {
           principal_nip: value.principal_nip.trim(),
           active_academic_year: value.active_academic_year.trim(),
           active_semester: value.active_semester,
-          auto_semester: value.auto_semester,
+          auto_semester: value.auto_semester ? "1" : "0",
           semester_ganjil_start: value.semester_ganjil_start.trim(),
           semester_genap_start: value.semester_genap_start.trim(),
           edit_window_days: value.edit_window_days.trim() || "0",
@@ -166,17 +167,12 @@ function SchoolSettings() {
           <h3 className="card-title text-base">Tahun Ajaran dan Semester</h3>
           <form.Field name="auto_semester">
             {(f) => (
-              <label className="label cursor-pointer justify-start gap-3">
-                <input
-                  type="checkbox"
-                  className="toggle toggle-primary"
-                  checked={f.state.value === "1"}
-                  onChange={(e) => f.handleChange(e.target.checked ? "1" : "0")}
-                />
-                <span className="label-text">
-                  Lanjut otomatis ke semester dan tahun ajaran berikutnya
-                </span>
-              </label>
+              <CheckboxField
+                toggle
+                label="Lanjut otomatis ke semester dan tahun ajaran berikutnya"
+                hint="Tahun ajaran dan semester aktif mengikuti kalender di bawah."
+                field={f}
+              />
             )}
           </form.Field>
           <form.Subscribe
@@ -189,7 +185,7 @@ function SchoolSettings() {
             }
           >
             {([auto, ganjil, genap]) => {
-              if (auto !== "1")
+              if (!auto)
                 return (
                   <div className="grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
                     <form.Field name="active_academic_year">

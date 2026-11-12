@@ -11,7 +11,7 @@ const ICONS = {
 export function Toaster() {
   const items = useToasts();
   return (
-    <div className="toast toast-end z-[9999] no-print">
+    <div className="toast toast-top toast-center z-[9999] no-print sm:toast-end">
       {items.map((t) => {
         const Icon = ICONS[t.type];
         return (

@@ -31,7 +31,7 @@ export const schoolSchema = z
         (v) => v === "" || v === "ganjil" || v === "genap",
         "Pilih ganjil atau genap",
       ),
-    auto_semester: z.string().refine((v) => v === "0" || v === "1"),
+    auto_semester: z.boolean(),
     semester_ganjil_start: z
       .string()
       .trim()

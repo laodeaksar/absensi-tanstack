@@ -218,7 +218,6 @@ export const saveSettings = mutation({
       );
     await upsertSettings(ctx, clean);
     await syncSemester(ctx); // mode otomatis: langsung berlaku tanpa menunggu cron
-    await upsertSettings(ctx, clean);
     return {
       message: "Pengaturan berhasil disimpan.",
       settings: await getSettingsMap(ctx),

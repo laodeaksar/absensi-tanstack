@@ -225,9 +225,19 @@ export function CheckboxField({
   label: string;
   field: AnyFieldApi;
   hint?: string;
+  /** Tampil sebagai toggle daisyUI, bukan kotak centang. */
+  toggle?: boolean;
 } & CheckboxExtra) {
   const message = errorText(field);
   const ref = useValidity<HTMLInputElement>(message);
+  // Nama kelas ditulis utuh agar terdeteksi Tailwind (jangan disusun dari potongan string)
+  const style = toggle
+    ? message
+      ? "toggle toggle-sm toggle-error"
+      : "toggle toggle-sm toggle-primary"
+    : message
+      ? "checkbox checkbox-sm checkbox-error"
+      : "checkbox checkbox-sm checkbox-primary";
 
   return (
     <FieldShell
@@ -247,7 +257,7 @@ export function CheckboxField({
           onBlur={field.handleBlur}
           onChange={(e) => field.handleChange(e.target.checked)}
           aria-invalid={!!message}
-          className={`checkbox checkbox-sm shrink-0 ${message ? "checkbox-error" : "checkbox-primary"}`}
+          className={`${style} shrink-0`}
         />
         <span className="min-w-0 wrap-anywhere">{label}</span>
       </label>
