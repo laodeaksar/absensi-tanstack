@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, revalidateLogic } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
@@ -351,7 +351,8 @@ function TeachingForm({
       subject_id: row?.subject_id ?? "",
       teacher_id: row?.teacher_id ?? "",
     },
-    validators: { onChange: schema, onSubmit: schema },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
