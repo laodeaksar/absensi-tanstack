@@ -4,10 +4,10 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { KeyRound, Plus, Pencil, ArrowRightLeft } from "lucide-react";
-import { useMemo, useState } from "react";
+import { KeyRound, Plus, Pencil, ArrowRightLeft, Eye } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import type { Student, StudentClass, StudentInput } from "~/lib/types";
@@ -39,8 +39,13 @@ import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
 
-export const Route = createFileRoute("/_app/students")({
+export const Route = createFileRoute("/_app/students/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
+  validateSearch: (s: Record<string, unknown>) => ({
+    edit: typeof s.edit === "string" ? s.edit : undefined,
+    // true = form Edit dibuka dari halaman detail, jadi kembali ke sana setelah selesai
+    back: s.back === true || s.back === "true" ? true : undefined,
+  }),
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.query(studentsQuery),
@@ -57,8 +62,19 @@ type StudentRow = Student & {
 };
 const col = columnHelperFor<StudentRow>();
 
-function StudentNameCell({ name }: Readonly<{ name: string }>) {
-  return <span className="font-medium">{name}</span>;
+function StudentNameCell({
+  studentId,
+  name,
+}: Readonly<{ studentId: string; name: string }>) {
+  return (
+    <Link
+      to="/students/$studentId"
+      params={{ studentId }}
+      className="link link-hover font-medium"
+    >
+      {name}
+    </Link>
+  );
 }
 
 function StudentClassCell({ name }: Readonly<{ name?: string | null }>) {
@@ -79,6 +95,14 @@ function StudentActionsCell({
 }: Readonly<{ student: StudentRow } & Handlers>) {
   return (
     <ActionMenu>
+      <li>
+        <Link
+          to="/students/$studentId"
+          params={{ studentId: student.student_id }}
+        >
+          <Eye className="size-4" /> Detail
+        </Link>
+      </li>
       <li>
         <button
           type="button"
@@ -120,7 +144,12 @@ function createStudentColumns({ onEdit, onReset, onMove }: Readonly<Handlers>) {
     }),
     col.accessor("full_name", {
       header: "Nama Lengkap",
-      cell: (i) => <StudentNameCell name={i.getValue()} />,
+      cell: (i) => (
+        <StudentNameCell
+          studentId={i.row.original.student_id}
+          name={i.getValue()}
+        />
+      ),
     }),
     col.accessor("class_name", {
       header: "Kelas",
@@ -149,17 +178,52 @@ function createStudentColumns({ onEdit, onReset, onMove }: Readonly<Handlers>) {
 }
 
 function StudentsPage() {
+  const { edit, back } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const { data: students } = useSuspenseQuery(studentsQuery);
   const { data: studentClasses } = useSuspenseQuery(studentClassesQuery);
   const { data: classes } = useSuspenseQuery(classesQuery);
   const [moving, setMoving] = useState<StudentRow | null>(null);
   const [search, setSearch] = useState("");
+  // Id siswa tujuan kembali, hanya terisi bila form Edit dibuka dari halaman detail
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const [modal, setModal] = useState<{
     open: boolean;
     student: Student | null;
   }>({ open: false, student: null });
   const { confirm, dialog } = useConfirm();
+
+  // ?edit=<id> membuka form Edit siswa itu, baik saat halaman baru dibuka (dari halaman detail)
+  // maupun saat parameternya berubah ketika halaman sudah terbuka. Disesuaikan saat render
+  // (pola dokumentasi React), bukan setState di dalam efek.
+  const [seenEdit, setSeenEdit] = useState<string | undefined>(undefined);
+  if (edit !== seenEdit) {
+    setSeenEdit(edit);
+    const s = edit ? students.find((x) => x.student_id === edit) : undefined;
+    if (s) {
+      setModal({ open: true, student: s });
+      setReturnTo(back ? s.student_id : null);
+    }
+  }
+
+  // Hapus parameter dari URL agar refresh atau tombol kembali tidak membukanya lagi
+  useEffect(() => {
+    if (edit || back)
+      void navigate({
+        to: "/students",
+        search: { edit: undefined, back: undefined },
+        replace: true,
+      });
+  }, [edit, back, navigate]);
+
+  // Dipanggil saat form ditutup atau selesai disimpan
+  const backToDetail = () => {
+    if (!returnTo) return;
+    const id = returnTo;
+    setReturnTo(null);
+    void navigate({ to: "/students/$studentId", params: { studentId: id } });
+  };
 
   const generate = useMutation({
     mutationFn: api.generateStudentAccounts,
@@ -278,7 +342,10 @@ function StudentsPage() {
 
       <Modal
         open={modal.open}
-        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        onClose={() => {
+          setModal((m) => ({ ...m, open: false }));
+          backToDetail();
+        }}
         title={modal.student ? "Edit Siswa" : "Tambah Siswa"}
       >
         {modal.open ? (
@@ -300,13 +367,15 @@ function StudentsPage() {
               void qc.invalidateQueries({
                 queryKey: qk.dashboard,
               });
+              backToDetail();
             }}
-            onCancel={() =>
+            onCancel={() => {
               setModal((m) => ({
                 ...m,
                 open: false,
-              }))
-            }
+              }));
+              backToDetail();
+            }}
           />
         ) : null}
       </Modal>

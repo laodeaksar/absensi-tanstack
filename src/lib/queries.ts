@@ -16,6 +16,7 @@ import type {
   Settings,
   Student,
   StudentClass,
+  StudentDetail,
   Subject,
   SubjectReportFilters,
   SubmissionList,
@@ -82,6 +83,11 @@ export const studentsQuery = queryOptions({
   ...convexQuery(convexApi.master.fetchMasterData, { type: "students" }),
   select: unwrap<Student[]>,
 });
+export const studentDetailQuery = (studentId: string) =>
+  queryOptions({
+    ...convexQuery(convexApi.master.getStudentDetail, { studentId }),
+    select: (r): StudentDetail => r as StudentDetail,
+  });
 export const studentClassesQuery = queryOptions({
   ...convexQuery(convexApi.master.listStudentClasses, {}),
   select: (r): StudentClass[] => r as StudentClass[],

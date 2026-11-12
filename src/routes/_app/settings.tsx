@@ -169,7 +169,7 @@ function SchoolSettings() {
             {(f) => (
               <CheckboxField
                 toggle
-                label="Lanjut otomatis ke semester dan tahun ajaran berikutnya"
+                label="Semester otomatis"
                 hint="Tahun ajaran dan semester aktif mengikuti kalender di bawah."
                 field={f}
               />

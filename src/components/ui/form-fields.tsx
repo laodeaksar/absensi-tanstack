@@ -220,6 +220,7 @@ export function CheckboxField({
   label,
   field,
   hint,
+  toggle,
   ...rest
 }: {
   label: string;

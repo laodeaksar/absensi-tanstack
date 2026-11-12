@@ -18,10 +18,11 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppStudentsRouteImport } from './routes/_app/students'
 import { Route as AppSubjectsRouteImport } from './routes/_app/subjects'
 import { Route as AppTeachingRouteImport } from './routes/_app/teaching'
 import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignments/index'
+import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
+import { Route as AppStudentsStudentIdRouteImport } from './routes/_app/students/$studentId'
 import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
 import { Route as AppTasksAssignmentIdRouteImport } from './routes/_app/tasks/$assignmentId'
 import { Route as AppTeachersIndexRouteImport } from './routes/_app/teachers/index'
@@ -74,11 +75,6 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppStudentsRoute = AppStudentsRouteImport.update({
-  id: '/students',
-  path: '/students',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSubjectsRoute = AppSubjectsRouteImport.update({
   id: '/subjects',
   path: '/subjects',
@@ -92,6 +88,16 @@ const AppTeachingRoute = AppTeachingRouteImport.update({
 const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
   id: '/assignments/',
   path: '/assignments/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStudentsIndexRoute = AppStudentsIndexRouteImport.update({
+  id: '/students/',
+  path: '/students/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStudentsStudentIdRoute = AppStudentsStudentIdRouteImport.update({
+  id: '/students/$studentId',
+  path: '/students/$studentId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
@@ -142,12 +148,13 @@ export interface FileRoutesByFullPath {
   '/my-attendance': typeof AppMyAttendanceRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
-  '/students': typeof AppStudentsRoute
   '/subjects': typeof AppSubjectsRoute
   '/teaching': typeof AppTeachingRoute
+  '/students/$studentId': typeof AppStudentsStudentIdRoute
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments/': typeof AppAssignmentsIndexRoute
+  '/students/': typeof AppStudentsIndexRoute
   '/tasks/': typeof AppTasksIndexRoute
   '/teachers/': typeof AppTeachersIndexRoute
   '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
@@ -163,12 +170,13 @@ export interface FileRoutesByTo {
   '/my-attendance': typeof AppMyAttendanceRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
-  '/students': typeof AppStudentsRoute
   '/subjects': typeof AppSubjectsRoute
   '/teaching': typeof AppTeachingRoute
+  '/students/$studentId': typeof AppStudentsStudentIdRoute
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments': typeof AppAssignmentsIndexRoute
+  '/students': typeof AppStudentsIndexRoute
   '/tasks': typeof AppTasksIndexRoute
   '/teachers': typeof AppTeachersIndexRoute
   '/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
@@ -186,12 +194,13 @@ export interface FileRoutesById {
   '/_app/my-attendance': typeof AppMyAttendanceRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
-  '/_app/students': typeof AppStudentsRoute
   '/_app/subjects': typeof AppSubjectsRoute
   '/_app/teaching': typeof AppTeachingRoute
+  '/_app/students/$studentId': typeof AppStudentsStudentIdRoute
   '/_app/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/_app/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/_app/assignments/': typeof AppAssignmentsIndexRoute
+  '/_app/students/': typeof AppStudentsIndexRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
   '/_app/teachers/': typeof AppTeachersIndexRoute
   '/_app/assignments/$assignmentId/questions': typeof AppAssignmentsAssignmentIdQuestionsRoute
@@ -209,12 +218,13 @@ export interface FileRouteTypes {
     | '/my-attendance'
     | '/reports'
     | '/settings'
-    | '/students'
     | '/subjects'
     | '/teaching'
+    | '/students/$studentId'
     | '/tasks/$assignmentId'
     | '/teachers/$teacherId'
     | '/assignments/'
+    | '/students/'
     | '/tasks/'
     | '/teachers/'
     | '/assignments/$assignmentId/questions'
@@ -230,12 +240,13 @@ export interface FileRouteTypes {
     | '/my-attendance'
     | '/reports'
     | '/settings'
-    | '/students'
     | '/subjects'
     | '/teaching'
+    | '/students/$studentId'
     | '/tasks/$assignmentId'
     | '/teachers/$teacherId'
     | '/assignments'
+    | '/students'
     | '/tasks'
     | '/teachers'
     | '/assignments/$assignmentId/questions'
@@ -252,12 +263,13 @@ export interface FileRouteTypes {
     | '/_app/my-attendance'
     | '/_app/reports'
     | '/_app/settings'
-    | '/_app/students'
     | '/_app/subjects'
     | '/_app/teaching'
+    | '/_app/students/$studentId'
     | '/_app/tasks/$assignmentId'
     | '/_app/teachers/$teacherId'
     | '/_app/assignments/'
+    | '/_app/students/'
     | '/_app/tasks/'
     | '/_app/teachers/'
     | '/_app/assignments/$assignmentId/questions'
@@ -336,13 +348,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/students': {
-      id: '/_app/students'
-      path: '/students'
-      fullPath: '/students'
-      preLoaderRoute: typeof AppStudentsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/subjects': {
       id: '/_app/subjects'
       path: '/subjects'
@@ -362,6 +367,20 @@ declare module '@tanstack/react-router' {
       path: '/assignments'
       fullPath: '/assignments/'
       preLoaderRoute: typeof AppAssignmentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/students/': {
+      id: '/_app/students/'
+      path: '/students'
+      fullPath: '/students/'
+      preLoaderRoute: typeof AppStudentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/students/$studentId': {
+      id: '/_app/students/$studentId'
+      path: '/students/$studentId'
+      fullPath: '/students/$studentId'
+      preLoaderRoute: typeof AppStudentsStudentIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tasks/': {
@@ -423,12 +442,13 @@ interface AppRouteChildren {
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppStudentsRoute: typeof AppStudentsRoute
   AppSubjectsRoute: typeof AppSubjectsRoute
   AppTeachingRoute: typeof AppTeachingRoute
+  AppStudentsStudentIdRoute: typeof AppStudentsStudentIdRoute
   AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute
   AppTeachersTeacherIdRoute: typeof AppTeachersTeacherIdRoute
   AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
+  AppStudentsIndexRoute: typeof AppStudentsIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
   AppTeachersIndexRoute: typeof AppTeachersIndexRoute
   AppAssignmentsAssignmentIdQuestionsRoute: typeof AppAssignmentsAssignmentIdQuestionsRoute
@@ -443,12 +463,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyAttendanceRoute: AppMyAttendanceRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppStudentsRoute: AppStudentsRoute,
   AppSubjectsRoute: AppSubjectsRoute,
   AppTeachingRoute: AppTeachingRoute,
+  AppStudentsStudentIdRoute: AppStudentsStudentIdRoute,
   AppTasksAssignmentIdRoute: AppTasksAssignmentIdRoute,
   AppTeachersTeacherIdRoute: AppTeachersTeacherIdRoute,
   AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
+  AppStudentsIndexRoute: AppStudentsIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
   AppTeachersIndexRoute: AppTeachersIndexRoute,
   AppAssignmentsAssignmentIdQuestionsRoute:

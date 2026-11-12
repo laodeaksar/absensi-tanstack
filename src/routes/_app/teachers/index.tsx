@@ -39,6 +39,8 @@ export const Route = createFileRoute("/_app/teachers/")({
   validateSearch: (s: Record<string, unknown>) => ({
     edit: typeof s.edit === "string" ? s.edit : undefined,
     add: typeof s.add === "string" ? s.add : undefined,
+    // true = form Edit dibuka dari halaman detail, jadi kembali ke sana setelah selesai
+    back: s.back === true || s.back === "true" ? true : undefined,
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -188,12 +190,14 @@ function createTeacherColumns({ onEdit, onToggle }: Readonly<Handlers>) {
 }
 
 function TeachersPage() {
-  const { edit, add } = Route.useSearch();
+  const { edit, add, back } = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const { data: teachers } = useSuspenseQuery(teachersQuery);
   const { data: classes } = useSuspenseQuery(classesQuery);
   const [search, setSearch] = useState("");
+  // Id guru tujuan kembali, hanya terisi bila form Edit dibuka dari halaman detail
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const [modal, setModal] = useState<{
     open: boolean;
     teacher: Teacher | null;
@@ -204,8 +208,6 @@ function TeachersPage() {
   });
   const { confirm, dialog } = useConfirm();
 
-  // ?edit=<id> membuka form Edit; ?add=<idKelas> membuka form Tambah dengan kelas itu terisi.
-  // Disesuaikan saat render (pola dokumentasi React), bukan setState di dalam efek.
   const [seen, setSeen] = useState<{
     edit?: string;
     add?: string;
@@ -213,19 +215,35 @@ function TeachersPage() {
   if (edit !== seen.edit || add !== seen.add) {
     setSeen({ edit, add });
     const t = edit ? teachers.find((x) => x.user_id === edit) : undefined;
-    if (t) setModal({ open: true, teacher: t });
-    else if (add) setModal({ open: true, teacher: null, presetClassId: add });
+    if (t) {
+      setModal({ open: true, teacher: t });
+      setReturnTo(back ? t.user_id : null);
+    } else if (add) {
+      setModal({ open: true, teacher: null, presetClassId: add });
+      setReturnTo(null);
+    }
   }
 
   // Hapus parameter dari URL agar refresh atau tombol kembali tidak membukanya lagi
   useEffect(() => {
-    if (edit)
+    if (edit || add || back)
       void navigate({
         to: "/teachers",
-        search: { edit: undefined, add: undefined },
+        search: { edit: undefined, add: undefined, back: undefined },
         replace: true,
       });
-  }, [edit, add, navigate]);
+  }, [edit, add, back, navigate]);
+
+  // Dipanggil saat form ditutup atau selesai disimpan
+  const backToDetail = () => {
+    if (!returnTo) return;
+    const id = returnTo;
+    setReturnTo(null);
+    void navigate({ 
+      to: "/teachers/$teacherId", 
+      params: { teacherId: id } 
+    });
+  };
 
   const toggle = useMutation({
     mutationFn: (v: { user_id: string; is_active: boolean }) =>
@@ -297,12 +315,7 @@ function TeachersPage() {
         <HeaderButton
           label="Tambah Guru"
           icon={<Plus className="size-4" />}
-          onClick={() =>
-            setModal({
-              open: true,
-              teacher: null,
-            })
-          }
+          onClick={() => setModal((m) => ({ ...m, open: true }))}
         />
       </PageHeader>
 
@@ -326,7 +339,10 @@ function TeachersPage() {
 
       <Modal
         open={modal.open}
-        onClose={() => setModal({ open: false, teacher: null })}
+        onClose={() => {
+          setModal((m) => ({ ...m, open: false }));
+          backToDetail();
+        }}
         title={modal.teacher ? "Edit Guru" : "Tambah Guru"}
       >
         {modal.open ? (
@@ -343,12 +359,10 @@ function TeachersPage() {
                 queryKey: qk.teachers,
               });
             }}
-            onCancel={() =>
-              setModal({
-                open: false,
-                teacher: null,
-              })
-            }
+            onCancel={() => {
+              setModal((m) => ({ ...m, open: false }));
+              backToDetail();
+            }}
           />
         ) : null}
       </Modal>

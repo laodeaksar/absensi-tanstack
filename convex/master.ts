@@ -6,6 +6,7 @@ import type { MutationCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import {
   assertStrongPassword,
+  canAccessClass,
   classById,
   fail,
   flag,
@@ -16,6 +17,7 @@ import {
   revokeSessions,
   strip,
   studentById,
+  subjectById,
   teacherOut,
   userById,
 } from "./lib";
@@ -446,6 +448,163 @@ export const resetStudentAccount = mutation({
     await ctx.db.insert("users", studentUserDoc(s, now));
     return {
       message: "Akun siswa dibuat. Username = NIS, password awal = NISN.",
+    };
+  },
+});
+
+/** Detail satu siswa untuk admin dan guru (guru: hanya siswa di kelas yang ia ampu). */
+export const getStudentDetail = query({
+  args: { token: v.optional(v.string()), studentId: v.string() },
+  handler: async (ctx, { token, studentId }) => {
+    const user = await requireAuth(ctx, token); // siswa -> FORBIDDEN
+    const student = await studentById(ctx, studentId);
+    if (!student) fail("Siswa tidak ditemukan.");
+
+    const hist = await ctx.db
+      .query("student_class_history")
+      .withIndex("by_student", (q) => q.eq("student_id", studentId))
+      .collect();
+    if (
+      user.role !== "admin" &&
+      !hist.some((h) => h.is_active && canAccessClass(user, h.class_id))
+    )
+      fail("FORBIDDEN");
+
+    const classNames = new Map<string, string>();
+    const className = async (id: string) => {
+      if (!classNames.has(id))
+        classNames.set(id, (await classById(ctx, id))?.class_name ?? "-");
+      return classNames.get(id)!;
+    };
+    const subjectNames = new Map<string, string>();
+    const subjectName = async (id: string) => {
+      if (!subjectNames.has(id))
+        subjectNames.set(id, (await subjectById(ctx, id))?.name ?? "-");
+      return subjectNames.get(id)!;
+    };
+    const pct = (hadir: number, total: number) =>
+      total > 0 ? ((hadir / total) * 100).toFixed(1) : "0";
+
+    // Riwayat kelas, terbaru di atas
+    const classes = [];
+    for (const h of [...hist].sort((a, b) =>
+      b.start_date.localeCompare(a.start_date),
+    ))
+      classes.push({
+        class_name: await className(h.class_id),
+        academic_year: h.academic_year,
+        start_date: h.start_date,
+        end_date: h.end_date,
+        is_active: h.is_active,
+      });
+
+    // Kehadiran harian
+    const recs = await ctx.db
+      .query("attendance")
+      .withIndex("by_student", (q) => q.eq("student_id", studentId))
+      .order("desc")
+      .take(500);
+    const summary = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
+    for (const a of recs) {
+      if (a.status === "Hadir") summary.hadir++;
+      else if (a.status === "Sakit") summary.sakit++;
+      else if (a.status === "Izin") summary.izin++;
+      else if (a.status === "Alpa") summary.alpa++;
+    }
+    const counted = summary.hadir + summary.sakit + summary.izin + summary.alpa;
+    const recent = [];
+    for (const a of recs.slice(0, 15))
+      recent.push({
+        date: a.attendance_date,
+        status: a.status || "-",
+        notes: a.notes,
+        class_name: await className(a.class_id),
+      });
+
+    // Kehadiran per mata pelajaran
+    const subjRecs = await ctx.db
+      .query("subject_attendance")
+      .withIndex("by_student_date", (q) => q.eq("student_id", studentId))
+      .order("desc")
+      .take(1000);
+    const bySubject = new Map<
+      string,
+      { hadir: number; sakit: number; izin: number; alpa: number }
+    >();
+    for (const a of subjRecs) {
+      const s = bySubject.get(a.subject_id) ?? {
+        hadir: 0,
+        sakit: 0,
+        izin: 0,
+        alpa: 0,
+      };
+      if (a.status === "Hadir") s.hadir++;
+      else if (a.status === "Sakit") s.sakit++;
+      else if (a.status === "Izin") s.izin++;
+      else if (a.status === "Alpa") s.alpa++;
+      bySubject.set(a.subject_id, s);
+    }
+    const subjects = [];
+    for (const [sid, s] of bySubject) {
+      const total = s.hadir + s.sakit + s.izin + s.alpa;
+      subjects.push({
+        subject_name: await subjectName(sid),
+        ...s,
+        total,
+        persentase: pct(s.hadir, total),
+      });
+    }
+    subjects.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
+
+    // Tugas: guru hanya melihat tugas di kelas yang ia ampu
+    const subs = await ctx.db
+      .query("submissions")
+      .withIndex("by_student", (q) => q.eq("student_id", studentId))
+      .collect();
+    const tasks = [];
+    for (const s of subs) {
+      const a = await ctx.db
+        .query("assignments")
+        .withIndex("by_assignment_id", (q) =>
+          q.eq("assignment_id", s.assignment_id),
+        )
+        .unique();
+      if (!a || !canAccessClass(user, a.class_id)) continue;
+      tasks.push({
+        assignment_id: a.assignment_id,
+        title: a.title,
+        class_name: await className(a.class_id),
+        subject_name: a.subject_id ? await subjectName(a.subject_id) : "",
+        status: s.status,
+        total_score: s.total_score,
+        max_score: s.max_score,
+        started_at: s.started_at,
+        submitted_at: s.submitted_at,
+      });
+    }
+    tasks.sort((x, y) => y.started_at - x.started_at);
+
+    return {
+      profile: {
+        student_id: student.student_id,
+        nis: student.nis,
+        nisn: student.nisn,
+        full_name: student.full_name,
+        gender: student.gender,
+        birth_place: student.birth_place,
+        birth_date: student.birth_date,
+        address: student.address,
+        parent_name: student.parent_name,
+        parent_phone: student.parent_phone,
+        is_active: student.is_active,
+      },
+      classes,
+      attendance: {
+        summary: { ...summary, persentase: pct(summary.hadir, counted) },
+        recent,
+      },
+      subjects,
+      tasks,
     };
   },
 });

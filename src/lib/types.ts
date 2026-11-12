@@ -21,6 +21,64 @@ export interface Student {
   is_active: boolean;
 }
 
+export interface StudentDetail {
+  profile: {
+    student_id: string;
+    nis: string;
+    nisn: string;
+    full_name: string;
+    gender: string;
+    birth_place: string;
+    birth_date: string;
+    address: string;
+    parent_name: string;
+    parent_phone: string;
+    is_active: boolean;
+  };
+  classes: {
+    class_name: string;
+    academic_year: string;
+    start_date: string;
+    end_date: string;
+    is_active: boolean;
+  }[];
+  attendance: {
+    summary: {
+      hadir: number;
+      sakit: number;
+      izin: number;
+      alpa: number;
+      persentase: string;
+    };
+    recent: {
+      date: string;
+      status: string;
+      notes: string;
+      class_name: string;
+    }[];
+  };
+  subjects: {
+    subject_name: string;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpa: number;
+    total: number;
+    persentase: string;
+  }[];
+  tasks: {
+    assignment_id: string;
+    title: string;
+    class_name: string;
+    subject_name: string;
+    status: "berlangsung" | "diserahkan" | "dinilai";
+    total_score: number | null;
+    max_score: number;
+    started_at: number;
+    submitted_at: number | null;
+  }[];
+}
+
 export interface StudentClass {
   student_id: string;
   class_id: string;
