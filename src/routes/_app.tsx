@@ -187,6 +187,14 @@ function AppLayout() {
                   label="Laporan"
                   onNavigate={close}
                 />
+                {!isAdmin && (
+                  <NavItem
+                    to="/students"
+                    icon={<Users className={ic} />}
+                    label="Data Siswa"
+                    onNavigate={close}
+                  />
+                )}
               </>
             )}
             {isAdmin && (

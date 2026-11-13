@@ -77,11 +77,32 @@ export const fetchMasterData = query({
       };
     }
     if (type === "students") {
+      if (user.role === "admin")
+        return {
+          data: (await ctx.db.query("students").collect()).map(strip),
+        };
+      // Guru: hanya siswa yang saat ini berada di kelas yang ia ampu
+      const ids = new Set<string>();
+      for (const classId of user.assigned_classes) {
+        const hist = await ctx.db
+          .query("student_class_history")
+          .withIndex("by_class", (q) => q.eq("class_id", classId))
+          .collect();
+        for (const h of hist) if (h.is_active) ids.add(h.student_id);
+      }
+      const rows = [];
+      for (const id of ids) {
+        const s = await studentById(ctx, id);
+        if (s) rows.push(strip(s));
+      }
+      return { data: rows };
+    }
+    /* if (type === "students") {
       if (user.role !== "admin") fail("FORBIDDEN");
       return {
         data: (await ctx.db.query("students").collect()).map(strip),
       };
-    }
+    } */
     return { data: [] };
   },
 });
@@ -276,10 +297,10 @@ export const saveStudent = mutation({
 export const listStudentClasses = query({
   args: { token: v.optional(v.string()) },
   handler: async (ctx, { token }) => {
-    await requireAuth(ctx, token, { admin: true });
+    const user = await requireAuth(ctx, token); // admin, atau guru (kelas yang diampu)
     const hist = await ctx.db.query("student_class_history").collect();
     return hist
-      .filter((h) => h.is_active)
+      .filter((h) => h.is_active && canAccessClass(user, h.class_id))
       .map((h) => ({
         student_id: h.student_id,
         class_id: h.class_id,

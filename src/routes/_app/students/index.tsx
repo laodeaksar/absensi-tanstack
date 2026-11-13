@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, revalidateLogic } from "@tanstack/react-form";
 import {
   useMutation,
   useQueryClient,
@@ -40,7 +40,7 @@ import { toast } from "~/lib/toast";
 import { isActive } from "~/lib/types";
 
 export const Route = createFileRoute("/_app/students/")({
-  beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
+  beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
   validateSearch: (s: Record<string, unknown>) => ({
     edit: typeof s.edit === "string" ? s.edit : undefined,
     // true = form Edit dibuka dari halaman detail, jadi kembali ke sana setelah selesai
@@ -89,10 +89,21 @@ type Handlers = {
 
 function StudentActionsCell({
   student,
+  canManage,
   onEdit,
   onMove,
   onReset,
-}: Readonly<{ student: StudentRow } & Handlers>) {
+}: Readonly<{ student: StudentRow; canManage: boolean } & Handlers>) {
+  if (!canManage)
+    return (
+      <Link
+        to="/students/$studentId"
+        params={{ studentId: student.student_id }}
+        className="btn btn-ghost btn-sm"
+      >
+        <Eye className="size-4" /> Detail
+      </Link>
+    );
   return (
     <ActionMenu>
       <li>
@@ -132,7 +143,12 @@ function StudentActionsCell({
   );
 }
 
-function createStudentColumns({ onEdit, onReset, onMove }: Readonly<Handlers>) {
+function createStudentColumns({
+  canManage,
+  onEdit,
+  onReset,
+  onMove,
+}: Readonly<Handlers & { canManage: boolean }>) {
   return col.columns([
     col.accessor("nis", {
       header: "NIS",
@@ -171,6 +187,7 @@ function createStudentColumns({ onEdit, onReset, onMove }: Readonly<Handlers>) {
           onEdit={onEdit}
           onReset={onReset}
           onMove={onMove}
+          canManage={canManage}
         />
       ),
     }),
@@ -178,6 +195,7 @@ function createStudentColumns({ onEdit, onReset, onMove }: Readonly<Handlers>) {
 }
 
 function StudentsPage() {
+  const { me } = Route.useRouteContext();
   const { edit, back } = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
@@ -193,6 +211,7 @@ function StudentsPage() {
     student: Student | null;
   }>({ open: false, student: null });
   const { confirm, dialog } = useConfirm();
+  const isAdmin = me.role === "admin";
 
   // ?edit=<id> membuka form Edit siswa itu, baik saat halaman baru dibuka (dari halaman detail)
   // maupun saat parameternya berubah ketika halaman sudah terbuka. Disesuaikan saat render
@@ -201,7 +220,7 @@ function StudentsPage() {
   if (edit !== seenEdit) {
     setSeenEdit(edit);
     const s = edit ? students.find((x) => x.student_id === edit) : undefined;
-    if (s) {
+    if (s && isAdmin) {
       setModal({ open: true, student: s });
       setReturnTo(back ? s.student_id : null);
     }
@@ -242,6 +261,7 @@ function StudentsPage() {
   const columns = useMemo(
     () =>
       createStudentColumns({
+        canManage: isAdmin,
         onEdit: (student) => setModal({ open: true, student }),
         onReset: (student) => {
           void confirm(
@@ -252,7 +272,7 @@ function StudentsPage() {
         },
         onMove: (student) => setMoving(student),
       }),
-    [confirm, resetAccount],
+    [confirm, resetAccount, isAdmin],
   );
 
   const rows = useMemo<StudentRow[]>(() => {
@@ -295,31 +315,35 @@ function StudentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Master Data Siswa">
-        <HeaderButton
-          label="Buat Akun Siswa"
-          className="btn-outline"
-          icon={<KeyRound className="size-4" />}
-          disabled={generate.isPending}
-          onClick={async () => {
-            if (
-              await confirm(
-                "Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.",
-              )
-            )
-              generate.mutate();
-          }}
-        />
-        <HeaderButton
-          label="Tambah Siswa"
-          icon={<Plus className="size-4" />}
-          onClick={() =>
-            setModal({
-              open: true,
-              student: null,
-            })
-          }
-        />
+      <PageHeader title={isAdmin ? "Master Data Siswa" : "Data Siswa"}>
+        {isAdmin ? (
+          <>
+            <HeaderButton
+              label="Buat Akun Siswa"
+              className="btn-outline"
+              icon={<KeyRound className="size-4" />}
+              disabled={generate.isPending}
+              onClick={async () => {
+                if (
+                  await confirm(
+                    "Buat akun login untuk semua siswa aktif yang belum punya akun?\nUsername = NIS, password awal = NISN.",
+                  )
+                )
+                  generate.mutate();
+              }}
+            />
+            <HeaderButton
+              label="Tambah Siswa"
+              icon={<Plus className="size-4" />}
+              onClick={() =>
+                setModal({
+                  open: true,
+                  student: null,
+                })
+              }
+            />
+          </>
+        ) : null}
       </PageHeader>
 
       <div className="card overflow-hidden border border-base-300 bg-base-100">
@@ -335,7 +359,11 @@ function StudentsPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Tidak ada data siswa."
+          emptyText={
+            isAdmin
+              ? "Tidak ada data siswa."
+              : "Belum ada siswa di kelas yang Anda ampu."
+          }
         />
         <Pager table={table} />
       </div>
@@ -442,10 +470,8 @@ function StudentForm({
       gender: student?.gender || "L",
       class_id: "",
     },
-    validators: {
-      onChange: schema,
-      onSubmit: schema,
-    },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
     onSubmitInvalid: () =>
       toast.error("Periksa kembali isian yang ditandai merah."),
     onSubmit: async ({ value }) => {
@@ -625,10 +651,8 @@ function MoveStudentForm({
 
   const form = useForm({
     defaultValues: { class_id: "" },
-    validators: {
-      onChange: moveSchema,
-      onSubmit: moveSchema,
-    },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: moveSchema },
     onSubmit: async ({ value }) => {
       await move.mutateAsync(value.class_id).catch(() => {});
     },

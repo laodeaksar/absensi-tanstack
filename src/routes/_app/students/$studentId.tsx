@@ -62,6 +62,7 @@ const Empty = ({ text }: Readonly<{ text: string }>) => (
 
 function StudentDetailPage() {
   const { studentId } = Route.useParams();
+  const { me } = Route.useRouteContext();
   const { data } = useSuspenseQuery(studentDetailQuery(studentId));
   const { profile: p, classes, attendance, subjects, tasks } = data;
   const current = classes.find((c) => c.is_active);
@@ -81,7 +82,7 @@ function StudentDetailPage() {
             </p>
           }
         >
-          {Route.useRouteContext().me.role === "admin" ? (
+          {me.role === "admin" ? (
             <Link
               to="/students"
               search={{ edit: p.student_id, back: true }}
