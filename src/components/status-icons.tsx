@@ -208,3 +208,18 @@ export function HeaderButton({
     </button>
   );
 }
+
+const PASSED: StatusMeta = {
+  label: "Tuntas",
+  cls: "text-success",
+  Icon: CircleCheck,
+};
+const NOT_PASSED: StatusMeta = {
+  label: "Belum tuntas",
+  cls: "text-error",
+  Icon: CircleX,
+};
+
+export function PassStatusIcon({ passed }: Readonly<{ passed: boolean }>) {
+  return <StatusIcon meta={passed ? PASSED : NOT_PASSED} />;
+}

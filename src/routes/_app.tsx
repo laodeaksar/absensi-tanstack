@@ -11,6 +11,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import {
+  Award,
   BarChart3,
   BookOpenCheck,
   CalendarCheck,
@@ -58,7 +59,9 @@ type NavTo =
   | "/subjects"
   | "/teaching"
   | "/my-attendance"
-  | "/settings";
+  | "/settings"
+  | "/grades"
+  | "/my-grades";
 
 function NavItem({
   to,
@@ -187,6 +190,12 @@ function AppLayout() {
                   label="Laporan"
                   onNavigate={close}
                 />
+                <NavItem
+                  to="/grades"
+                  icon={<Award className={ic} />}
+                  label="Nilai"
+                  onNavigate={close}
+                />
                 {!isAdmin && (
                   <NavItem
                     to="/students"
@@ -244,6 +253,12 @@ function AppLayout() {
                   to="/tasks"
                   icon={<BookOpenCheck className={ic} />}
                   label="Tugas Saya"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/my-grades"
+                  icon={<Award className={ic} />}
+                  label="Nilai Saya"
                   onNavigate={close}
                 />
               </>

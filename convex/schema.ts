@@ -264,4 +264,41 @@ export default defineSchema({
   })
     .index("by_answer_id", ["answer_id"])
     .index("by_submission", ["submission_id"]),
+
+  grade_configs: defineTable({
+    class_id: v.string(),
+    subject_id: v.string(),
+    kkm: v.number(),
+    components: v.array(
+      v.object({
+        key: v.string(),
+        label: v.string(),
+        weight: v.number(), // persen, total 100
+        source: v.union(v.literal("tugas"), v.literal("manual")),
+      }),
+    ),
+    updated_by: v.string(),
+    updated_at: v.string(),
+  }).index("by_class_subject", ["class_id", "subject_id"]),
+
+  grade_scores: defineTable({
+    class_id: v.string(),
+    subject_id: v.string(),
+    academic_year: v.string(),
+    semester: v.union(v.literal("ganjil"), v.literal("genap")),
+    student_id: v.string(),
+    component: v.string(),
+    score: v.number(),
+    updated_by: v.string(),
+    updated_at: v.string(),
+  })
+    .index("by_cell", [
+      "class_id",
+      "subject_id",
+      "academic_year",
+      "semester",
+      "student_id",
+      "component",
+    ])
+    .index("by_student", ["student_id"]),
 });

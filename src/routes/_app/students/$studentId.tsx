@@ -3,7 +3,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Pencil } from "lucide-react";
 
 import { BackLink } from "~/components/back-link";
-import { PageHeader } from "~/components/status-icons";
+import { Info } from "~/components/info";
+import {
+  AttendanceStatusIcon,
+  PageHeader,
+  SubmissionStatusIcon,
+} from "~/components/status-icons";
+import { ActiveStatusIcon, ActiveBadge } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
 import { formatDate } from "~/lib/date";
 import { studentDetailQuery } from "~/lib/queries";
@@ -15,32 +21,11 @@ export const Route = createFileRoute("/_app/students/$studentId")({
   component: StudentDetailPage,
 });
 
-const STATUS_BADGE: Record<string, string> = {
-  Hadir: "badge-success",
-  Sakit: "badge-warning",
-  Izin: "badge-info",
-  Alpa: "badge-error",
-};
-
 const fmtTime = (ms: number) =>
   new Date(ms).toLocaleString("id-ID", {
     dateStyle: "medium",
     timeStyle: "short",
   });
-
-function Info({
-  label,
-  children,
-}: Readonly<{ label: string; children?: React.ReactNode }>) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs text-base-content/60">{label}</dt>
-      <dd className="text-sm wrap-anywhere">
-        {children || <span className="text-base-content/40">-</span>}
-      </dd>
-    </div>
-  );
-}
 
 function Section({
   title,
@@ -108,11 +93,7 @@ function StudentDetailPage() {
               .join(", ")}
           </Info>
           <Info label="Status">
-            <span
-              className={`badge badge-sm ${p.is_active ? "badge-success" : "badge-ghost"}`}
-            >
-              {p.is_active ? "Aktif" : "Nonaktif"}
-            </span>
+            <ActiveBadge active={p.is_active} />
           </Info>
           <Info label="Nama Orang Tua / Wali">{p.parent_name}</Info>
           <Info label="Telepon Orang Tua / Wali">{p.parent_phone}</Info>
@@ -136,9 +117,7 @@ function StudentDetailPage() {
                   {c.start_date ? formatDate(c.start_date) : "-"}
                   {c.end_date ? ` s.d. ${formatDate(c.end_date)}` : ""}
                 </span>
-                {c.is_active ? (
-                  <span className="badge badge-xs badge-success">Saat ini</span>
-                ) : null}
+                <ActiveStatusIcon active={c.is_active} />
               </li>
             ))}
           </ul>
@@ -179,11 +158,7 @@ function StudentDetailPage() {
                 className="flex flex-wrap items-center gap-2 p-2 text-sm"
               >
                 <span>{formatDate(r.date)}</span>
-                <span
-                  className={`badge badge-sm ${STATUS_BADGE[r.status] ?? "badge-ghost"}`}
-                >
-                  {r.status}
-                </span>
+                <AttendanceStatusIcon status={r.status} />
                 <span className="text-xs text-base-content/60">
                   {r.class_name}
                 </span>
@@ -253,21 +228,7 @@ function StudentDetailPage() {
                     {t.class_name}
                     {t.subject_name ? ` · ${t.subject_name}` : ""}
                   </span>
-                  <span
-                    className={`badge badge-xs ${
-                      t.status === "dinilai"
-                        ? "badge-success"
-                        : t.status === "diserahkan"
-                          ? "badge-info"
-                          : "badge-warning"
-                    }`}
-                  >
-                    {t.status === "dinilai"
-                      ? "Dinilai"
-                      : t.status === "diserahkan"
-                        ? "Diserahkan"
-                        : "Berlangsung"}
-                  </span>
+                  <SubmissionStatusIcon status={t.status} />
                   {t.status === "dinilai" && t.total_score !== null ? (
                     <span className="font-medium">
                       Nilai {t.total_score}/{t.max_score}

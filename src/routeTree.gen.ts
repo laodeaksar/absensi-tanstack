@@ -15,7 +15,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppClassesRouteImport } from './routes/_app/classes'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppGradesRouteImport } from './routes/_app/grades'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
+import { Route as AppMyGradesRouteImport } from './routes/_app/my-grades'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubjectsRouteImport } from './routes/_app/subjects'
@@ -60,9 +62,19 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGradesRoute = AppGradesRouteImport.update({
+  id: '/grades',
+  path: '/grades',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
   id: '/my-attendance',
   path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyGradesRoute = AppMyGradesRouteImport.update({
+  id: '/my-grades',
+  path: '/my-grades',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -145,7 +157,9 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/grades': typeof AppGradesRoute
   '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-grades': typeof AppMyGradesRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/subjects': typeof AppSubjectsRoute
@@ -167,7 +181,9 @@ export interface FileRoutesByTo {
   '/attendance': typeof AppAttendanceRoute
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/grades': typeof AppGradesRoute
   '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-grades': typeof AppMyGradesRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/subjects': typeof AppSubjectsRoute
@@ -191,7 +207,9 @@ export interface FileRoutesById {
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/classes': typeof AppClassesRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/grades': typeof AppGradesRoute
   '/_app/my-attendance': typeof AppMyAttendanceRoute
+  '/_app/my-grades': typeof AppMyGradesRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subjects': typeof AppSubjectsRoute
@@ -215,7 +233,9 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/classes'
     | '/dashboard'
+    | '/grades'
     | '/my-attendance'
+    | '/my-grades'
     | '/reports'
     | '/settings'
     | '/subjects'
@@ -237,7 +257,9 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/classes'
     | '/dashboard'
+    | '/grades'
     | '/my-attendance'
+    | '/my-grades'
     | '/reports'
     | '/settings'
     | '/subjects'
@@ -260,7 +282,9 @@ export interface FileRouteTypes {
     | '/_app/attendance'
     | '/_app/classes'
     | '/_app/dashboard'
+    | '/_app/grades'
     | '/_app/my-attendance'
+    | '/_app/my-grades'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/subjects'
@@ -327,11 +351,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/grades': {
+      id: '/_app/grades'
+      path: '/grades'
+      fullPath: '/grades'
+      preLoaderRoute: typeof AppGradesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/my-attendance': {
       id: '/_app/my-attendance'
       path: '/my-attendance'
       fullPath: '/my-attendance'
       preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-grades': {
+      id: '/_app/my-grades'
+      path: '/my-grades'
+      fullPath: '/my-grades'
+      preLoaderRoute: typeof AppMyGradesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reports': {
@@ -439,7 +477,9 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppClassesRoute: typeof AppClassesRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppGradesRoute: typeof AppGradesRoute
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
+  AppMyGradesRoute: typeof AppMyGradesRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubjectsRoute: typeof AppSubjectsRoute
@@ -460,7 +500,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppClassesRoute: AppClassesRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppGradesRoute: AppGradesRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
+  AppMyGradesRoute: AppMyGradesRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubjectsRoute: AppSubjectsRoute,

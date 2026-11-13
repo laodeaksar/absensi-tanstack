@@ -200,3 +200,46 @@ export function periodFor(
     return { academicYear: `${y - 1}/${y}`, semester: "genap" };
   return { academicYear: `${y - 1}/${y}`, semester: "ganjil" };
 }
+
+export type GradeComponent = {
+  key: string;
+  label: string;
+  weight: number;
+  source: "tugas" | "manual";
+};
+export const DEFAULT_KKM = 75;
+export const DEFAULT_GRADE_COMPONENTS: GradeComponent[] = [
+  { key: "tugas", label: "Tugas", weight: 40, source: "tugas" },
+  { key: "uts", label: "UTS", weight: 30, source: "manual" },
+  { key: "uas", label: "UAS", weight: 30, source: "manual" },
+];
+//export const GRADE_LIMITS = { maxComponents: 6 };
+
+/**
+ * Nilai akhir berbobot. Komponen yang belum bernilai dilewati dan bobotnya dinormalisasi,
+ * lalu complete = false (nilai sementara).
+ */
+export function finalScore(
+  components: GradeComponent[],
+  values: Record<string, number | null | undefined>,
+) {
+  let sum = 0;
+  let weight = 0;
+  let missing = 0;
+  for (const c of components) {
+    const v = values[c.key];
+    if (v === null || v === undefined) {
+      missing++;
+      continue;
+    }
+    sum += v * c.weight;
+    weight += c.weight;
+  }
+  return {
+    final: weight > 0 ? Math.round((sum / weight) * 100) / 100 : null,
+    complete: components.length > 0 && missing === 0,
+  };
+}
+
+export const predicateFor = (score: number, kkm: number) =>
+  score < kkm ? "D" : score >= 90 ? "A" : score >= 80 ? "B" : "C";

@@ -36,6 +36,9 @@ export const LIMITS = {
   notesMin: 3,
   notesMax: 200,
 
+  // nilai
+  maxComponents: 6,
+
   // pengaturan sekolah
   schoolName: 100,
   schoolAddress: 200,

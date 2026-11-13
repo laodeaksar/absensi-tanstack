@@ -515,3 +515,42 @@ export interface MySubjectAttendance {
     notes: string;
   }[];
 }
+
+export type GradeSemester = "ganjil" | "genap";
+export interface GradeComponentDef {
+  key: string;
+  label: string;
+  weight: number;
+  source: "tugas" | "manual";
+}
+export interface GradeBook {
+  config: { kkm: number; components: GradeComponentDef[]; saved: boolean };
+  task_count: number;
+  rows: {
+    student_id: string;
+    nis: string;
+    full_name: string;
+    values: Record<string, number | null>;
+    final: number | null;
+    complete: boolean;
+    predicate: string;
+    passed: boolean;
+  }[];
+}
+export interface MyGrades {
+  rows: {
+    subject_id: string;
+    subject_name: string;
+    kkm: number;
+    components: {
+      key: string;
+      label: string;
+      weight: number;
+      value: number | null;
+    }[];
+    final: number | null;
+    complete: boolean;
+    predicate: string;
+    passed: boolean;
+  }[];
+}

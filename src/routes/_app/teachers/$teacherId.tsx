@@ -4,7 +4,9 @@ import { Pencil } from "lucide-react";
 import { useMemo } from "react";
 
 import { BackLink } from "~/components/back-link";
-import { PageHeader } from "~/components/status-icons";
+import { Info } from "~/components/info";
+import { PageHeader, PublishStatusIcon } from "~/components/status-icons";
+import { ActiveBadge } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
 import { formatDateTime } from "~/lib/date";
 import {
@@ -26,20 +28,6 @@ export const Route = createFileRoute("/_app/teachers/$teacherId")({
     ]),
   component: TeacherDetailPage,
 });
-
-function Info({
-  label,
-  children,
-}: Readonly<{ label: string; children?: React.ReactNode }>) {
-  return (
-    <div>
-      <dt className="text-xs text-base-content/60">{label}</dt>
-      <dd className="text-sm">
-        {children || <span className="text-base-content/40">-</span>}
-      </dd>
-    </div>
-  );
-}
 
 function Section({
   title,
@@ -138,11 +126,7 @@ function TeacherDetailPage() {
           <Info label="Username">{teacher.username}</Info>
           <Info label="NIP">{teacher.nip}</Info>
           <Info label="Status">
-            <span
-              className={`badge badge-sm ${isActive(teacher.is_active) ? "badge-success" : "badge-ghost"}`}
-            >
-              {isActive(teacher.is_active) ? "Aktif" : "Nonaktif"}
-            </span>
+            <ActiveBadge active={isActive(teacher.is_active)} />
           </Info>
           <Info label="Telepon">{teacher.phone}</Info>
           <Info label="Email">{teacher.email}</Info>
@@ -222,18 +206,13 @@ function TeacherDetailPage() {
                     {a.class_name}
                     {a.subject_name ? ` · ${a.subject_name}` : ""}
                   </span>
-                  <span
-                    className={`badge badge-xs ${a.is_published ? "badge-success" : "badge-ghost"}`}
-                  >
-                    {a.is_published ? "Terbit" : "Draf"}
+                  <PublishStatusIcon published={a.is_published} />
+                  <span>
+                    ·{" "}
+                    {a.is_creator
+                      ? "Dibuat guru ini"
+                      : `Dibuat oleh ${a.creator_name}`}
                   </span>
-                  {a.is_creator ? (
-                    <span className="badge badge-xs badge-info badge-soft">
-                      Dibuat guru ini
-                    </span>
-                  ) : (
-                    <span>· Dibuat oleh {a.creator_name}</span>
-                  )}
                   {a.due_at ? (
                     <span>· Tenggat {formatDateTime(a.due_at)}</span>
                   ) : null}

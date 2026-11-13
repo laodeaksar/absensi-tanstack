@@ -8,7 +8,10 @@ import type {
   Assignment,
   ClassRow,
   DashboardData,
+  GradeBook,
+  GradeSemester,
   MyAttendance,
+  MyGrades,
   MyResult,
   MySubjectAttendance,
   MyTask,
@@ -223,4 +226,24 @@ export const mySubjectAttendanceQuery = (f: {
   queryOptions({
     ...convexQuery(convexApi.subjects.getMySubjectAttendance, { filters: f }),
     select: (r): MySubjectAttendance => r as MySubjectAttendance,
+  });
+
+export const gradeBookQuery = (a: {
+  classId: string;
+  subjectId: string;
+  academicYear: string;
+  semester: GradeSemester;
+}) =>
+  queryOptions({
+    ...convexQuery(convexApi.grades.getGradeBook, a),
+    select: (r): GradeBook => r as GradeBook,
+  });
+
+export const myGradesQuery = (a: {
+  academicYear: string;
+  semester: GradeSemester;
+}) =>
+  queryOptions({
+    ...convexQuery(convexApi.grades.getMyGrades, a),
+    select: (r): MyGrades => r as MyGrades,
   });
