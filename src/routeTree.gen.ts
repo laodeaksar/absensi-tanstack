@@ -23,6 +23,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubjectsRouteImport } from './routes/_app/subjects'
 import { Route as AppTeachingRouteImport } from './routes/_app/teaching'
 import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignments/index'
+import { Route as AppPromotionsIndexRouteImport } from './routes/_app/promotions/index'
 import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
 import { Route as AppStudentsStudentIdRouteImport } from './routes/_app/students/$studentId'
 import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
@@ -102,6 +103,11 @@ const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
   path: '/assignments/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPromotionsIndexRoute = AppPromotionsIndexRouteImport.update({
+  id: '/promotions/',
+  path: '/promotions/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppStudentsIndexRoute = AppStudentsIndexRouteImport.update({
   id: '/students/',
   path: '/students/',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments/': typeof AppAssignmentsIndexRoute
+  '/promotions/': typeof AppPromotionsIndexRoute
   '/students/': typeof AppStudentsIndexRoute
   '/tasks/': typeof AppTasksIndexRoute
   '/teachers/': typeof AppTeachersIndexRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments': typeof AppAssignmentsIndexRoute
+  '/promotions': typeof AppPromotionsIndexRoute
   '/students': typeof AppStudentsIndexRoute
   '/tasks': typeof AppTasksIndexRoute
   '/teachers': typeof AppTeachersIndexRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/_app/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/_app/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/_app/assignments/': typeof AppAssignmentsIndexRoute
+  '/_app/promotions/': typeof AppPromotionsIndexRoute
   '/_app/students/': typeof AppStudentsIndexRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
   '/_app/teachers/': typeof AppTeachersIndexRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/tasks/$assignmentId'
     | '/teachers/$teacherId'
     | '/assignments/'
+    | '/promotions/'
     | '/students/'
     | '/tasks/'
     | '/teachers/'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/tasks/$assignmentId'
     | '/teachers/$teacherId'
     | '/assignments'
+    | '/promotions'
     | '/students'
     | '/tasks'
     | '/teachers'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/_app/tasks/$assignmentId'
     | '/_app/teachers/$teacherId'
     | '/_app/assignments/'
+    | '/_app/promotions/'
     | '/_app/students/'
     | '/_app/tasks/'
     | '/_app/teachers/'
@@ -407,6 +419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssignmentsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/promotions/': {
+      id: '/_app/promotions/'
+      path: '/promotions'
+      fullPath: '/promotions/'
+      preLoaderRoute: typeof AppPromotionsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/students/': {
       id: '/_app/students/'
       path: '/students'
@@ -488,6 +507,7 @@ interface AppRouteChildren {
   AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute
   AppTeachersTeacherIdRoute: typeof AppTeachersTeacherIdRoute
   AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
+  AppPromotionsIndexRoute: typeof AppPromotionsIndexRoute
   AppStudentsIndexRoute: typeof AppStudentsIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
   AppTeachersIndexRoute: typeof AppTeachersIndexRoute
@@ -511,6 +531,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTasksAssignmentIdRoute: AppTasksAssignmentIdRoute,
   AppTeachersTeacherIdRoute: AppTeachersTeacherIdRoute,
   AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
+  AppPromotionsIndexRoute: AppPromotionsIndexRoute,
   AppStudentsIndexRoute: AppStudentsIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
   AppTeachersIndexRoute: AppTeachersIndexRoute,

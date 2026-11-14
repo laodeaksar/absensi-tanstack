@@ -56,6 +56,8 @@ export const api = {
   studentClasses: () => rpc<StudentClass[]>("listStudentClasses"),
   moveStudent: (studentId: string, classId: string) =>
     rpc<Msg>("moveStudent", studentId, classId),
+  graduateStudent: (studentId: string) =>
+    rpc<Msg>("graduateStudent", studentId),
   saveClass: (d: ClassInput) => rpc<Msg>("saveClass", d),
   saveTeacher: (d: TeacherInput) => rpc<Msg>("saveTeacher", d),
   generateStudentAccounts: () => rpc<Msg>("generateStudentAccounts"),

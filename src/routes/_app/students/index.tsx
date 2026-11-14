@@ -6,7 +6,14 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { KeyRound, Plus, Pencil, ArrowRightLeft, Eye } from "lucide-react";
+import {
+  KeyRound,
+  Plus,
+  Pencil,
+  ArrowRightLeft,
+  Eye,
+  GraduationCap,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -62,6 +69,13 @@ type StudentRow = Student & {
 };
 const col = columnHelperFor<StudentRow>();
 
+type Handlers = {
+  onEdit: (student: Student) => void;
+  onReset: (student: Student) => void;
+  onMove: (student: StudentRow) => void;
+  onGraduate: (student: Student) => void;
+};
+
 function StudentNameCell({
   studentId,
   name,
@@ -81,11 +95,21 @@ function StudentClassCell({ name }: Readonly<{ name?: string | null }>) {
   return <span className="whitespace-nowrap">{name || "-"}</span>;
 }
 
-type Handlers = {
-  onEdit: (student: Student) => void;
-  onReset: (student: Student) => void;
-  onMove: (student: StudentRow) => void;
-};
+function statusLabel(s: Student) {
+  if (s.graduated_at) return "Lulus";
+  return isActive(s.is_active) ? "Aktif" : "Nonaktif";
+}
+
+function StudentStatusCell({ student }: Readonly<{ student: Student }>) {
+  if (student.graduated_at)
+    return (
+      <span className="inline-flex items-center gap-1 text-sm whitespace-nowrap">
+        <GraduationCap className="size-4 text-info" />
+        Lulus{student.graduated_year ? ` ${student.graduated_year}` : ""}
+      </span>
+    );
+  return <ActiveStatusIcon active={isActive(student.is_active)} />;
+}
 
 function StudentActionsCell({
   student,
@@ -93,6 +117,7 @@ function StudentActionsCell({
   onEdit,
   onMove,
   onReset,
+  onGraduate,
 }: Readonly<{ student: StudentRow; canManage: boolean } & Handlers>) {
   if (!canManage)
     return (
@@ -139,6 +164,15 @@ function StudentActionsCell({
           <ArrowRightLeft className="size-4" /> Pindah Kelas
         </button>
       </li>
+      <li className={isActive(student.is_active) ? undefined : "menu-disabled"}>
+        <button
+          type="button"
+          disabled={!isActive(student.is_active)}
+          onClick={() => onGraduate(student)}
+        >
+          <GraduationCap className="size-4" /> Luluskan
+        </button>
+      </li>
     </ActionMenu>
   );
 }
@@ -148,6 +182,7 @@ function createStudentColumns({
   onEdit,
   onReset,
   onMove,
+  onGraduate,
 }: Readonly<Handlers & { canManage: boolean }>) {
   return col.columns([
     col.accessor("nis", {
@@ -172,10 +207,10 @@ function createStudentColumns({
       cell: (i) => <StudentClassCell name={i.getValue()} />,
     }),
     col.accessor("gender", { header: "L/P" }),
-    col.accessor((r) => (isActive(r.is_active) ? "Aktif" : "Nonaktif"), {
+    col.accessor((r) => statusLabel(r), {
       id: "status",
       header: "Status",
-      cell: (i) => <ActiveStatusIcon active={i.getValue() === "Aktif"} />,
+      cell: (i) => <StudentStatusCell student={i.row.original} />,
     }),
     col.display({
       id: "actions",
@@ -188,6 +223,7 @@ function createStudentColumns({
           onReset={onReset}
           onMove={onMove}
           canManage={canManage}
+          onGraduate={onGraduate}
         />
       ),
     }),
@@ -255,8 +291,22 @@ function StudentsPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const graduate = useMutation({
+    mutationFn: (id: string) => api.graduateStudent(id),
+    onSuccess: async (r) => {
+      toast.success(r.message);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: qk.students }),
+        qc.invalidateQueries({ queryKey: qk.studentClasses }),
+        qc.invalidateQueries({ queryKey: qk.dashboard }),
+      ]);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   // Handler terbaru lewat ref agar definisi kolom tetap stabil
   const resetAccount = reset.mutate; // stabil, berbeda dari objek `reset` yang baru tiap render
+  const graduateStudent = graduate.mutate;
 
   const columns = useMemo(
     () =>
@@ -271,8 +321,15 @@ function StudentsPage() {
           });
         },
         onMove: (student) => setMoving(student),
+        onGraduate: (student) => {
+          void confirm(
+            `Luluskan ${student.full_name}?\nRiwayat kelas ditutup, siswa dinonaktifkan, dan akun loginnya tidak bisa dipakai lagi.`,
+          ).then((confirmed) => {
+            if (confirmed) graduateStudent(student.student_id);
+          });
+        },
       }),
-    [confirm, resetAccount, isAdmin],
+    [confirm, graduateStudent, resetAccount, isAdmin],
   );
 
   const rows = useMemo<StudentRow[]>(() => {

@@ -11,6 +11,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import {
+  ArrowUpRight,
   Award,
   BarChart3,
   BookOpenCheck,
@@ -55,6 +56,7 @@ type NavTo =
   | "/tasks"
   | "/students"
   | "/classes"
+  | "/promotions"
   | "/teachers"
   | "/subjects"
   | "/teaching"
@@ -237,6 +239,12 @@ function AppLayout() {
                   to="/teaching"
                   icon={<GraduationCap className={ic} />}
                   label="Pengampu Mapel"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/promotions"
+                  icon={<ArrowUpRight className={ic} />}
+                  label="Kenaikan Kelas"
                   onNavigate={close}
                 />
               </>

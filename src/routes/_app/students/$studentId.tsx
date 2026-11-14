@@ -1,18 +1,22 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Pencil } from "lucide-react";
+import { GraduationCap, Pencil } from "lucide-react";
 
 import { BackLink } from "~/components/back-link";
 import { Info } from "~/components/info";
 import {
   AttendanceStatusIcon,
+  HeaderButton,
   PageHeader,
   SubmissionStatusIcon,
 } from "~/components/status-icons";
 import { ActiveStatusIcon, ActiveBadge } from "~/components/ui";
+import { useConfirm } from "~/hooks/use-confirm";
+import { api } from "~/lib/api";
 import { allowRoles } from "~/lib/auth";
 import { formatDate } from "~/lib/date";
 import { studentDetailQuery } from "~/lib/queries";
+import { toast } from "~/lib/toast";
 
 export const Route = createFileRoute("/_app/students/$studentId")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
@@ -53,6 +57,18 @@ function StudentDetailPage() {
   const current = classes.find((c) => c.is_active);
   const sum = attendance.summary;
 
+  const { confirm, dialog } = useConfirm();
+  const graduate = useMutation({
+    mutationFn: () => api.graduateStudent(p.student_id),
+    onSuccess: (r) => toast.success(r.message),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const graduatedLabel = `Lulus${p.graduated_year ? ` ${p.graduated_year}` : ""}`;
+  let statusNote = "";
+  if (p.graduated_at) statusNote = ` - ${graduatedLabel}`;
+  else if (!p.is_active) statusNote = " - Nonaktif";
+
   return (
     <div className="space-y-4">
       <div>
@@ -63,20 +79,38 @@ function StudentDetailPage() {
             <p className="text-sm text-base-content/60">
               NIS {p.nis}
               {current ? ` - ${current.class_name}` : ""}
-              {p.is_active ? "" : " - Nonaktif"}
+              {statusNote}
             </p>
           }
         >
           {me.role === "admin" ? (
-            <Link
-              to="/students"
-              search={{ edit: p.student_id, back: true }}
-              aria-label="Edit"
-              className="btn btn-primary btn-sm max-sm:btn-square"
-            >
-              <Pencil className="size-4" />
-              <span className="hidden sm:inline">Edit</span>
-            </Link>
+            <>
+              {p.is_active ? (
+                <HeaderButton
+                  label="Luluskan"
+                  className="btn-outline"
+                  icon={<GraduationCap className="size-4" />}
+                  disabled={graduate.isPending}
+                  onClick={async () => {
+                    if (
+                      await confirm(
+                        `Luluskan ${p.full_name}?\nRiwayat kelas ditutup, siswa dinonaktifkan, dan akun loginnya tidak bisa dipakai lagi.`,
+                      )
+                    )
+                      graduate.mutate();
+                  }}
+                />
+              ) : null}
+              <Link
+                to="/students"
+                search={{ edit: p.student_id, back: true }}
+                aria-label="Edit"
+                className="btn btn-primary btn-sm max-sm:btn-square"
+              >
+                <Pencil className="size-4" />
+                <span className="hidden sm:inline">Edit</span>
+              </Link>
+            </>
           ) : null}
         </PageHeader>
       </div>
@@ -93,7 +127,14 @@ function StudentDetailPage() {
               .join(", ")}
           </Info>
           <Info label="Status">
-            <ActiveBadge active={p.is_active} />
+            {p.graduated_at ? (
+              <span className="inline-flex items-center gap-1">
+                <GraduationCap className="size-4 text-info" />
+                {graduatedLabel}
+              </span>
+            ) : (
+              <ActiveBadge active={p.is_active} />
+            )}
           </Info>
           <Info label="Nama Orang Tua / Wali">{p.parent_name}</Info>
           <Info label="Telepon Orang Tua / Wali">{p.parent_phone}</Info>
@@ -243,6 +284,7 @@ function StudentDetailPage() {
           <Empty text="Belum ada tugas yang dikerjakan." />
         )}
       </Section>
+      {dialog}
     </div>
   );
 }

@@ -85,7 +85,8 @@ export default defineSchema({
     parent_name: v.string(),
     parent_phone: v.string(),
     is_active: v.boolean(),
-    // type: v.union(v.literal("teachers"),v.literal("classes"),v.literal("students"),),
+    graduated_at: v.optional(v.string()),
+    graduated_year: v.optional(v.string()),
     created_at: v.string(),
     updated_at: v.string(),
   })

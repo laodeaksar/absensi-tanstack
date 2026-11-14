@@ -19,6 +19,8 @@ export interface Student {
   full_name: string;
   gender: string;
   is_active: boolean;
+  graduated_at?: string;
+  graduated_year?: string;
 }
 
 export interface StudentDetail {
@@ -34,6 +36,8 @@ export interface StudentDetail {
     parent_name: string;
     parent_phone: string;
     is_active: boolean;
+    graduated_at?: string;
+    graduated_year?: string;
   };
   classes: {
     class_name: string;

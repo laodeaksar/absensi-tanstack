@@ -121,6 +121,61 @@ function buildRow(
   };
 }
 
+/** Blokir bila ada mapel yang belum memenuhi KKM pada semester ganjil dan genap. */
+export async function assertMeetsKkm(
+  ctx: QueryCtx,
+  studentId: string,
+  classId: string,
+  academicYear: string,
+  action: string,
+) {
+  const teaching = await ctx.db
+    .query("teaching")
+    .withIndex("by_class_subject", (q) => q.eq("class_id", classId))
+    .collect();
+  const subjectIds = [...new Set(teaching.map((t) => t.subject_id))];
+
+  const problems: string[] = [];
+  for (const subjectId of subjectIds) {
+    const cfg = await loadConfig(ctx, classId, subjectId);
+    const failed: string[] = [];
+    for (const semester of ["ganjil", "genap"] as const) {
+      const { averages } = await taskAverages(
+        ctx,
+        classId,
+        subjectId,
+        academicYear,
+        semester,
+      );
+      const scores = await ctx.db
+        .query("grade_scores")
+        .withIndex("by_cell", (q) =>
+          q
+            .eq("class_id", classId)
+            .eq("subject_id", subjectId)
+            .eq("academic_year", academicYear)
+            .eq("semester", semester)
+            .eq("student_id", studentId),
+        )
+        .collect();
+      const manual: Record<string, number> = {};
+      for (const s of scores) manual[s.component] = s.score;
+      const r = buildRow(cfg, averages.get(studentId), manual);
+      // nilai belum lengkap dianggap belum memenuhi KKM
+      if (!(r.complete && r.passed)) failed.push(semester);
+    }
+    if (failed.length)
+      problems.push(
+        `${(await subjectById(ctx, subjectId))?.name ?? subjectId} (${failed.join(", ")})`,
+      );
+  }
+
+  if (problems.length)
+    fail(
+      `Belum bisa ${action}. Nilai belum memenuhi KKM: ${problems.join("; ")}.`,
+    );
+}
+
 /** Buku nilai satu kelas, mapel, dan semester (admin atau guru pengampu). */
 export const getGradeBook = query({
   args: {

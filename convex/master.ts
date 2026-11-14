@@ -4,6 +4,7 @@ import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 
 import { mutation, query } from "./_generated/server";
+import { assertMeetsKkm } from "./grades";
 import {
   assertStrongPassword,
   canAccessClass,
@@ -249,7 +250,14 @@ export const saveStudent = mutation({
         ...clean,
         updated_at: now,
       };
-      if (d.is_active !== undefined) patch.is_active = flag(d.is_active);
+      // if (d.is_active !== undefined) patch.is_active = flag(d.is_active);
+      if (d.is_active !== undefined) {
+        patch.is_active = flag(d.is_active);
+        if (patch.is_active) {
+          patch.graduated_at = undefined;
+          patch.graduated_year = undefined;
+        }
+      }
       await ctx.db.patch(existing._id, patch as Partial<Doc<"students">>);
       const warning = await syncStudentAccount(ctx, existing.student_id);
       return {
@@ -335,6 +343,23 @@ export const moveStudent = mutation({
     if (active.some((h) => h.class_id === classId))
       fail("Siswa sudah berada di kelas ini.");
 
+    // Naik ke tingkat berikutnya di tahun ajaran baru wajib memenuhi KKM.
+    // Dikecualikan: pindah dalam tahun yang sama dan tinggal kelas (tingkat sama).
+    const sameLevel = (a: string, b: string) =>
+      a.trim().toLowerCase() === b.trim().toLowerCase();
+    for (const h of active) {
+      if (h.academic_year === cls!.academic_year) continue;
+      const from = await classById(ctx, h.class_id);
+      if (from && sameLevel(from.grade_level, cls!.grade_level)) continue;
+      await assertMeetsKkm(
+        ctx,
+        studentId,
+        h.class_id,
+        h.academic_year,
+        "naik kelas",
+      );
+    }
+
     // Tutup riwayat aktif (bisa lebih dari satu bila data lama tidak rapi), lalu buka yang baru
     const now = nowIso();
     for (const h of active)
@@ -355,6 +380,48 @@ export const moveStudent = mutation({
     return {
       message: `${student!.full_name} dipindahkan ke ${cls!.class_name}.`,
     };
+  },
+});
+
+export const graduateStudent = mutation({
+  args: { token: v.string(), studentId: v.string() },
+  handler: async (ctx, { token, studentId }) => {
+    await requireAuth(ctx, token, { admin: true });
+
+    const student = await studentById(ctx, studentId);
+    if (!student) fail("Data siswa tidak ditemukan.");
+    if (!student!.is_active) fail("Siswa sudah nonaktif atau lulus.");
+
+    const active = (
+      await ctx.db
+        .query("student_class_history")
+        .withIndex("by_student", (q) => q.eq("student_id", studentId))
+        .collect()
+    ).filter((h) => h.is_active);
+
+    for (const h of active)
+      await assertMeetsKkm(
+        ctx,
+        studentId,
+        h.class_id,
+        h.academic_year,
+        "meluluskan siswa",
+      );
+
+    const now = nowIso();
+    for (const h of active)
+      await ctx.db.patch(h._id, { is_active: false, end_date: now });
+
+    await ctx.db.patch(student!._id, {
+      is_active: false,
+      graduated_at: now,
+      graduated_year: active[0]?.academic_year ?? "",
+      updated_at: now,
+    });
+    // menonaktifkan akun login dan mencabut sesi
+    await syncStudentAccount(ctx, studentId);
+
+    return { message: `${student!.full_name} dinyatakan lulus.` };
   },
 });
 
@@ -618,6 +685,8 @@ export const getStudentDetail = query({
         parent_name: student.parent_name,
         parent_phone: student.parent_phone,
         is_active: student.is_active,
+        graduated_at: student.graduated_at,
+        graduated_year: student.graduated_year,
       },
       classes,
       attendance: {
