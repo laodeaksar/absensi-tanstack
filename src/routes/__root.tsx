@@ -68,10 +68,7 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html
-      lang="id"
-      data-theme="eduabsen"
-    >
+    <html lang="id">
       <head>
         <HeadContent />
       </head>
