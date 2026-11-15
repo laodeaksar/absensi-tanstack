@@ -24,6 +24,7 @@ import {
   TextField,
   Tip,
 } from "~/components/ui";
+import { GRADE_LEVELS } from "~/convex/rules";
 import { api } from "~/lib/api";
 import { allowRoles } from "~/lib/auth";
 import { makeClassSchema } from "~/lib/class-schema";
@@ -248,13 +249,6 @@ function ClassForm({
     [classes, teachers, cls, teacherOptions],
   );
 
-  // Saran tingkat dari kelas yang sudah ada
-  const gradeSuggestions = useMemo(
-    () =>
-      [...new Set(classes.map((c) => c.grade_level).filter(Boolean))].sort(),
-    [classes],
-  );
-
   const save = useMutation({
     mutationFn: (v: ClassInput) => api.saveClass(v),
     onSuccess: (r) => {
@@ -335,12 +329,25 @@ function ClassForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <form.Field name="grade_level">
           {(f) => (
-            <TextField
+            <SelectField
               label="Tingkat"
               field={f}
-              list="grade-levels"
-              autoComplete="off"
-            />
+            >
+              <option
+                disabled
+                value=""
+              >
+                -- Pilih Tingkat --
+              </option>
+              {GRADE_LEVELS.map((g) => (
+                <option
+                  key={g}
+                  value={g}
+                >
+                  {g}
+                </option>
+              ))}
+            </SelectField>
           )}
         </form.Field>
         <form.Field name="academic_year">
@@ -377,14 +384,6 @@ function ClassForm({
           )}
         </form.Field>
       ) : null}
-      <datalist id="grade-levels">
-        {gradeSuggestions.map((g) => (
-          <option
-            key={g}
-            value={g}
-          />
-        ))}
-      </datalist>
 
       <ErrorAlert message={save.error?.message} />
 

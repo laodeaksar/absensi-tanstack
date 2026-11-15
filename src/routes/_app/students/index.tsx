@@ -32,12 +32,14 @@ import {
   ActionMenu,
   RadioField,
 } from "~/components/ui";
+import { GRADUATION_LEVEL, isYearFinished } from "~/convex/rules";
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { allowRoles } from "~/lib/auth";
 import {
   classesQuery,
   qk,
+  settingsQuery,
   studentClassesQuery,
   studentsQuery,
 } from "~/lib/queries";
@@ -66,6 +68,7 @@ type StudentRow = Student & {
   current_class_id: string;
   class_name: string;
   class_year: string;
+  can_graduate: boolean;
 };
 const col = columnHelperFor<StudentRow>();
 
@@ -164,15 +167,16 @@ function StudentActionsCell({
           <ArrowRightLeft className="size-4" /> Pindah Kelas
         </button>
       </li>
-      <li className={isActive(student.is_active) ? undefined : "menu-disabled"}>
-        <button
-          type="button"
-          disabled={!isActive(student.is_active)}
-          onClick={() => onGraduate(student)}
-        >
-          <GraduationCap className="size-4" /> Luluskan
-        </button>
-      </li>
+      {isActive(student.is_active) && student.can_graduate ? (
+        <li>
+          <button
+            type="button"
+            onClick={() => onGraduate(student)}
+          >
+            <GraduationCap className="size-4" /> Luluskan
+          </button>
+        </li>
+      ) : null}
     </ActionMenu>
   );
 }
@@ -238,6 +242,7 @@ function StudentsPage() {
   const { data: students } = useSuspenseQuery(studentsQuery);
   const { data: studentClasses } = useSuspenseQuery(studentClassesQuery);
   const { data: classes } = useSuspenseQuery(classesQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const [moving, setMoving] = useState<StudentRow | null>(null);
   const [search, setSearch] = useState("");
   // Id siswa tujuan kembali, hanya terisi bila form Edit dibuka dari halaman detail
@@ -346,9 +351,13 @@ function StudentsPage() {
         current_class_id: c?.class_id ?? "",
         class_name: c?.class_name ?? "",
         class_year: c?.academic_year ?? "",
+        can_graduate: c
+          ? c.grade_level === GRADUATION_LEVEL &&
+            isYearFinished(c.academic_year, settings.active_academic_year)
+          : false,
       };
     });
-  }, [students, classes, studentClasses]);
+  }, [students, classes, studentClasses, settings.active_academic_year]);
 
   const data = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -22,6 +22,7 @@ import {
   SearchBox,
   SelectField,
 } from "~/components/ui";
+import { GRADE_LEVELS, GRADUATION_LEVEL, isYearFinished } from "~/convex/rules";
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { allowRoles } from "~/lib/auth";
@@ -30,6 +31,7 @@ import {
   qk,
   studentClassesQuery,
   studentsQuery,
+  settingsQuery,
 } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
@@ -38,6 +40,7 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/promotions/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
   validateSearch: (s: Record<string, unknown>) => ({
+    tingkat: typeof s.tingkat === "string" ? s.tingkat : undefined,
     kelas: typeof s.kelas === "string" ? s.kelas : undefined,
   }),
   loader: ({ context }) =>
@@ -53,6 +56,8 @@ type PromotionRow = Student & {
   current_class_id: string;
   class_name: string;
   class_year: string;
+  grade_level: string;
+  can_graduate: boolean;
 };
 const col = columnHelperFor<PromotionRow>();
 
@@ -80,6 +85,10 @@ function createPromotionColumns({ onPromote, onGraduate }: Readonly<Handlers>) {
       ),
     }),
     col.accessor("gender", { header: "L/P" }),
+    col.accessor("grade_level", {
+      header: "Tingkat",
+      cell: (i) => i.getValue() || "-",
+    }),
     col.accessor("class_name", {
       header: "Kelas",
       cell: (i) => (
@@ -110,14 +119,16 @@ function createPromotionColumns({ onPromote, onGraduate }: Readonly<Handlers>) {
               <ArrowUpRight className="size-4" /> Naik Kelas
             </button>
           </li>
-          <li>
-            <button
-              type="button"
-              onClick={() => onGraduate(row.original)}
-            >
-              <GraduationCap className="size-4" /> Luluskan
-            </button>
-          </li>
+          {row.original.can_graduate ? (
+            <li>
+              <button
+                type="button"
+                onClick={() => onGraduate(row.original)}
+              >
+                <GraduationCap className="size-4" /> Luluskan
+              </button>
+            </li>
+          ) : null}
         </ActionMenu>
       ),
     }),
@@ -125,12 +136,13 @@ function createPromotionColumns({ onPromote, onGraduate }: Readonly<Handlers>) {
 }
 
 function PromotionsPage() {
-  const { kelas } = Route.useSearch();
+  const { kelas, tingkat } = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const { data: students } = useSuspenseQuery(studentsQuery);
   const { data: studentClasses } = useSuspenseQuery(studentClassesQuery);
   const { data: classes } = useSuspenseQuery(classesQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const [promoting, setPromoting] = useState<PromotionRow | null>(null);
   const [search, setSearch] = useState("");
   const { confirm, dialog } = useConfirm();
@@ -176,6 +188,11 @@ function PromotionsPage() {
     [classes],
   );
 
+  const classFilterOptions = useMemo(
+    () => classOptions.filter((c) => !tingkat || c.grade_level === tingkat),
+    [classOptions, tingkat],
+  );
+
   // Hanya siswa aktif yang masih punya kelas aktif
   const rows = useMemo<PromotionRow[]>(() => {
     const byId = new Map(classes.map((c) => [c.class_id, c]));
@@ -194,19 +211,24 @@ function PromotionsPage() {
         current_class_id: c.class_id,
         class_name: c.class_name,
         class_year: c.academic_year,
+        grade_level: c.grade_level,
+        can_graduate:
+          c.grade_level === GRADUATION_LEVEL &&
+          isYearFinished(c.academic_year, settings.active_academic_year),
       });
     }
     return result;
-  }, [students, classes, studentClasses]);
+  }, [students, classes, studentClasses, settings.active_academic_year]);
 
   const data = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter(
       (s) =>
+        (!tingkat || s.grade_level === tingkat) &&
         (!kelas || s.current_class_id === kelas) &&
         (!q || `${s.full_name} ${s.nis}`.toLowerCase().includes(q)),
     );
-  }, [rows, kelas, search]);
+  }, [rows, tingkat, kelas, search]);
 
   const table = useTable({
     features,
@@ -222,19 +244,44 @@ function PromotionsPage() {
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <div className="flex flex-col gap-2 border-b border-base-300 bg-base-200/60 p-4 sm:flex-row">
           <select
-            className="select select-sm w-full sm:w-64"
+            className="select w-full sm:w-40"
+            aria-label="Filter tingkat"
+            value={tingkat ?? ""}
+            onChange={(e) => {
+              void navigate({
+                search: { 
+                  tingkat: e.target.value || undefined, 
+                  kelas
+                },
+                replace: true,
+              });
+              table.setPageIndex(0);
+            }}
+          >
+            <option value="">Semua Tingkat</option>
+            {GRADE_LEVELS.map((g) => (
+              <option
+                key={g}
+                value={g}
+              >
+                {g}
+              </option>
+            ))}
+          </select>
+          <select
+            className="select w-full sm:w-64"
             aria-label="Filter kelas"
             value={kelas ?? ""}
             onChange={(e) => {
               void navigate({
-                search: { kelas: e.target.value || undefined },
+                search: { tingkat, kelas: e.target.value || undefined },
                 replace: true,
               });
               table.setPageIndex(0);
             }}
           >
             <option value="">Semua Kelas</option>
-            {classOptions.map((c) => (
+            {classFilterOptions.map((c) => (
               <option
                 key={c.class_id}
                 value={c.class_id}

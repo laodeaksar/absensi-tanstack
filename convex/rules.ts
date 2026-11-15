@@ -243,3 +243,17 @@ export function finalScore(
 
 export const predicateFor = (score: number, kkm: number) =>
   score < kkm ? "D" : score >= 90 ? "A" : score >= 80 ? "B" : "C";
+
+export const GRADE_LEVELS = ["X", "XI", "XII"] as const;
+export const GRADUATION_LEVEL = "XII";
+
+export const isGradeLevel = (v: string): boolean =>
+  (GRADE_LEVELS as readonly string[]).includes(v);
+
+export const gradeRank = (g: string): number =>
+  (GRADE_LEVELS as readonly string[]).indexOf(g.trim().toUpperCase());
+
+export const isYearFinished = (
+  classYear: string,
+  activeYear: string,
+): boolean => !activeYear || classYear < activeYear;

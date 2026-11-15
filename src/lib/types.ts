@@ -41,6 +41,7 @@ export interface StudentDetail {
   };
   classes: {
     class_name: string;
+    grade_level: string;
     academic_year: string;
     start_date: string;
     end_date: string;

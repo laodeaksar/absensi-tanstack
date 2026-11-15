@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { LIMITS } from "~/convex/limits";
-import { isAcademicYear } from "~/convex/rules";
+import { isAcademicYear, isGradeLevel } from "~/convex/rules";
 
 import type { ClassRow } from "./types";
 
@@ -43,7 +43,7 @@ export function makeClassSchema(rules: ClassRules) {
         .string()
         .trim()
         .min(1, "Tingkat wajib diisi")
-        .max(LIMITS.gradeLevel, `Maksimal ${LIMITS.gradeLevel} karakter`),
+        .refine(isGradeLevel, "Pilih tingkat X, XI, atau XII"),
       academic_year: z
         .string()
         .trim()

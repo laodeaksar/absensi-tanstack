@@ -1,6 +1,7 @@
 import { internal } from "./_generated/api";
 import { internalMutation } from "./_generated/server";
 import { LIMITS } from "./limits";
+import { isGradeLevel } from "./rules";
 
 const BATCH = 500;
 
@@ -29,5 +30,24 @@ export const cleanup = internalMutation({
       await ctx.scheduler.runAfter(0, internal.maintenance.cleanup);
     }
     return { sessions: sessions.length, attempts: attempts.length };
+  },
+});
+
+export const normalizeGradeLevels = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const map: Record<string, string> = { "10": "X", "11": "XI", "12": "XII" };
+    const unknown: string[] = [];
+    for (const c of await ctx.db.query("classes").collect()) {
+      const raw = c.grade_level.trim().toUpperCase();
+      const next = map[raw] ?? raw;
+      if (!isGradeLevel(next)) {
+        unknown.push(`${c.class_name}: ${c.grade_level}`);
+        continue;
+      }
+      if (next !== c.grade_level)
+        await ctx.db.patch(c._id, { grade_level: next });
+    }
+    return { unknown };
   },
 });

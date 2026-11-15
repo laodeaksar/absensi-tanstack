@@ -23,7 +23,13 @@ import {
   userById,
 } from "./lib";
 import { LIMITS } from "./limits";
-import { RULES, isAcademicYear } from "./rules";
+import {
+  RULES,
+  isAcademicYear,
+  isGradeLevel,
+  GRADUATION_LEVEL,
+  gradeRank,
+} from "./rules";
 import { getSettingsMap } from "./settings";
 
 const classInput = v.object({
@@ -343,14 +349,17 @@ export const moveStudent = mutation({
     if (active.some((h) => h.class_id === classId))
       fail("Siswa sudah berada di kelas ini.");
 
-    // Naik ke tingkat berikutnya di tahun ajaran baru wajib memenuhi KKM.
-    // Dikecualikan: pindah dalam tahun yang sama dan tinggal kelas (tingkat sama).
-    const sameLevel = (a: string, b: string) =>
-      a.trim().toLowerCase() === b.trim().toLowerCase();
+    // Naik ke tingkat yang lebih tinggi wajib memenuhi KKM.
+    // Pindah kelas setingkat (paralel atau tinggal kelas) tidak dicek.
+    const activeYear = (await getSettingsMap(ctx)).active_academic_year;
     for (const h of active) {
-      if (h.academic_year === cls!.academic_year) continue;
       const from = await classById(ctx, h.class_id);
-      if (from && sameLevel(from.grade_level, cls!.grade_level)) continue;
+      if (!from || gradeRank(cls!.grade_level) <= gradeRank(from.grade_level))
+        continue;
+      if (activeYear && h.academic_year >= activeYear)
+        fail(
+          `Belum bisa naik kelas. Semester genap tahun ajaran ${h.academic_year} belum selesai.`,
+        );
       await assertMeetsKkm(
         ctx,
         studentId,
@@ -398,6 +407,13 @@ export const graduateStudent = mutation({
         .withIndex("by_student", (q) => q.eq("student_id", studentId))
         .collect()
     ).filter((h) => h.is_active);
+
+    if (!active.length) fail("Siswa belum memiliki kelas aktif.");
+    for (const h of active) {
+      const cls = await classById(ctx, h.class_id);
+      if (cls?.grade_level !== GRADUATION_LEVEL)
+        fail(`Kelulusan hanya untuk siswa tingkat ${GRADUATION_LEVEL}.`);
+    }
 
     for (const h of active)
       await assertMeetsKkm(
@@ -577,14 +593,17 @@ export const getStudentDetail = query({
     const classes = [];
     for (const h of [...hist].sort((a, b) =>
       b.start_date.localeCompare(a.start_date),
-    ))
+    )) {
+      const cls = await classById(ctx, h.class_id);
       classes.push({
-        class_name: await className(h.class_id),
+        class_name: cls?.class_name ?? "-",
+        grade_level: cls?.grade_level ?? "",
         academic_year: h.academic_year,
         start_date: h.start_date,
         end_date: h.end_date,
         is_active: h.is_active,
       });
+    }
 
     // Kehadiran harian
     const recs = await ctx.db
@@ -726,9 +745,7 @@ export const saveClass = mutation({
     if (!className) fail("Nama kelas wajib diisi.");
     if (className.length > LIMITS.className)
       fail(`Nama kelas maksimal ${LIMITS.className} karakter.`);
-    if (!grade) fail("Tingkat wajib diisi.");
-    if (grade.length > LIMITS.gradeLevel)
-      fail(`Tingkat maksimal ${LIMITS.gradeLevel} karakter.`);
+    if (!isGradeLevel(grade)) fail("Tingkat harus X, XI, atau XII.");
     if (!isAcademicYear(year)) fail("Tahun ajaran harus berformat 2025/2026.");
 
     // Kelas baru selalu aktif; saat edit, status hanya berubah bila dikirim eksplisit

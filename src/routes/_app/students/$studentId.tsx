@@ -11,11 +11,12 @@ import {
   SubmissionStatusIcon,
 } from "~/components/status-icons";
 import { ActiveStatusIcon, ActiveBadge } from "~/components/ui";
+import { GRADUATION_LEVEL, isYearFinished } from "~/convex/rules";
 import { useConfirm } from "~/hooks/use-confirm";
 import { api } from "~/lib/api";
 import { allowRoles } from "~/lib/auth";
 import { formatDate } from "~/lib/date";
-import { studentDetailQuery } from "~/lib/queries";
+import { studentDetailQuery, settingsQuery } from "~/lib/queries";
 import { toast } from "~/lib/toast";
 
 export const Route = createFileRoute("/_app/students/$studentId")({
@@ -53,9 +54,15 @@ function StudentDetailPage() {
   const { studentId } = Route.useParams();
   const { me } = Route.useRouteContext();
   const { data } = useSuspenseQuery(studentDetailQuery(studentId));
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const { profile: p, classes, attendance, subjects, tasks } = data;
   const current = classes.find((c) => c.is_active);
   const sum = attendance.summary;
+
+  const canGraduate =
+    p.is_active &&
+    current?.grade_level === GRADUATION_LEVEL &&
+    isYearFinished(current.academic_year, settings.active_academic_year);
 
   const { confirm, dialog } = useConfirm();
   const graduate = useMutation({
@@ -85,7 +92,7 @@ function StudentDetailPage() {
         >
           {me.role === "admin" ? (
             <>
-              {p.is_active ? (
+              {canGraduate ? (
                 <HeaderButton
                   label="Luluskan"
                   className="btn-outline"
