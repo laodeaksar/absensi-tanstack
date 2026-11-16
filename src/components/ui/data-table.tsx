@@ -11,7 +11,15 @@ import {
 
 import type { AppFeatures } from "~/lib/table";
 
-/* TanStack Table v9 */
+import { ResponsiveName } from "~/components/responsive-name";
+
+/** Opsi per kolom lewat `columnDef.meta`. */
+type CellMeta = {
+  /** 1 | 2 | "col-1" | "col-2" | true | "left" */
+  sticky?: unknown;
+  /** Mobile hanya inisial, sm ke atas nama lengkap. Nilai sel harus string. */
+  initials?: boolean;
+};
 
 export function DataTable<TData extends Record<string, any>>({
   table,
@@ -139,21 +147,24 @@ export function DataTable<TData extends Record<string, any>>({
             rows.map((row) => (
               <tr key={row.id}>
                 {row.getAllCells().map((cell, i) => {
+                  const meta = cell.column.columnDef.meta as
+                    | CellMeta
+                    | undefined;
                   const stickyClass = getStickyClass(
                     i,
                     cell.column.id,
-                    (
-                      cell.column.columnDef.meta as
-                        | Record<string, any>
-                        | undefined
-                    )?.sticky,
+                    meta?.sticky,
                   );
                   return (
                     <td
                       key={cell.id}
                       className={stickyClass || undefined}
                     >
-                      <FlexRender cell={cell} />
+                      {meta?.initials ? (
+                        <ResponsiveName name={String(cell.getValue() ?? "")} />
+                      ) : (
+                        <FlexRender cell={cell} />
+                      )}
                     </td>
                   );
                 })}

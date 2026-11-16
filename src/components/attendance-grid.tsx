@@ -258,6 +258,7 @@ export function AttendanceGrid({
         col.display({
           id: "no",
           header: "No",
+          meta: { sticky: 1 },
           cell: ({ row }) => (
             <span className="w-8 inline-block text-center font-medium">
               {row.original.originalIndex + 1}
@@ -267,7 +268,8 @@ export function AttendanceGrid({
         col.accessor("full_name", {
           header: "Nama Siswa",
           enableSorting: false,
-          cell: ({ row }) => (
+          meta: { sticky: 2, initials: true },
+          /* cell: ({ row }) => (
             <div className="min-w-32 max-w-48 sm:max-w-none pr-2">
               <span className="font-medium block truncate">
                 {row.original.full_name}
@@ -276,7 +278,7 @@ export function AttendanceGrid({
                 NIS {row.original.nis}
               </span>
             </div>
-          ),
+          ), */
         }),
         col.accessor("nis", {
           id: "nis",
@@ -468,7 +470,6 @@ export function AttendanceGrid({
       <DataTable
         table={table}
         emptyText={computedEmptyText}
-        stickyColumns={["no", "full_name"]}
         stickyCol1Width="2.75rem"
       />
 

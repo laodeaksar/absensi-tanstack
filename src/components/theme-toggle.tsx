@@ -67,7 +67,7 @@ export function ThemeToggleBar() {
           title={LABELS[m]}
         >
           <ThemeIcon mode={m} />
-          <span className="text-xs">{LABELS[m]}</span>
+          <span className="hidden sm:block text-xs">{LABELS[m]}</span>
         </button>
       ))}
     </div>
