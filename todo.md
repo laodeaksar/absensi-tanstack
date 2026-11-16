@@ -19,7 +19,7 @@ Dokumen pelacak tugas (*task tracking*) untuk rencana perbaikan, peningkatan pen
 
 Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang mengakses aplikasi dari ponsel pintar (smartphone Android/iOS).
 
-- [ ] **1. Mode Input Absensi Ramah Sentuh (Touch-Friendly Segmented Chips)**
+- [x] **1. Mode Input Absensi Ramah Sentuh (Touch-Friendly Segmented Chips)**
   - *Lokasi*: `src/components/attendance-grid.tsx`
   - *Deskripsi*: Ganti baris checkbox kecil tabel dengan tombol segmented pill (`[H] [S] [I] [A]`) yang memiliki touch target minimal 44×44px.
   - *Fitur*:

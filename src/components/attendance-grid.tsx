@@ -18,22 +18,52 @@ import { toast } from "~/lib/toast";
 type Row = Omit<AttendanceEntry, "attendance_id">;
 const col = columnHelperFor<Row>();
 
-const STATUS_STYLE = {
+/** Getar haptic halus di perangkat mobile */
+function triggerHaptic(duration = 15) {
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.vibrate === "function"
+  ) {
+    try {
+      navigator.vibrate(duration);
+    } catch {
+      /* abaikan bila perangkat menolak getar */
+    }
+  }
+}
+
+const STATUS_CONFIG = {
   Hadir: {
-    tone: "checkbox-success",
-    text: "text-success",
+    short: "H",
+    label: "Hadir",
+    activeClass:
+      "bg-success text-success-content font-bold border-success shadow-xs hover:bg-success/90",
+    idleClass:
+      "btn-ghost hover:bg-success/20 hover:text-success text-base-content/70",
   },
   Sakit: {
-    tone: "checkbox-warning",
-    text: "text-warning",
+    short: "S",
+    label: "Sakit",
+    activeClass:
+      "bg-warning text-warning-content font-bold border-warning shadow-xs hover:bg-warning/90",
+    idleClass:
+      "btn-ghost hover:bg-warning/20 hover:text-warning text-base-content/70",
   },
   Izin: {
-    tone: "checkbox-info",
-    text: "text-info",
+    short: "I",
+    label: "Izin",
+    activeClass:
+      "bg-info text-info-content font-bold border-info shadow-xs hover:bg-info/90",
+    idleClass:
+      "btn-ghost hover:bg-info/20 hover:text-info text-base-content/70",
   },
   Alpa: {
-    tone: "checkbox-error",
-    text: "text-error",
+    short: "A",
+    label: "Alpa",
+    activeClass:
+      "bg-error text-error-content font-bold border-error shadow-xs hover:bg-error/90",
+    idleClass:
+      "btn-ghost hover:bg-error/20 hover:text-error text-base-content/70",
   },
 } as const;
 
@@ -53,19 +83,22 @@ function NotesButton({
 
   const filled = row.notes.trim().length >= LIMITS.notesMin;
   const tone = filled
-    ? "text-success"
+    ? "btn-success btn-soft text-success"
     : attempts > 0
-      ? "text-error"
-      : "text-warning";
+      ? "btn-error btn-soft text-error animate-pulse"
+      : "btn-warning btn-soft text-warning";
   return (
     <button
       type="button"
-      className={`btn btn-ghost btn-xs ${tone}`}
+      className={`btn btn-sm h-10 min-h-10 px-2.5 ${tone}`}
       aria-label={filled ? "Ubah keterangan" : "Isi keterangan"}
       title={row.notes || "Isi keterangan"}
       onClick={() => onOpen(index)}
     >
-      <MessageSquareText className="size-4" />
+      <MessageSquareText className="size-4 shrink-0" />
+      <span className="text-xs max-w-28 truncate hidden md:inline">
+        {filled ? row.notes : "Keterangan"}
+      </span>
     </button>
   );
 }
@@ -158,6 +191,7 @@ export function AttendanceGrid({
   };
 
   const markAll = (status: string) => {
+    triggerHaptic(25);
     rows.forEach((_, i) =>
       form.setFieldValue(`rows[${i}].status` as const, status),
     );
@@ -180,48 +214,57 @@ export function AttendanceGrid({
           enableSorting: false,
           cell: (i) => <span className="font-medium">{i.getValue()}</span>,
         }),
-        ...STATUS_VALUES.map((s) =>
-          col.display({
-            id: s,
-            // Hanya "Hadir" yang bisa ditandai massal: status lain butuh keterangan per siswa
-            header: () =>
-              s === "Hadir" ? (
-                <button
-                  type="button"
-                  title={`Tandai semua ${s}`}
-                  onClick={() => markAll(s)}
-                  className={`btn btn-ghost btn-xs ${STATUS_STYLE[s].text}`}
-                >
-                  {s}
-                </button>
-              ) : (
-                <span
-                  className={`text-xs font-semibold ${STATUS_STYLE[s].text}`}
-                >
-                  {s}
-                </span>
-              ),
-            cell: ({ row }) => (
-              <form.Field name={`rows[${row.index}].status` as const}>
-                {(f) => (
-                  <div className="text-center">
-                    <input
-                      type="checkbox"
-                      aria-label={`${s}: ${row.original.full_name}`}
-                      className={`checkbox checkbox-sm ${STATUS_STYLE[s].tone}`}
-                      checked={f.state.value === s}
-                      onChange={(e) => {
-                        const next = e.target.checked ? s : "";
-                        f.handleChange(next);
-                        if (next && needsNotes(next)) openNote(row.index);
-                      }}
-                    />
-                  </div>
-                )}
-              </form.Field>
-            ),
-          }),
-        ),
+        col.display({
+          id: "status",
+          header: () => (
+            <div className="flex items-center justify-between gap-2 min-w-44">
+              <span>Status Kehadiran</span>
+              <button
+                type="button"
+                title="Tandai semua Hadir"
+                onClick={() => markAll("Hadir")}
+                className="btn btn-ghost btn-xs text-success font-semibold normal-case"
+              >
+                Semua Hadir
+              </button>
+            </div>
+          ),
+          cell: ({ row }) => (
+            <form.Field name={`rows[${row.index}].status` as const}>
+              {(f) => (
+                <div className="join border border-base-300 bg-base-200/50 p-0.5 rounded-lg inline-flex">
+                  {STATUS_VALUES.map((s) => {
+                    const isSelected = f.state.value === s;
+                    const cfg = STATUS_CONFIG[s];
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        aria-pressed={isSelected}
+                        aria-label={`${s}: ${row.original.full_name}`}
+                        title={`${s} (${row.original.full_name})`}
+                        className={`join-item btn btn-sm h-10 min-h-10 min-w-10 px-2.5 sm:px-3 text-xs sm:text-sm transition-all ${
+                          isSelected ? cfg.activeClass : cfg.idleClass
+                        }`}
+                        onClick={() => {
+                          triggerHaptic(15);
+                          const next = isSelected ? "" : s;
+                          f.handleChange(next);
+                          if (next && needsNotes(next)) openNote(row.index);
+                        }}
+                      >
+                        <span className="font-bold sm:hidden">{cfg.short}</span>
+                        <span className="hidden sm:inline font-semibold">
+                          {cfg.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </form.Field>
+          ),
+        }),
         col.display({
           id: "notes",
           header: "Ket.",
