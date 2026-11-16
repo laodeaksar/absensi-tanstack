@@ -29,7 +29,7 @@ Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang m
   - _Lokasi_: `src/components/ui/data-table.tsx`, `src/styles.css`
   - _Deskripsi_: Buat kolom **No** dan **Nama Siswa** tetap membeku (_sticky left_) saat tabel di-scroll mendatar (_horizontal scroll_) di layar sempit.
   - _Manfaat_: Guru tidak kehilangan nama siswa saat mencentang absensi atau mengisi nilai di kolom sebelah kanan.
-- [ ] **3. Filter Cepat "Belum Diabsen"**
+- [x] **3. Filter Cepat "Belum Diabsen"**
   - _Lokasi_: `src/routes/_app/attendance.tsx`, `src/components/attendance-grid.tsx`
   - _Deskripsi_: Tambahkan filter tab/chip di atas tabel: `Semua Siswa`, `Belum Diabsen (X)`, `Perlu Keterangan (Y)`.
   - _Manfaat_: Mempercepat pengisian absensi kelas dari puluhan siswa menjadi hitungan detik.

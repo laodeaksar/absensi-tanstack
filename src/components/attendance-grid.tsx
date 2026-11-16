@@ -3,19 +3,26 @@ import type { AnyFormApi } from "@tanstack/react-form";
 import { useForm, useSelector } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useTable } from "@tanstack/react-table";
-import { MessageSquareText, Save } from "lucide-react";
+import { MessageSquareText, RotateCcw, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { AttendanceEntry } from "~/lib/types";
 
-import { DataTable, Modal, TextAreaField } from "~/components/ui";
+import {
+  DataTable,
+  Modal,
+  SearchBox,
+  TextAreaField,
+} from "~/components/ui";
 import { LIMITS, needsNotes } from "~/convex/limits";
 import { STATUS_VALUES } from "~/convex/rules";
 import { gridSchema } from "~/lib/attendance-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 
-type Row = Omit<AttendanceEntry, "attendance_id">;
+type Row = Omit<AttendanceEntry, "attendance_id"> & {
+  originalIndex: number;
+};
 const col = columnHelperFor<Row>();
 
 /** Getar haptic halus di perangkat mobile */
@@ -109,6 +116,8 @@ export type AttendancePayload = {
   notes: string;
 };
 
+type FilterMode = "all" | "unmarked" | "need_notes";
+
 /**
  * Grid absensi bersama: absensi harian dan absensi per mata pelajaran.
  * Halaman pemanggil menentukan cara menyimpan dan query apa yang perlu dimuat ulang.
@@ -129,12 +138,13 @@ export function AttendanceGrid({
 }>) {
   const rows = useMemo<Row[]>(
     () =>
-      entries.map((e) => ({
+      entries.map((e, index) => ({
         student_id: e.student_id,
         nis: e.nis,
         full_name: e.full_name,
         status: e.status === "Belum Ada" ? "" : e.status,
         notes: e.notes,
+        originalIndex: index,
       })),
     [entries],
   );
@@ -197,6 +207,58 @@ export function AttendanceGrid({
     );
   };
 
+  // Filter cepat & pencarian
+  const [filter, setFilter] = useState<FilterMode>("all");
+  const [search, setSearch] = useState("");
+
+  const formValues = useSelector(form.store, (s) => s.values.rows);
+
+  const totalCount = formValues.length;
+  const unmarkedCount = formValues.filter((r) => !r.status).length;
+  const needNotesCount = formValues.filter(
+    (r) => needsNotes(r.status) && r.notes.trim().length < LIMITS.notesMin,
+  ).length;
+
+  const displayRows = useMemo(() => {
+    let result = rows;
+
+    if (filter === "unmarked") {
+      result = result.filter(
+        (r) => !formValues[r.originalIndex]?.status,
+      );
+    } else if (filter === "need_notes") {
+      result = result.filter((r) => {
+        const current = formValues[r.originalIndex];
+        return (
+          current &&
+          needsNotes(current.status) &&
+          current.notes.trim().length < LIMITS.notesMin
+        );
+      });
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (r) =>
+          r.full_name.toLowerCase().includes(q) ||
+          r.nis.toLowerCase().includes(q),
+      );
+    }
+
+    return result;
+  }, [rows, filter, formValues, search]);
+
+  const computedEmptyText = useMemo(() => {
+    if (rows.length === 0) return emptyText;
+    if (search.trim())
+      return `Tidak ada siswa yang cocok dengan pencarian "${search}".`;
+    if (filter === "unmarked") return "Semua siswa sudah diabsen! 🎉";
+    if (filter === "need_notes")
+      return "Semua keterangan absensi sudah lengkap.";
+    return emptyText;
+  }, [rows.length, search, filter, emptyText]);
+
   const columns = useMemo(
     () =>
       col.columns([
@@ -205,7 +267,7 @@ export function AttendanceGrid({
           header: "No",
           cell: ({ row }) => (
             <span className="w-8 inline-block text-center font-medium">
-              {row.index + 1}
+              {row.original.originalIndex + 1}
             </span>
           ),
         }),
@@ -249,7 +311,9 @@ export function AttendanceGrid({
             </div>
           ),
           cell: ({ row }) => (
-            <form.Field name={`rows[${row.index}].status` as const}>
+            <form.Field
+              name={`rows[${row.original.originalIndex}].status` as const}
+            >
               {(f) => (
                 <div className="join border border-base-300 bg-base-200/50 p-0.5 rounded-lg inline-flex">
                   {STATUS_VALUES.map((s) => {
@@ -269,7 +333,8 @@ export function AttendanceGrid({
                           triggerHaptic(15);
                           const next = isSelected ? "" : s;
                           f.handleChange(next);
-                          if (next && needsNotes(next)) openNote(row.index);
+                          if (next && needsNotes(next))
+                            openNote(row.original.originalIndex);
                         }}
                       >
                         <span className="font-bold sm:hidden">{cfg.short}</span>
@@ -290,7 +355,7 @@ export function AttendanceGrid({
           cell: ({ row }) => (
             <NotesButton
               form={form}
-              index={row.index}
+              index={row.original.originalIndex}
               onOpen={openNote}
             />
           ),
@@ -303,7 +368,7 @@ export function AttendanceGrid({
   const table = useTable({
     features,
     columns,
-    data: rows,
+    data: displayRows,
     initialState: {
       pagination: {
         pageIndex: 0,
@@ -322,23 +387,110 @@ export function AttendanceGrid({
         void form.handleSubmit();
       }}
     >
-      <div className="flex items-center justify-between border-b border-base-300 bg-base-200/60 p-4">
-        <h3 className="font-semibold">Daftar Siswa</h3>
+      <div className="flex flex-col gap-3 border-b border-base-300 bg-base-200/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">Daftar Siswa</h3>
+          <span className="badge badge-neutral badge-sm font-mono">
+            {rows.length}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => markAll("Hadir")}
-          className="btn btn-ghost btn-sm text-primary"
+          className="btn btn-ghost btn-sm text-primary font-medium"
         >
           Tandai Semua Hadir
         </button>
       </div>
 
+      {/* Toolbar Filter Cepat & Pencarian */}
+      <div className="flex flex-col gap-2.5 border-b border-base-200 bg-base-100 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={`btn btn-xs sm:btn-sm rounded-full ${
+              filter === "all" ? "btn-neutral" : "btn-ghost"
+            }`}
+          >
+            Semua
+            <span className="badge badge-sm font-mono ml-1">{totalCount}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter("unmarked")}
+            className={`btn btn-xs sm:btn-sm rounded-full ${
+              filter === "unmarked"
+                ? "btn-warning text-warning-content font-bold shadow-xs"
+                : unmarkedCount > 0
+                  ? "btn-outline btn-warning text-warning"
+                  : "btn-ghost text-base-content/60"
+            }`}
+          >
+            Belum Diabsen
+            <span className="badge badge-sm font-mono ml-1">
+              {unmarkedCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter("need_notes")}
+            className={`btn btn-xs sm:btn-sm rounded-full ${
+              filter === "need_notes"
+                ? "btn-error text-error-content font-bold shadow-xs"
+                : needNotesCount > 0
+                  ? "btn-outline btn-error text-error"
+                  : "btn-ghost text-base-content/60"
+            }`}
+          >
+            Perlu Keterangan
+            <span className="badge badge-sm font-mono ml-1">
+              {needNotesCount}
+            </span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-64">
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Cari nama / NIS..."
+          />
+          {search ? (
+            <button
+              type="button"
+              className="btn btn-ghost btn-xs"
+              onClick={() => setSearch("")}
+              title="Hapus pencarian"
+            >
+              <RotateCcw className="size-3.5" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Area Tabel dengan Kolom Sticky */}
       <DataTable
         table={table}
-        emptyText={emptyText}
+        emptyText={computedEmptyText}
         stickyColumns={["no", "full_name"]}
         stickyCol1Width="2.75rem"
       />
+
+      {/* Tautan kembali bila filter kosong */}
+      {displayRows.length === 0 && filter !== "all" ? (
+        <div className="p-4 text-center border-t border-base-200 bg-base-200/30">
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost text-primary"
+            onClick={() => setFilter("all")}
+          >
+            Tampilkan Semua Siswa
+          </button>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-base-300 p-4">
         {/* Ringkasan dinamis dari nilai form */}
@@ -353,7 +505,7 @@ export function AttendanceGrid({
               <p className="text-sm text-base-content/70">
                 Terisi {filled} dari {vals.length} siswa
                 {missing > 0 ? (
-                  <span className="ml-2 text-error">
+                  <span className="ml-2 text-error font-medium">
                     · {missing} perlu keterangan
                   </span>
                 ) : null}
