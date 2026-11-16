@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 
 import type { ThemeMode } from "~/hooks/use-theme";
+
 import { useTheme } from "~/hooks/use-theme";
 
 const LABELS: Record<ThemeMode, string> = {
@@ -60,9 +61,7 @@ export function ThemeToggleBar() {
           type="button"
           onClick={() => setMode(m)}
           className={`join-item btn btn-sm flex-1 gap-1 ${
-            mode === m
-              ? "btn-primary"
-              : "btn-ghost border border-base-300"
+            mode === m ? "btn-primary" : "btn-ghost border border-base-300"
           }`}
           aria-pressed={mode === m}
           title={LABELS[m]}

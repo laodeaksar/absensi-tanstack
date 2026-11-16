@@ -8,12 +8,7 @@ import { useMemo, useState } from "react";
 
 import type { AttendanceEntry } from "~/lib/types";
 
-import {
-  DataTable,
-  Modal,
-  SearchBox,
-  TextAreaField,
-} from "~/components/ui";
+import { DataTable, Modal, SearchBox, TextAreaField } from "~/components/ui";
 import { LIMITS, needsNotes } from "~/convex/limits";
 import { STATUS_VALUES } from "~/convex/rules";
 import { gridSchema } from "~/lib/attendance-schema";
@@ -223,9 +218,7 @@ export function AttendanceGrid({
     let result = rows;
 
     if (filter === "unmarked") {
-      result = result.filter(
-        (r) => !formValues[r.originalIndex]?.status,
-      );
+      result = result.filter((r) => !formValues[r.originalIndex]?.status);
     } else if (filter === "need_notes") {
       result = result.filter((r) => {
         const current = formValues[r.originalIndex];

@@ -325,7 +325,13 @@ function AttendanceSection({
   const q = useQuery(attendanceFormQuery(date, classId, subjectId));
   const qc = useQueryClient();
 
-  if (q.isPending) return <TableSkeleton rows={8} cols={5} />;
+  if (q.isPending)
+    return (
+      <TableSkeleton
+        rows={8}
+        cols={5}
+      />
+    );
   if (q.error) return <ErrorAlert message={q.error.message} />;
 
   return (

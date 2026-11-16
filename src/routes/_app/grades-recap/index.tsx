@@ -22,17 +22,6 @@ export const Route = createFileRoute("/_app/grades-recap/")({
   component: GradeRecapPage,
 });
 
-const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? "-" : String(n);
-
-function statusOf(cell: GradeRecapCell | null) {
-  if (!cell || !cell.complete)
-    return { label: "Belum lengkap", cls: "text-warning" };
-  return cell.passed
-    ? { label: "Tuntas", cls: "text-success" }
-    : { label: "Belum KKM", cls: "text-error" };
-}
-
 type RecapRow = {
   id: string;
   student_id: string;

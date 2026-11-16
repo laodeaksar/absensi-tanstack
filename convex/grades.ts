@@ -472,7 +472,7 @@ export const getClassGradeRecap = query({
       .withIndex("by_class_subject", (q) => q.eq("class_id", a.classId))
       .collect();
     const subjectIds = [...new Set(teaching.map((t) => t.subject_id))];
-    
+
     const students = [];
     for (const id of await activeStudentIds(ctx, a.classId)) {
       const s = await studentById(ctx, id);

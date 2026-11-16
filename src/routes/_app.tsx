@@ -31,13 +31,10 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { ThemeToggleBar, ThemeToggleCompact } from "~/components/theme-toggle";
 import { requireUser } from "~/lib/auth";
 import { qk, settingsQuery } from "~/lib/queries";
 import { logoutFn } from "~/server/functions";
-import {
-  ThemeToggleBar,
-  ThemeToggleCompact,
-} from "~/components/theme-toggle";
 
 export const Route = createFileRoute("/_app")({
   // Area login = SPA: tidak perlu SSR (bergantung cookie sesi dan tanggal lokal browser)

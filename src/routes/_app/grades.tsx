@@ -258,7 +258,10 @@ function GradesPage() {
           Pilih kelas, mata pelajaran, dan tahun ajaran untuk menampilkan nilai.
         </p>
       ) : book.isPending ? (
-        <TableSkeleton rows={6} cols={5} />
+        <TableSkeleton
+          rows={6}
+          cols={5}
+        />
       ) : book.error ? (
         <ErrorAlert message={book.error.message} />
       ) : book.data ? (

@@ -22,7 +22,13 @@ function applyTheme(mode: ThemeMode) {
     window.matchMedia("(prefers-color-scheme: dark)").matches;
 
   const resolved =
-    mode === "system" ? (prefersDark ? THEME_DARK : THEME_LIGHT) : mode === "dark" ? THEME_DARK : THEME_LIGHT;
+    mode === "system"
+      ? prefersDark
+        ? THEME_DARK
+        : THEME_LIGHT
+      : mode === "dark"
+        ? THEME_DARK
+        : THEME_LIGHT;
 
   document.documentElement.setAttribute("data-theme", resolved);
 }

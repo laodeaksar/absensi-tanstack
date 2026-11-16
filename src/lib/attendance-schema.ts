@@ -64,7 +64,7 @@ export const rowSchema = z
     student_id: z.string(),
     nis: z.string(),
     full_name: z.string(),
-    // '' = belum diisi (tidak disimpan)
+    originalIndex: z.number(),
     status: z
       .string()
       .refine(
