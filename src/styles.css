@@ -104,6 +104,51 @@
   }
 }
 
+/* Sticky table utilities */
+.table-sticky-header thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--color-base-200);
+}
+
+.table-sticky-col-1 {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--color-base-100);
+}
+
+.table-sticky-col-2 {
+  position: sticky;
+  left: var(--sticky-col-1-width, 3rem);
+  z-index: 10;
+  background-color: var(--color-base-100);
+}
+
+.table-sticky-shadow {
+  box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.18);
+}
+
+/* Header sticky columns need higher z-index to stay above scrolling headers and body cells */
+thead th.table-sticky-col-1,
+thead th.table-sticky-col-2 {
+  z-index: 30;
+  background-color: var(--color-base-200);
+}
+
+/* Preserve zebra striping for sticky columns */
+tr:nth-child(even) td.table-sticky-col-1,
+tr:nth-child(even) td.table-sticky-col-2 {
+  background-color: var(--color-base-200);
+}
+
+/* Hover state for sticky cells in zebra tables */
+tr:hover td.table-sticky-col-1,
+tr:hover td.table-sticky-col-2 {
+  background-color: var(--color-base-300);
+}
+
 @media print {
   html,
   body,

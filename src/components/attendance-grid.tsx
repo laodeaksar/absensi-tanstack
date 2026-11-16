@@ -203,16 +203,35 @@ export function AttendanceGrid({
         col.display({
           id: "no",
           header: "No",
-          cell: ({ row }) => row.index + 1,
-        }),
-        col.accessor("nis", {
-          header: "NIS",
-          enableSorting: false,
+          cell: ({ row }) => (
+            <span className="w-8 inline-block text-center font-medium">
+              {row.index + 1}
+            </span>
+          ),
         }),
         col.accessor("full_name", {
           header: "Nama Siswa",
           enableSorting: false,
-          cell: (i) => <span className="font-medium">{i.getValue()}</span>,
+          cell: ({ row }) => (
+            <div className="min-w-32 max-w-48 sm:max-w-none pr-2">
+              <span className="font-medium block truncate">
+                {row.original.full_name}
+              </span>
+              <span className="text-[11px] text-base-content/50 sm:hidden block truncate">
+                NIS {row.original.nis}
+              </span>
+            </div>
+          ),
+        }),
+        col.accessor("nis", {
+          id: "nis",
+          header: () => <span className="hidden sm:inline">NIS</span>,
+          enableSorting: false,
+          cell: (i) => (
+            <span className="hidden sm:inline whitespace-nowrap">
+              {i.getValue()}
+            </span>
+          ),
         }),
         col.display({
           id: "status",
@@ -317,6 +336,8 @@ export function AttendanceGrid({
       <DataTable
         table={table}
         emptyText={emptyText}
+        stickyColumns={["no", "full_name"]}
+        stickyCol1Width="2.75rem"
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-base-300 p-4">

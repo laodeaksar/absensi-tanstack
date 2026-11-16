@@ -472,6 +472,7 @@ function GradeBookTable({
       <DataTable
         table={table}
         emptyText="Belum ada siswa di kelas ini."
+        stickyColumns={["student"]}
       />
       <Pager table={table} />
       {save.error ? <ErrorAlert message={save.error.message} /> : null}

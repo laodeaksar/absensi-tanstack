@@ -16,27 +16,90 @@ import type { AppFeatures } from "~/lib/table";
 export function DataTable<TData extends Record<string, any>>({
   table,
   emptyText,
+  stickyHeader = true,
+  stickyColumns,
+  stickyCol1Width = "3rem",
 }: {
   table: Table<AppFeatures, TData>;
   emptyText: string;
+  stickyHeader?: boolean;
+  stickyColumns?: number | string[];
+  stickyCol1Width?: string;
 }) {
   const rows = table.getRowModel().rows;
   const headerGroups = table.getHeaderGroups();
   const colCount = table.getAllLeafColumns().length;
 
+  const getStickyClass = (
+    colIndex: number,
+    columnId: string,
+    metaSticky?: unknown,
+  ): string => {
+    if (metaSticky === "col-1" || metaSticky === 1) {
+      return "table-sticky-col-1";
+    }
+    if (metaSticky === "col-2" || metaSticky === 2) {
+      return "table-sticky-col-2 table-sticky-shadow";
+    }
+    if (metaSticky === true || metaSticky === "left") {
+      return colIndex === 0
+        ? "table-sticky-col-1 table-sticky-shadow"
+        : "table-sticky-col-2 table-sticky-shadow";
+    }
+
+    if (typeof stickyColumns === "number") {
+      if (colIndex === 0 && stickyColumns >= 1) {
+        return stickyColumns === 1
+          ? "table-sticky-col-1 table-sticky-shadow"
+          : "table-sticky-col-1";
+      }
+      if (colIndex === 1 && stickyColumns >= 2) {
+        return "table-sticky-col-2 table-sticky-shadow";
+      }
+    } else if (Array.isArray(stickyColumns)) {
+      const idx = stickyColumns.indexOf(columnId);
+      if (idx === 0) {
+        return stickyColumns.length === 1
+          ? "table-sticky-col-1 table-sticky-shadow"
+          : "table-sticky-col-1";
+      }
+      if (idx === 1) {
+        return "table-sticky-col-2 table-sticky-shadow";
+      }
+    }
+
+    return "";
+  };
+
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-zebra">
+    <div
+      className="overflow-x-auto relative"
+      style={
+        {
+          "--sticky-col-1-width": stickyCol1Width,
+        } as React.CSSProperties
+      }
+    >
+      <table
+        className={`table table-zebra ${stickyHeader ? "table-sticky-header" : ""}`}
+      >
         <thead>
           {headerGroups.map((hg) => (
             <tr key={hg.id}>
-              {hg.headers.map((h) => {
+              {hg.headers.map((h, i) => {
                 const canSort = h.column.getCanSort();
                 const sorted = h.column.getIsSorted();
+                const stickyClass = getStickyClass(
+                  i,
+                  h.column.id,
+                  (h.column.columnDef.meta as Record<string, any> | undefined)
+                    ?.sticky,
+                );
                 return (
                   <th
                     key={h.id}
                     colSpan={h.colSpan}
+                    className={stickyClass || undefined}
                   >
                     {h.isPlaceholder ? null : canSort ? (
                       <button
@@ -75,11 +138,25 @@ export function DataTable<TData extends Record<string, any>>({
           ) : (
             rows.map((row) => (
               <tr key={row.id}>
-                {row.getAllCells().map((cell) => (
-                  <td key={cell.id}>
-                    <FlexRender cell={cell} />
-                  </td>
-                ))}
+                {row.getAllCells().map((cell, i) => {
+                  const stickyClass = getStickyClass(
+                    i,
+                    cell.column.id,
+                    (
+                      cell.column.columnDef.meta as
+                        | Record<string, any>
+                        | undefined
+                    )?.sticky,
+                  );
+                  return (
+                    <td
+                      key={cell.id}
+                      className={stickyClass || undefined}
+                    >
+                      <FlexRender cell={cell} />
+                    </td>
+                  );
+                })}
               </tr>
             ))
           )}

@@ -25,7 +25,7 @@ Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang m
   - _Fitur_:
     - Warna status aktif kontras (Hijau Hadir, Kuning Sakit, Biru Izin, Merah Alpa).
     - Haptic feedback getar halus perangkat (`navigator.vibrate?.(15)`) saat tombol status ditekan.
-- [ ] **2. Sticky Column & Header pada Tabel Lebar**
+- [x] **2. Sticky Column & Header pada Tabel Lebar**
   - _Lokasi_: `src/components/ui/data-table.tsx`, `src/styles.css`
   - _Deskripsi_: Buat kolom **No** dan **Nama Siswa** tetap membeku (_sticky left_) saat tabel di-scroll mendatar (_horizontal scroll_) di layar sempit.
   - _Manfaat_: Guru tidak kehilangan nama siswa saat mencentang absensi atau mengisi nilai di kolom sebelah kanan.
