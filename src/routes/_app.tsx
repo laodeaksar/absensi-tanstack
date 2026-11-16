@@ -34,6 +34,10 @@ import { useEffect, useState } from "react";
 import { requireUser } from "~/lib/auth";
 import { qk, settingsQuery } from "~/lib/queries";
 import { logoutFn } from "~/server/functions";
+import {
+  ThemeToggleBar,
+  ThemeToggleCompact,
+} from "~/components/theme-toggle";
 
 export const Route = createFileRoute("/_app")({
   // Area login = SPA: tidak perlu SSR (bergantung cookie sesi dan tanggal lokal browser)
@@ -139,10 +143,11 @@ function AppLayout() {
           >
             <Menu className="size-6" />
           </label>
-          <div className="ml-1 flex items-center gap-2">
+          <div className="ml-1 flex flex-1 items-center gap-2">
             <School className="size-5 text-primary" />
             <span className="font-bold">{name}</span>
           </div>
+          <ThemeToggleCompact />
         </header>
 
         <main
@@ -287,7 +292,14 @@ function AppLayout() {
             />
           </ul>
 
-          <div className="shrink-0 border-t border-base-300 p-4">
+          <div className="shrink-0 space-y-3 border-t border-base-300 p-4">
+            {/* Pilihan tema: Terang / Otomatis / Gelap */}
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-base-content/50">
+                Tema Tampilan
+              </p>
+              <ThemeToggleBar />
+            </div>
             <button
               type="button"
               className="btn btn-outline w-full"

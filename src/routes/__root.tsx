@@ -94,9 +94,20 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  // Script ini berjalan sinkron sebelum paint pertama untuk mencegah flash tema yang salah.
+  // dangerouslySetInnerHTML dipakai karena ini adalah script blocking kecil yang sengaja diinline.
+  const themeScript = `(function(){
+    var s=localStorage.getItem('eduabsen_theme')||'system';
+    var dark=s==='dark'||(s==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+    document.documentElement.setAttribute('data-theme',dark?'eduabsen-dark':'eduabsen');
+  })();`;
+
   return (
     <html lang="id">
       <head>
+        {/* Terapkan tema tersimpan sebelum paint pertama untuk mencegah FOWT */}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: intentional blocking inline script */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />
       </head>
       <body className="h-dvh overflow-hidden bg-base-200 text-base-content antialiased">

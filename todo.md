@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[█████████████░░░░░░░] 65% Selesai
-- Selesai          : 8 Task (Seluruh P0 + P1 poin 5)
+[██████████████░░░░░░] 70% Selesai
+- Selesai          : 9 Task (Seluruh P0 + P1 poin 5 & 6)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 11 Task (P1, P2, P3)
+- Dalam Antrean    : 10 Task (P1, P2, P3)
 ```
 
 ---
@@ -50,7 +50,7 @@ Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan mod
   - _Lokasi_: `src/components/ui/skeleton.tsx`, `src/components/ui/page-spinner.tsx`
   - _Deskripsi_: Gantikan animasi spinner layar penuh yang kosong dengan placeholder shimmer beranimasi abu-abu halus sesuai bentuk kartu dashboard dan baris tabel.
   - _Target_: Pemuatan awal rute Dashboard, Input Absensi, Nilai, dan Data Siswa.
-- [ ] **6. Theme Switcher (Toggle Mode Gelap/Terang/Sistem)**
+- [x] **6. Theme Switcher (Toggle Mode Gelap/Terang/Sistem)**
   - _Lokasi_: `src/routes/_app.tsx` (Navbar Header / Drawer Bawah)
   - _Deskripsi_: Tambahkan tombol toggle cepat (ikon Matahari ☀️ / Bulan 🌙 / Komputer 💻) untuk berpindah antara tema Terang, Gelap, atau Otomatis mengikuti OS, dengan penyimpanan preferensi di `localStorage`.
 - [ ] **7. Indikator Visual Autosave Tugas Siswa**
