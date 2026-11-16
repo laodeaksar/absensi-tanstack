@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "EduAbsen - Sistem Presensi & Akademik",
+  "short_name": "EduAbsen",
+  "description": "Sistem Manajemen Kehadiran Siswa, Tugas CBT, dan Rekapitulasi Nilai Akademik Terpadu.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "categories": ["education", "productivity"],
+  "lang": "id",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Input Absensi",
+      "short_name": "Absensi",
+      "description": "Buka halaman input absensi siswa",
+      "url": "/attendance",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Buka dashboard ikhtisar kehadiran",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Tugas Saya",
+      "short_name": "Tugas",
+      "description": "Buka daftar tugas siswa",
+      "url": "/tasks",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ]
+}

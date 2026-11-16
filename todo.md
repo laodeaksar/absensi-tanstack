@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[██████████░░░░░░░░░░] 50% Selesai
-- Selesai          : 4 Task (Migrasi Convex, Sesi Aman, PRD & Docs, Dark Mode CSS)
-- Sedang Berjalan  : 1 Task (Persiapan PWA & Mobile Touch)
-- Dalam Antrean    : 15 Task
+[████████████░░░░░░░░] 60% Selesai
+- Selesai          : 7 Task (Seluruh Prioritas 0 P0 Selesai)
+- Sedang Berjalan  : 0 Task
+- Dalam Antrean    : 12 Task (P1, P2, P3)
 ```
 
 ---
@@ -33,7 +33,7 @@ Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang m
   - _Lokasi_: `src/routes/_app/attendance.tsx`, `src/components/attendance-grid.tsx`
   - _Deskripsi_: Tambahkan filter tab/chip di atas tabel: `Semua Siswa`, `Belum Diabsen (X)`, `Perlu Keterangan (Y)`.
   - _Manfaat_: Mempercepat pengisian absensi kelas dari puluhan siswa menjadi hitungan detik.
-- [ ] **4. PWA (Progressive Web App) Standalone Support**
+- [x] **4. PWA (Progressive Web App) Standalone Support**
   - _Lokasi_: `public/manifest.webmanifest`, `src/routes/__root.tsx`
   - _Deskripsi_:
     - Buat berkas `manifest.webmanifest` lengkap dengan nama aplikasi, warna tema, dan ikon homescreen.

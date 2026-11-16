@@ -24,11 +24,38 @@ export const Route = createRootRouteWithContext<{
       { charSet: "utf-8" },
       {
         name: "viewport",
-        content: "width=device-width, initial-scale=1",
+        content:
+          "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
       },
-      { title: "Sistem Absensi Siswa" },
+      { title: "EduAbsen - Sistem Presensi & Akademik" },
+      {
+        name: "description",
+        content:
+          "Sistem Manajemen Kehadiran Siswa, Tugas CBT, dan Rekapitulasi Nilai Akademik Terintegrasi.",
+      },
+      {
+        name: "theme-color",
+        content: "#4f46e5",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        name: "theme-color",
+        content: "#1a1625",
+        media: "(prefers-color-scheme: dark)",
+      },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      {
+        name: "apple-mobile-web-app-status-bar-style",
+        content: "black-translucent",
+      },
+      { name: "apple-mobile-web-app-title", content: "EduAbsen" },
+      { name: "application-name", content: "EduAbsen" },
     ],
     links: [
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", type: "image/svg+xml", href: "/icon.svg" },
+      { rel: "apple-touch-icon", href: "/icon.svg" },
       { rel: "stylesheet", href: appCss },
       {
         rel: "preconnect",
