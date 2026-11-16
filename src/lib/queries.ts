@@ -6,6 +6,7 @@ import { getMeFn, getPublicSettingsFn } from "~/server/functions";
 
 import type {
   Assignment,
+  ClassGradeRecap,
   ClassRow,
   DashboardData,
   GradeBook,
@@ -20,6 +21,7 @@ import type {
   Student,
   StudentClass,
   StudentDetail,
+  StudentGrades,
   Subject,
   SubjectReportFilters,
   SubmissionList,
@@ -246,4 +248,19 @@ export const myGradesQuery = (a: {
   queryOptions({
     ...convexQuery(convexApi.grades.getMyGrades, a),
     select: (r): MyGrades => r as MyGrades,
+  });
+
+export const classGradeRecapQuery = (a: {
+  classId: string;
+  academicYear: string;
+}) =>
+  queryOptions({
+    ...convexQuery(convexApi.grades.getClassGradeRecap, a),
+    select: (r): ClassGradeRecap => r as ClassGradeRecap,
+  });
+
+export const studentGradesQuery = (studentId: string) =>
+  queryOptions({
+    ...convexQuery(convexApi.grades.getStudentGrades, { studentId }),
+    select: (r): StudentGrades => r as StudentGrades,
   });

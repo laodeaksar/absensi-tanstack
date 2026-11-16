@@ -28,13 +28,13 @@ Aplikasi manajemen kehadiran (absensi), tugas siswa (CBT), dan buku nilai terint
   - **Guru**: Input absensi harian & per mata pelajaran, pembuatan tugas & koreksi esai, penginputan dan konfigurasi buku nilai (KKM & bobot).
   - **Siswa**: Dashboard kehadiran mandiri, pengerjaan tugas online dengan autosave berkala, melihat rekap nilai dan predikat per semester.
 - **Absensi Harian & Mata Pelajaran**:
-  - Validasi batas tanggal masa depan dan jendela edit (*edit window*) yang dapat dikonfigurasi.
-  - Ringkasan harian instan (*daily aggregation*) untuk performa tinggi pada dashboard.
+  - Validasi batas tanggal masa depan dan jendela edit (_edit window_) yang dapat dikonfigurasi.
+  - Ringkasan harian instan (_daily aggregation_) untuk performa tinggi pada dashboard.
   - Catatan wajib otomatis untuk siswa dengan status Sakit, Izin, atau Alpa.
 - **Tugas & Ujian Siswa (CBT)**:
   - Soal pilihan ganda dinilai otomatis secara instan.
   - Soal esai dengan antarmuka review dan penilaian guru.
-  - Fitur batas durasi pengerjaan (*timer countdown*) dan autosave draf otomatis jika koneksi terputus atau tab diminimalkan.
+  - Fitur batas durasi pengerjaan (_timer countdown_) dan autosave draf otomatis jika koneksi terputus atau tab diminimalkan.
 - **Buku Nilai (GradeBook) & KKM**:
   - Konfigurasi bobot komponen nilai dinamis per kelas dan mapel (sumber tugas otomatis maupun manual).
   - Perhitungan otomatis nilai akhir, status ketuntasan (KKM), dan predikat.
@@ -44,34 +44,36 @@ Aplikasi manajemen kehadiran (absensi), tugas siswa (CBT), dan buku nilai terint
 - **Keamanan & Proteksi Akun**:
   - Token sesi disimpan di cookie `httpOnly` pada server Start; token tidak tersimpan di `localStorage` peramban.
   - Kebijakan pergantian password bawaan saat pertama kali masuk.
-  - Proteksi *brute-force* login dengan penguncian akun bertahap (*exponential lockout*).
+  - Proteksi _brute-force_ login dengan penguncian akun bertahap (_exponential lockout_).
 
 ---
 
 ## Teknologi yang Digunakan
 
-| Kategori | Paket / Teknologi |
-| :--- | :--- |
-| **Framework Fullstack** | [`@tanstack/react-start`](https://tanstack.com/start), [`nitro`](https://nitro.unjs.io) |
-| **Routing** | [`@tanstack/react-router`](https://tanstack.com/router) (File-based Routing, Code-Splitting) |
+| Kategori                  | Paket / Teknologi                                                                                                                    |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework Fullstack**   | [`@tanstack/react-start`](https://tanstack.com/start), [`nitro`](https://nitro.unjs.io)                                              |
+| **Routing**               | [`@tanstack/react-router`](https://tanstack.com/router) (File-based Routing, Code-Splitting)                                         |
 | **Data Fetching & Cache** | [`@tanstack/react-query`](https://tanstack.com/query), [`@convex-dev/react-query`](https://github.com/get-convex/convex-react-query) |
-| **Backend & Database** | [Convex](https://convex.dev) (`convex` ^1.49.0 - Reaktif & Transaksional) |
-| **Manajemen Form** | [`@tanstack/react-form`](https://tanstack.com/form) |
-| **Tabel Data** | [`@tanstack/react-table`](https://tanstack.com/table) (v9) |
-| **Visualisasi / Grafik** | [`@tanstack/charts`](https://tanstack.com/charts) |
-| **Styling & UI** | Tailwind CSS v4, DaisyUI v5, [`lucide-react`](https://lucide.dev) |
-| **Validasi Skema** | [`zod`](https://zod.dev) v4 |
+| **Backend & Database**    | [Convex](https://convex.dev) (`convex` ^1.49.0 - Reaktif & Transaksional)                                                            |
+| **Manajemen Form**        | [`@tanstack/react-form`](https://tanstack.com/form)                                                                                  |
+| **Tabel Data**            | [`@tanstack/react-table`](https://tanstack.com/table) (v9)                                                                           |
+| **Visualisasi / Grafik**  | [`@tanstack/charts`](https://tanstack.com/charts)                                                                                    |
+| **Styling & UI**          | Tailwind CSS v4, DaisyUI v5, [`lucide-react`](https://lucide.dev)                                                                    |
+| **Validasi Skema**        | [`zod`](https://zod.dev) v4                                                                                                          |
 
 ---
 
 ## Panduan Instalasi & Menjalankan
 
 ### 1. Prasyarat
+
 - **Node.js**: Versi 20.x atau lebih baru (disarankan LTS).
 - **Package Manager**: `pnpm` (disarankan) atau `npm`.
 - **Akun Convex**: [Daftar akun gratis di Convex](https://convex.dev).
 
 ### 2. Kloning & Pemasangan Dependensi
+
 ```bash
 git clone <url-repo>
 cd absensi-tanstack
@@ -82,12 +84,15 @@ pnpm install
 ```
 
 ### 3. Konfigurasi Lingkungan (.env)
+
 Salin berkas contoh `.env.example` menjadi `.env`:
+
 ```bash
 cp .env.example .env
 ```
 
 Sesuaikan variabel lingkungan di `.env`:
+
 ```env
 # Deployment Convex
 CONVEX_DEPLOYMENT=dev:eduabsen-xxx
@@ -103,15 +108,18 @@ VITE_CONVEX_URL=https://eduabsen-xxx.convex.cloud
 ### 4. Menjalankan Server Pengembangan
 
 Jalankan Convex backend (di terminal pertama):
+
 ```bash
 npx convex dev
 ```
 
 Jalankan frontend TanStack Start (di terminal kedua):
+
 ```bash
 pnpm dev
 # Atau: npm run dev
 ```
+
 Buka browser pada alamat [http://localhost:3000](http://localhost:3000).
 
 ---
@@ -165,4 +173,4 @@ absensi-tanstack/
 
 ## Lisensi & Kontribusi
 
-Aplikasi ini dikembangkan untuk penggunaan instansi pendidikan. Segala saran dan kontribusi pengembangan dapat disampaikan melalui pembuatan *Pull Request* atau *Issue* pada repositori ini.
+Aplikasi ini dikembangkan untuk penggunaan instansi pendidikan. Segala saran dan kontribusi pengembangan dapat disampaikan melalui pembuatan _Pull Request_ atau _Issue_ pada repositori ini.

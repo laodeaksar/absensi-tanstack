@@ -1,6 +1,6 @@
 import { useSuspenseQuery, useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GraduationCap, Pencil } from "lucide-react";
+import { GraduationCap, Pencil, ClipboardList } from "lucide-react";
 
 import { BackLink } from "~/components/back-link";
 import { Info } from "~/components/info";
@@ -116,6 +116,14 @@ function StudentDetailPage() {
               >
                 <Pencil className="size-4" />
                 <span className="hidden sm:inline">Edit</span>
+              </Link>
+              <Link
+                to="/grades-recap/$studentId"
+                params={{ studentId: p.student_id }}
+                className="btn btn-outline btn-sm"
+              >
+                <ClipboardList className="size-4" />
+                <span className="hidden sm:inline">Daftar Nilai</span>
               </Link>
             </>
           ) : null}

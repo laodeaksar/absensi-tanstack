@@ -5,6 +5,7 @@ import type { Doc } from "./_generated/dataModel";
 import { type QueryCtx, mutation, query } from "./_generated/server";
 import {
   canTeach,
+  classById,
   fail,
   nowIso,
   requireAuth,
@@ -445,5 +446,198 @@ export const getMyGrades = query({
     }
     rows.sort((x, y) => x.subject_name.localeCompare(y.subject_name));
     return { rows };
+  },
+});
+
+type RecapCell = ReturnType<typeof buildRow>;
+type RecapSubject = {
+  subject_id: string;
+  subject_name: string;
+  kkm: number;
+  components: { key: string; label: string; weight: number }[];
+};
+
+/** Rekap nilai seluruh siswa aktif satu kelas, semester ganjil dan genap (admin). */
+export const getClassGradeRecap = query({
+  args: {
+    token: v.optional(v.string()),
+    classId: v.string(),
+    academicYear: v.string(),
+  },
+  handler: async (ctx, a) => {
+    await requireAuth(ctx, a.token, { admin: true });
+
+    const teaching = await ctx.db
+      .query("teaching")
+      .withIndex("by_class_subject", (q) => q.eq("class_id", a.classId))
+      .collect();
+    const subjectIds = [...new Set(teaching.map((t) => t.subject_id))];
+    
+    const students = [];
+    for (const id of await activeStudentIds(ctx, a.classId)) {
+      const s = await studentById(ctx, id);
+      if (s && s.is_active) students.push(s);
+    }
+    students.sort((x, y) => x.full_name.localeCompare(y.full_name));
+
+    const subjects: RecapSubject[] = [];
+    const cells = new Map<string, { ganjil?: RecapCell; genap?: RecapCell }>();
+    for (const subjectId of subjectIds) {
+      const cfg = await loadConfig(ctx, a.classId, subjectId);
+      subjects.push({
+        subject_id: subjectId,
+        subject_name: (await subjectById(ctx, subjectId))?.name ?? "-",
+        kkm: cfg.kkm,
+        components: cfg.components.map((c) => ({
+          key: c.key,
+          label: c.label,
+          weight: c.weight,
+        })),
+      });
+      for (const semester of ["ganjil", "genap"] as const) {
+        const { averages } = await taskAverages(
+          ctx,
+          a.classId,
+          subjectId,
+          a.academicYear,
+          semester,
+        );
+        const scores = await ctx.db
+          .query("grade_scores")
+          .withIndex("by_cell", (q) =>
+            q
+              .eq("class_id", a.classId)
+              .eq("subject_id", subjectId)
+              .eq("academic_year", a.academicYear)
+              .eq("semester", semester),
+          )
+          .collect();
+        const manual = new Map<string, Record<string, number>>();
+        for (const s of scores) {
+          const m = manual.get(s.student_id) ?? {};
+          m[s.component] = s.score;
+          manual.set(s.student_id, m);
+        }
+        for (const s of students) {
+          const key = `${s.student_id}|${subjectId}`;
+          const cur = cells.get(key) ?? {};
+          cur[semester] = buildRow(
+            cfg,
+            averages.get(s.student_id),
+            manual.get(s.student_id),
+          );
+          cells.set(key, cur);
+        }
+      }
+    }
+    subjects.sort((x, y) => x.subject_name.localeCompare(y.subject_name));
+
+    return {
+      subjects,
+      students: students.map((s) => ({
+        student_id: s.student_id,
+        nis: s.nis,
+        full_name: s.full_name,
+        grades: subjects.map((sub) => {
+          const c = cells.get(`${s.student_id}|${sub.subject_id}`);
+          return {
+            subject_id: sub.subject_id,
+            ganjil: c?.ganjil ?? null,
+            genap: c?.genap ?? null,
+          };
+        }),
+      })),
+    };
+  },
+});
+
+/** Daftar nilai satu siswa untuk semua kelas yang pernah ditempati (admin). */
+export const getStudentGrades = query({
+  args: { token: v.optional(v.string()), studentId: v.string() },
+  handler: async (ctx, { token, studentId }) => {
+    await requireAuth(ctx, token, { admin: true });
+    const student = await studentById(ctx, studentId);
+    if (!student) fail("Data siswa tidak ditemukan.");
+
+    const hist = (
+      await ctx.db
+        .query("student_class_history")
+        .withIndex("by_student", (q) => q.eq("student_id", studentId))
+        .collect()
+    ).sort((x, y) => y.start_date.localeCompare(x.start_date));
+
+    const seen = new Set<string>();
+    const periods = [];
+    for (const h of hist) {
+      const key = `${h.class_id}|${h.academic_year}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const cls = await classById(ctx, h.class_id);
+      const teaching = await ctx.db
+        .query("teaching")
+        .withIndex("by_class_subject", (q) => q.eq("class_id", h.class_id))
+        .collect();
+
+      const subjects = [];
+      for (const subjectId of new Set(teaching.map((t) => t.subject_id))) {
+        const cfg = await loadConfig(ctx, h.class_id, subjectId);
+        const cells: Partial<Record<"ganjil" | "genap", RecapCell>> = {};
+        for (const semester of ["ganjil", "genap"] as const) {
+          const { averages } = await taskAverages(
+            ctx,
+            h.class_id,
+            subjectId,
+            h.academic_year,
+            semester,
+          );
+          const scores = await ctx.db
+            .query("grade_scores")
+            .withIndex("by_cell", (q) =>
+              q
+                .eq("class_id", h.class_id)
+                .eq("subject_id", subjectId)
+                .eq("academic_year", h.academic_year)
+                .eq("semester", semester)
+                .eq("student_id", studentId),
+            )
+            .collect();
+          const manual: Record<string, number> = {};
+          for (const s of scores) manual[s.component] = s.score;
+          cells[semester] = buildRow(cfg, averages.get(studentId), manual);
+        }
+        subjects.push({
+          subject_id: subjectId,
+          subject_name: (await subjectById(ctx, subjectId))?.name ?? "-",
+          kkm: cfg.kkm,
+          components: cfg.components.map((c) => ({
+            key: c.key,
+            label: c.label,
+            weight: c.weight,
+          })),
+          ganjil: cells.ganjil ?? null,
+          genap: cells.genap ?? null,
+        });
+      }
+      subjects.sort((x, y) => x.subject_name.localeCompare(y.subject_name));
+
+      periods.push({
+        class_id: h.class_id,
+        class_name: cls?.class_name ?? "-",
+        grade_level: cls?.grade_level ?? "",
+        academic_year: h.academic_year,
+        is_active: h.is_active,
+        subjects,
+      });
+    }
+
+    return {
+      student: {
+        student_id: student!.student_id,
+        nis: student!.nis,
+        full_name: student!.full_name,
+      },
+      periods,
+    };
   },
 });

@@ -63,6 +63,7 @@ type NavTo =
   | "/my-attendance"
   | "/settings"
   | "/grades"
+  | "/grades-recap"
   | "/my-grades";
 
 function NavItem({
@@ -245,6 +246,12 @@ function AppLayout() {
                   to="/promotions"
                   icon={<ArrowUpRight className={ic} />}
                   label="Kenaikan Kelas"
+                  onNavigate={close}
+                />
+                <NavItem
+                  to="/grades-recap"
+                  icon={<ClipboardList className={ic} />}
+                  label="Rekap Nilai"
                   onNavigate={close}
                 />
               </>

@@ -249,9 +249,9 @@ function PromotionsPage() {
             value={tingkat ?? ""}
             onChange={(e) => {
               void navigate({
-                search: { 
-                  tingkat: e.target.value || undefined, 
-                  kelas
+                search: {
+                  tingkat: e.target.value || undefined,
+                  kelas,
                 },
                 replace: true,
               });

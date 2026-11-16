@@ -559,3 +559,49 @@ export interface MyGrades {
     passed: boolean;
   }[];
 }
+
+export interface GradeRecapCell {
+  values: Record<string, number | null>;
+  final: number | null;
+  complete: boolean;
+  predicate: string;
+  passed: boolean;
+}
+
+export interface ClassGradeRecap {
+  subjects: {
+    subject_id: string;
+    subject_name: string;
+    kkm: number;
+    components: { key: string; label: string; weight: number }[];
+  }[];
+  students: {
+    student_id: string;
+    nis: string;
+    full_name: string;
+    grades: {
+      subject_id: string;
+      ganjil: GradeRecapCell | null;
+      genap: GradeRecapCell | null;
+    }[];
+  }[];
+}
+
+export interface StudentGrades {
+  student: { student_id: string; nis: string; full_name: string };
+  periods: {
+    class_id: string;
+    class_name: string;
+    grade_level: string;
+    academic_year: string;
+    is_active: boolean;
+    subjects: {
+      subject_id: string;
+      subject_name: string;
+      kkm: number;
+      components: { key: string; label: string; weight: number }[];
+      ganjil: GradeRecapCell | null;
+      genap: GradeRecapCell | null;
+    }[];
+  }[];
+}

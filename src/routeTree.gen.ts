@@ -23,6 +23,8 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubjectsRouteImport } from './routes/_app/subjects'
 import { Route as AppTeachingRouteImport } from './routes/_app/teaching'
 import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignments/index'
+import { Route as AppGradesRecapIndexRouteImport } from './routes/_app/grades-recap/index'
+import { Route as AppGradesRecapStudentIdRouteImport } from './routes/_app/grades-recap/$studentId'
 import { Route as AppPromotionsIndexRouteImport } from './routes/_app/promotions/index'
 import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
 import { Route as AppStudentsStudentIdRouteImport } from './routes/_app/students/$studentId'
@@ -103,6 +105,16 @@ const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
   path: '/assignments/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGradesRecapIndexRoute = AppGradesRecapIndexRouteImport.update({
+  id: '/grades-recap/',
+  path: '/grades-recap/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGradesRecapStudentIdRoute = AppGradesRecapStudentIdRouteImport.update({
+  id: '/grades-recap/$studentId',
+  path: '/grades-recap/$studentId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPromotionsIndexRoute = AppPromotionsIndexRouteImport.update({
   id: '/promotions/',
   path: '/promotions/',
@@ -170,10 +182,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/subjects': typeof AppSubjectsRoute
   '/teaching': typeof AppTeachingRoute
+  '/grades-recap/$studentId': typeof AppGradesRecapStudentIdRoute
   '/students/$studentId': typeof AppStudentsStudentIdRoute
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments/': typeof AppAssignmentsIndexRoute
+  '/grades-recap/': typeof AppGradesRecapIndexRoute
   '/promotions/': typeof AppPromotionsIndexRoute
   '/students/': typeof AppStudentsIndexRoute
   '/tasks/': typeof AppTasksIndexRoute
@@ -195,10 +209,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/subjects': typeof AppSubjectsRoute
   '/teaching': typeof AppTeachingRoute
+  '/grades-recap/$studentId': typeof AppGradesRecapStudentIdRoute
   '/students/$studentId': typeof AppStudentsStudentIdRoute
   '/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/assignments': typeof AppAssignmentsIndexRoute
+  '/grades-recap': typeof AppGradesRecapIndexRoute
   '/promotions': typeof AppPromotionsIndexRoute
   '/students': typeof AppStudentsIndexRoute
   '/tasks': typeof AppTasksIndexRoute
@@ -222,10 +238,12 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subjects': typeof AppSubjectsRoute
   '/_app/teaching': typeof AppTeachingRoute
+  '/_app/grades-recap/$studentId': typeof AppGradesRecapStudentIdRoute
   '/_app/students/$studentId': typeof AppStudentsStudentIdRoute
   '/_app/tasks/$assignmentId': typeof AppTasksAssignmentIdRoute
   '/_app/teachers/$teacherId': typeof AppTeachersTeacherIdRoute
   '/_app/assignments/': typeof AppAssignmentsIndexRoute
+  '/_app/grades-recap/': typeof AppGradesRecapIndexRoute
   '/_app/promotions/': typeof AppPromotionsIndexRoute
   '/_app/students/': typeof AppStudentsIndexRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
@@ -249,10 +267,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subjects'
     | '/teaching'
+    | '/grades-recap/$studentId'
     | '/students/$studentId'
     | '/tasks/$assignmentId'
     | '/teachers/$teacherId'
     | '/assignments/'
+    | '/grades-recap/'
     | '/promotions/'
     | '/students/'
     | '/tasks/'
@@ -274,10 +294,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subjects'
     | '/teaching'
+    | '/grades-recap/$studentId'
     | '/students/$studentId'
     | '/tasks/$assignmentId'
     | '/teachers/$teacherId'
     | '/assignments'
+    | '/grades-recap'
     | '/promotions'
     | '/students'
     | '/tasks'
@@ -300,10 +322,12 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/subjects'
     | '/_app/teaching'
+    | '/_app/grades-recap/$studentId'
     | '/_app/students/$studentId'
     | '/_app/tasks/$assignmentId'
     | '/_app/teachers/$teacherId'
     | '/_app/assignments/'
+    | '/_app/grades-recap/'
     | '/_app/promotions/'
     | '/_app/students/'
     | '/_app/tasks/'
@@ -419,6 +443,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssignmentsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/grades-recap/': {
+      id: '/_app/grades-recap/'
+      path: '/grades-recap'
+      fullPath: '/grades-recap/'
+      preLoaderRoute: typeof AppGradesRecapIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/grades-recap/$studentId': {
+      id: '/_app/grades-recap/$studentId'
+      path: '/grades-recap/$studentId'
+      fullPath: '/grades-recap/$studentId'
+      preLoaderRoute: typeof AppGradesRecapStudentIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/promotions/': {
       id: '/_app/promotions/'
       path: '/promotions'
@@ -503,10 +541,12 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubjectsRoute: typeof AppSubjectsRoute
   AppTeachingRoute: typeof AppTeachingRoute
+  AppGradesRecapStudentIdRoute: typeof AppGradesRecapStudentIdRoute
   AppStudentsStudentIdRoute: typeof AppStudentsStudentIdRoute
   AppTasksAssignmentIdRoute: typeof AppTasksAssignmentIdRoute
   AppTeachersTeacherIdRoute: typeof AppTeachersTeacherIdRoute
   AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
+  AppGradesRecapIndexRoute: typeof AppGradesRecapIndexRoute
   AppPromotionsIndexRoute: typeof AppPromotionsIndexRoute
   AppStudentsIndexRoute: typeof AppStudentsIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
@@ -527,10 +567,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppSubjectsRoute: AppSubjectsRoute,
   AppTeachingRoute: AppTeachingRoute,
+  AppGradesRecapStudentIdRoute: AppGradesRecapStudentIdRoute,
   AppStudentsStudentIdRoute: AppStudentsStudentIdRoute,
   AppTasksAssignmentIdRoute: AppTasksAssignmentIdRoute,
   AppTeachersTeacherIdRoute: AppTeachersTeacherIdRoute,
   AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
+  AppGradesRecapIndexRoute: AppGradesRecapIndexRoute,
   AppPromotionsIndexRoute: AppPromotionsIndexRoute,
   AppStudentsIndexRoute: AppStudentsIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,

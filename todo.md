@@ -1,6 +1,6 @@
 # TODO - Rencana Perbaikan & Pengembangan Fitur EduAbsen
 
-Dokumen pelacak tugas (*task tracking*) untuk rencana perbaikan, peningkatan pengalaman pengguna (UX/UI), dan penambahan fitur aplikasi **EduAbsen**.
+Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pengalaman pengguna (UX/UI), dan penambahan fitur aplikasi **EduAbsen**.
 
 ---
 
@@ -20,48 +20,48 @@ Dokumen pelacak tugas (*task tracking*) untuk rencana perbaikan, peningkatan pen
 Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang mengakses aplikasi dari ponsel pintar (smartphone Android/iOS).
 
 - [x] **1. Mode Input Absensi Ramah Sentuh (Touch-Friendly Segmented Chips)**
-  - *Lokasi*: `src/components/attendance-grid.tsx`
-  - *Deskripsi*: Ganti baris checkbox kecil tabel dengan tombol segmented pill (`[H] [S] [I] [A]`) yang memiliki touch target minimal 44×44px.
-  - *Fitur*:
+  - _Lokasi_: `src/components/attendance-grid.tsx`
+  - _Deskripsi_: Ganti baris checkbox kecil tabel dengan tombol segmented pill (`[H] [S] [I] [A]`) yang memiliki touch target minimal 44×44px.
+  - _Fitur_:
     - Warna status aktif kontras (Hijau Hadir, Kuning Sakit, Biru Izin, Merah Alpa).
     - Haptic feedback getar halus perangkat (`navigator.vibrate?.(15)`) saat tombol status ditekan.
 - [ ] **2. Sticky Column & Header pada Tabel Lebar**
-  - *Lokasi*: `src/components/ui/data-table.tsx`, `src/styles.css`
-  - *Deskripsi*: Buat kolom **No** dan **Nama Siswa** tetap membeku (*sticky left*) saat tabel di-scroll mendatar (*horizontal scroll*) di layar sempit.
-  - *Manfaat*: Guru tidak kehilangan nama siswa saat mencentang absensi atau mengisi nilai di kolom sebelah kanan.
+  - _Lokasi_: `src/components/ui/data-table.tsx`, `src/styles.css`
+  - _Deskripsi_: Buat kolom **No** dan **Nama Siswa** tetap membeku (_sticky left_) saat tabel di-scroll mendatar (_horizontal scroll_) di layar sempit.
+  - _Manfaat_: Guru tidak kehilangan nama siswa saat mencentang absensi atau mengisi nilai di kolom sebelah kanan.
 - [ ] **3. Filter Cepat "Belum Diabsen"**
-  - *Lokasi*: `src/routes/_app/attendance.tsx`, `src/components/attendance-grid.tsx`
-  - *Deskripsi*: Tambahkan filter tab/chip di atas tabel: `Semua Siswa`, `Belum Diabsen (X)`, `Perlu Keterangan (Y)`.
-  - *Manfaat*: Mempercepat pengisian absensi kelas dari puluhan siswa menjadi hitungan detik.
+  - _Lokasi_: `src/routes/_app/attendance.tsx`, `src/components/attendance-grid.tsx`
+  - _Deskripsi_: Tambahkan filter tab/chip di atas tabel: `Semua Siswa`, `Belum Diabsen (X)`, `Perlu Keterangan (Y)`.
+  - _Manfaat_: Mempercepat pengisian absensi kelas dari puluhan siswa menjadi hitungan detik.
 - [ ] **4. PWA (Progressive Web App) Standalone Support**
-  - *Lokasi*: `public/manifest.webmanifest`, `src/routes/__root.tsx`
-  - *Deskripsi*:
+  - _Lokasi_: `public/manifest.webmanifest`, `src/routes/__root.tsx`
+  - _Deskripsi_:
     - Buat berkas `manifest.webmanifest` lengkap dengan nama aplikasi, warna tema, dan ikon homescreen.
     - Tambahkan meta tags `apple-mobile-web-app-capable`, `theme-color`, dan `mobile-web-app-capable`.
-    - Pengguna Android/iOS dapat menekan tombol *"Instal ke Layar Utama"* dan membuka aplikasi secara full-screen tanpa address bar browser.
+    - Pengguna Android/iOS dapat menekan tombol _"Instal ke Layar Utama"_ dan membuka aplikasi secara full-screen tanpa address bar browser.
 
 ---
 
-## 🎨 Prioritas 1 (P1) - Kecepatan Visual (*Perceived Speed*) & Polish
+## 🎨 Prioritas 1 (P1) - Kecepatan Visual (_Perceived Speed_) & Polish
 
 Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan modern.
 
 - [ ] **5. Komponen Skeleton Shimmer (Pengganti PageSpinner)**
-  - *Lokasi*: `src/components/ui/skeleton.tsx`, `src/components/ui/page-spinner.tsx`
-  - *Deskripsi*: Gantikan animasi spinner layar penuh yang kosong dengan placeholder shimmer beranimasi abu-abu halus sesuai bentuk kartu dashboard dan baris tabel.
-  - *Target*: Pemuatan awal rute Dashboard, Input Absensi, Nilai, dan Data Siswa.
+  - _Lokasi_: `src/components/ui/skeleton.tsx`, `src/components/ui/page-spinner.tsx`
+  - _Deskripsi_: Gantikan animasi spinner layar penuh yang kosong dengan placeholder shimmer beranimasi abu-abu halus sesuai bentuk kartu dashboard dan baris tabel.
+  - _Target_: Pemuatan awal rute Dashboard, Input Absensi, Nilai, dan Data Siswa.
 - [ ] **6. Theme Switcher (Toggle Mode Gelap/Terang/Sistem)**
-  - *Lokasi*: `src/routes/_app.tsx` (Navbar Header / Drawer Bawah)
-  - *Deskripsi*: Tambahkan tombol toggle cepat (ikon Matahari ☀️ / Bulan 🌙 / Komputer 💻) untuk berpindah antara tema Terang, Gelap, atau Otomatis mengikuti OS, dengan penyimpanan preferensi di `localStorage`.
+  - _Lokasi_: `src/routes/_app.tsx` (Navbar Header / Drawer Bawah)
+  - _Deskripsi_: Tambahkan tombol toggle cepat (ikon Matahari ☀️ / Bulan 🌙 / Komputer 💻) untuk berpindah antara tema Terang, Gelap, atau Otomatis mengikuti OS, dengan penyimpanan preferensi di `localStorage`.
 - [ ] **7. Indikator Visual Autosave Tugas Siswa**
-  - *Lokasi*: `src/routes/_app/tasks/$assignmentId.tsx`
-  - *Deskripsi*: Tambahkan badge status mikro di sudut atas layar saat siswa mengerjakan tugas:
-    - *"Menyimpan draf..."* (ikon awan berputar).
-    - *"Tersimpan otomatis pk 08:35 ✓"* (warna hijau lembut).
-  - *Manfaat*: Memberikan kepastian psikologis bagi siswa bahwa jawaban ujian mereka tidak hilang.
+  - _Lokasi_: `src/routes/_app/tasks/$assignmentId.tsx`
+  - _Deskripsi_: Tambahkan badge status mikro di sudut atas layar saat siswa mengerjakan tugas:
+    - _"Menyimpan draf..."_ (ikon awan berputar).
+    - _"Tersimpan otomatis pk 08:35 ✓"_ (warna hijau lembut).
+  - _Manfaat_: Memberikan kepastian psikologis bagi siswa bahwa jawaban ujian mereka tidak hilang.
 - [ ] **8. Desain Empty State Informatif**
-  - *Lokasi*: Seluruh rute tabel (`assignments`, `tasks`, `classes`, `subjects`, `reports`)
-  - *Deskripsi*: Ganti teks datar *"Tidak ada data"* dengan komponen ilustrasi ramah dan tombol aksi langsung (misal: *"Belum ada tugas untuk kelas ini. [Buat Tugas Baru +]"*).
+  - _Lokasi_: Seluruh rute tabel (`assignments`, `tasks`, `classes`, `subjects`, `reports`)
+  - _Deskripsi_: Ganti teks datar _"Tidak ada data"_ dengan komponen ilustrasi ramah dan tombol aksi langsung (misal: _"Belum ada tugas untuk kelas ini. [Buat Tugas Baru +]"_).
 
 ---
 
@@ -69,21 +69,21 @@ Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan mod
 
 Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer sekolah.
 
-- [ ] **9. Pintasan Keyboard (*Keyboard Shortcuts*) pada Input Absensi & Nilai**
-  - *Lokasi*: `src/components/attendance-grid.tsx`, `src/routes/_app/grades.tsx`
-  - *Fitur*:
+- [ ] **9. Pintasan Keyboard (_Keyboard Shortcuts_) pada Input Absensi & Nilai**
+  - _Lokasi_: `src/components/attendance-grid.tsx`, `src/routes/_app/grades.tsx`
+  - _Fitur_:
     - Tombol panah atas/bawah (`ArrowUp` / `ArrowDown`) untuk berpindah antar-baris siswa.
     - Tombol cepat huruf: `H` (Hadir), `S` (Sakit), `I` (Izin), `A` (Alpa).
     - Tombol `Enter` untuk membuka modal isian keterangan.
 - [ ] **10. Ekspor Laporan Presensi ke Excel / CSV**
-  - *Lokasi*: `src/routes/_app/reports.tsx`, `src/components/subject-report-view.tsx`
-  - *Deskripsi*: Tambahkan tombol *"Ekspor CSV"* di samping tombol *"Cetak"* agar rekap presensi bulanan dapat diolah lebih lanjut untuk keperluan laporan dinas/yayasan.
+  - _Lokasi_: `src/routes/_app/reports.tsx`, `src/components/subject-report-view.tsx`
+  - _Deskripsi_: Tambahkan tombol _"Ekspor CSV"_ di samping tombol _"Cetak"_ agar rekap presensi bulanan dapat diolah lebih lanjut untuk keperluan laporan dinas/yayasan.
 - [ ] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
-  - *Lokasi*: `src/routes/_app/students/index.tsx`, `src/routes/_app/teachers/index.tsx`
-  - *Deskripsi*: Form unggah berkas CSV/Excel berbasis template standar untuk mengimpor puluhan hingga ratusan siswa baru sekaligus saat tahun ajaran baru.
+  - _Lokasi_: `src/routes/_app/students/index.tsx`, `src/routes/_app/teachers/index.tsx`
+  - _Deskripsi_: Form unggah berkas CSV/Excel berbasis template standar untuk mengimpor puluhan hingga ratusan siswa baru sekaligus saat tahun ajaran baru.
 - [ ] **12. Konfirmasi Ganda untuk Tindakan Kritis**
-  - *Lokasi*: `src/hooks/use-confirm.tsx`, `src/routes/_app/students/index.tsx`
-  - *Deskripsi*: Tambahkan dialog konfirmasi dengan pengetikan nama atau teks konfirmasi untuk tindakan permanen:
+  - _Lokasi_: `src/hooks/use-confirm.tsx`, `src/routes/_app/students/index.tsx`
+  - _Deskripsi_: Tambahkan dialog konfirmasi dengan pengetikan nama atau teks konfirmasi untuk tindakan permanen:
     - Meluluskan siswa (menonaktifkan akun).
     - Menghapus tugas yang sudah memiliki jawaban siswa.
     - Reset akun siswa massal.
@@ -95,18 +95,18 @@ Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer seko
 Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak menentu.
 
 - [ ] **13. Offline Connectivity Banner**
-  - *Lokasi*: `src/routes/__root.tsx`, `src/components/ui/offline-banner.tsx`
-  - *Deskripsi*: Deteksi perubahan status jaringan (`window.addEventListener('online'/'offline')`).
-  - *Tampilan*: Bar notifikasi oranye di bagian atas: *"Koneksi terputus. Anda sedang offline. Mohon tidak menutup halaman hingga jaringan kembali normal."*
+  - _Lokasi_: `src/routes/__root.tsx`, `src/components/ui/offline-banner.tsx`
+  - _Deskripsi_: Deteksi perubahan status jaringan (`window.addEventListener('online'/'offline')`).
+  - _Tampilan_: Bar notifikasi oranye di bagian atas: _"Koneksi terputus. Anda sedang offline. Mohon tidak menutup halaman hingga jaringan kembali normal."_
 - [ ] **14. Validasi Batas Nilai KKM Interaktif**
-  - *Lokasi*: `src/routes/_app/grades.tsx`
-  - *Deskripsi*: Peringatan visual langsung pada input nilai jika angka yang dimasukkan di luar rentang $0 - 100$ atau jika bobot total komponen nilai belum berjumlah $100\%$.
+  - _Lokasi_: `src/routes/_app/grades.tsx`
+  - _Deskripsi_: Peringatan visual langsung pada input nilai jika angka yang dimasukkan di luar rentang $0 - 100$ atau jika bobot total komponen nilai belum berjumlah $100\%$.
 - [ ] **15. Pemantauan Kehadiran Wali Kelas (Homeroom Overview)**
-  - *Lokasi*: `src/routes/_app/dashboard.tsx`
-  - *Deskripsi*: Tambahkan tab atau widget khusus bagi guru yang berstatus wali kelas untuk melihat rangkuman absensi harian dan mata pelajaran khusus kelas bimbingannya dalam satu layar.
+  - _Lokasi_: `src/routes/_app/dashboard.tsx`
+  - _Deskripsi_: Tambahkan tab atau widget khusus bagi guru yang berstatus wali kelas untuk melihat rangkuman absensi harian dan mata pelajaran khusus kelas bimbingannya dalam satu layar.
 - [ ] **16. Integrasi Cetak Rapor Siswa Resmi (Format PDF)**
-  - *Lokasi*: `src/routes/_app/grades.tsx`, `src/routes/_app/my-grades.tsx`
-  - *Deskripsi*: Template halaman cetak rapor nilai per semester lengkap dengan tanda tangan Kepala Sekolah dan Wali Kelas.
+  - _Lokasi_: `src/routes/_app/grades.tsx`, `src/routes/_app/my-grades.tsx`
+  - _Deskripsi_: Template halaman cetak rapor nilai per semester lengkap dengan tanda tangan Kepala Sekolah dan Wali Kelas.
 
 ---
 
