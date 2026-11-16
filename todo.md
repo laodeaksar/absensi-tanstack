@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[██████████████░░░░░░] 70% Selesai
-- Selesai          : 9 Task (Seluruh P0 + P1 poin 5 & 6)
+[███████████████░░░░░] 75% Selesai
+- Selesai          : 10 Task (Seluruh P0 + P1 poin 5, 6, 7)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 10 Task (P1, P2, P3)
+- Dalam Antrean    : 9 Task (P1, P2, P3)
 ```
 
 ---
@@ -53,7 +53,7 @@ Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan mod
 - [x] **6. Theme Switcher (Toggle Mode Gelap/Terang/Sistem)**
   - _Lokasi_: `src/routes/_app.tsx` (Navbar Header / Drawer Bawah)
   - _Deskripsi_: Tambahkan tombol toggle cepat (ikon Matahari ☀️ / Bulan 🌙 / Komputer 💻) untuk berpindah antara tema Terang, Gelap, atau Otomatis mengikuti OS, dengan penyimpanan preferensi di `localStorage`.
-- [ ] **7. Indikator Visual Autosave Tugas Siswa**
+- [x] **7. Indikator Visual Autosave Tugas Siswa**
   - _Lokasi_: `src/routes/_app/tasks/$assignmentId.tsx`
   - _Deskripsi_: Tambahkan badge status mikro di sudut atas layar saat siswa mengerjakan tugas:
     - _"Menyimpan draf..."_ (ikon awan berputar).

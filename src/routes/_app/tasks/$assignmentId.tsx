@@ -6,10 +6,11 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, Hourglass, Send } from "lucide-react";
+import { CheckCircle2, Clock, CloudOff, Hourglass, Loader2, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AnswerInput, MyTask, TaskSession } from "~/lib/types";
+import type { AutosaveStatus } from "~/lib/use-draft-autosave";
 
 import { BackLink } from "~/components/back-link";
 import {
@@ -41,6 +42,53 @@ const mmss = (ms: number) => {
   const sec = s % 60;
   return `${h > 0 ? `${h}:` : ""}${String(m).padStart(h > 0 ? 2 : 1, "0")}:${String(sec).padStart(2, "0")}`;
 };
+
+/** Format "pk HH:mm" dari epoch ms — cukup jam & menit untuk konteks autosave */
+const fmtTime = (ms: number) =>
+  new Date(ms).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+/**
+ * Badge mikro indikator status autosave.
+ * - "saving"  → awan berputar + "Menyimpan draf..."
+ * - "saved"   → centang hijau + "Tersimpan pk HH:mm ✓"
+ * - "error"   → ikon awan silang + "Gagal simpan draf"
+ * - "idle"    → tidak tampil (null)
+ */
+function AutosaveBadge({
+  status,
+  savedAt,
+}: Readonly<{ status: AutosaveStatus; savedAt: number | null }>) {
+  if (status === "idle") return null;
+
+  if (status === "saving") {
+    return (
+      <span className="flex items-center gap-1 text-xs text-base-content/60">
+        <Loader2 className="size-3.5 animate-spin" />
+        Menyimpan draf…
+      </span>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <span className="flex items-center gap-1 text-xs text-error">
+        <CloudOff className="size-3.5" />
+        Gagal simpan draf
+      </span>
+    );
+  }
+
+  // saved
+  return (
+    <span className="flex items-center gap-1 text-xs text-success">
+      <CheckCircle2 className="size-3.5" />
+      Tersimpan{savedAt ? ` pk ${fmtTime(savedAt)}` : ""} ✓
+    </span>
+  );
+}
 
 function TaskPage() {
   const { assignmentId } = Route.useParams();
@@ -430,9 +478,11 @@ function TaskForm({
   }, [left]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Simpan draf ke server tiap ~25 detik; berhenti saat waktu habis atau sedang/selesai mengumpulkan
-  useDraftAutosave(id, () => form.state.values.answers, {
-    enabled: left > 0 && !submit.isPending && !submit.isSuccess,
-  });
+  const { status: autosaveStatus, savedAt: autosaveSavedAt } = useDraftAutosave(
+    id,
+    () => form.state.values.answers,
+    { enabled: left > 0 && !submit.isPending && !submit.isSuccess },
+  );
 
   const answered = answers.filter((a) => a.answer.trim()).length;
   const hasTimer = Number.isFinite(left);
@@ -446,6 +496,11 @@ function TaskForm({
             <p className="text-xs text-base-content/60">
               Terjawab {answered} dari {session.questions.length} soal
             </p>
+            {/* Indikator autosave — tampil hanya saat aktif saving/saved/error */}
+            <AutosaveBadge
+              status={autosaveStatus}
+              savedAt={autosaveSavedAt}
+            />
           </div>
           <div className="flex items-center gap-3">
             {hasTimer ? (
