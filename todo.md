@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[████████████░░░░░░░░] 60% Selesai
-- Selesai          : 7 Task (Seluruh Prioritas 0 P0 Selesai)
+[█████████████░░░░░░░] 65% Selesai
+- Selesai          : 8 Task (Seluruh P0 + P1 poin 5)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 12 Task (P1, P2, P3)
+- Dalam Antrean    : 11 Task (P1, P2, P3)
 ```
 
 ---
@@ -46,7 +46,7 @@ Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang m
 
 Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan modern.
 
-- [ ] **5. Komponen Skeleton Shimmer (Pengganti PageSpinner)**
+- [x] **5. Komponen Skeleton Shimmer (Pengganti PageSpinner)**
   - _Lokasi_: `src/components/ui/skeleton.tsx`, `src/components/ui/page-spinner.tsx`
   - _Deskripsi_: Gantikan animasi spinner layar penuh yang kosong dengan placeholder shimmer beranimasi abu-abu halus sesuai bentuk kartu dashboard dan baris tabel.
   - _Target_: Pemuatan awal rute Dashboard, Input Absensi, Nilai, dan Data Siswa.

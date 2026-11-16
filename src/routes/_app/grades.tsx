@@ -22,9 +22,9 @@ import {
   DataTable,
   ErrorAlert,
   Modal,
-  PageSpinner,
   Pager,
   SelectField,
+  TableSkeleton,
   TextField,
 } from "~/components/ui";
 import { api as convexApi } from "~/convex/_generated/api";
@@ -258,7 +258,7 @@ function GradesPage() {
           Pilih kelas, mata pelajaran, dan tahun ajaran untuk menampilkan nilai.
         </p>
       ) : book.isPending ? (
-        <PageSpinner />
+        <TableSkeleton rows={6} cols={5} />
       ) : book.error ? (
         <ErrorAlert message={book.error.message} />
       ) : book.data ? (

@@ -13,8 +13,8 @@ import type { AnswerInput, MyTask, TaskSession } from "~/lib/types";
 
 import { BackLink } from "~/components/back-link";
 import {
+  CardSkeleton,
   ErrorAlert,
-  PageSpinner,
   TextAreaField,
   RadioField,
 } from "~/components/ui";
@@ -211,7 +211,7 @@ function TaskPage() {
 
 function ResultCard({ assignmentId }: Readonly<{ assignmentId: string }>) {
   const q = useQuery(myResultQuery(assignmentId));
-  if (q.isPending) return <PageSpinner />;
+  if (q.isPending) return <CardSkeleton />;
   if (q.error) return <ErrorAlert message={q.error.message} />;
   const r = q.data;
 
