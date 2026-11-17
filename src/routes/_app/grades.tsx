@@ -33,10 +33,11 @@ import { LIMITS } from "~/convex/limits";
 import { allowRoles } from "~/lib/auth";
 import {
   gradeConfigSchema,
-  gradeFilterSchema,
   gradeScoresSchema,
+  isScoreInvalid,
   parseNum,
   parseScore,
+  sumWeights,
 } from "~/lib/grade-schema";
 import { gradeBookQuery, settingsQuery, teachingQuery } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
@@ -435,6 +436,19 @@ function createGradeColumns({
   ]);
 }
 
+function countInvalidScores(scores: Scores) {
+  let n = 0;
+  for (const cells of Object.values(scores))
+    for (const text of Object.values(cells)) if (isScoreInvalid(text)) n++;
+  return n;
+}
+
+function weightNote(total: number) {
+  const diff = Math.round(Math.abs(100 - total) * 100) / 100;
+  if (diff < 0.01) return "✓";
+  return total < 100 ? `(kurang ${diff}%)` : `(lebih ${diff}%)`;
+}
+
 function GradeBookTable({
   args,
   data,
@@ -488,6 +502,11 @@ function GradeBookTable({
     data: data.rows,
     initialState: { pagination: { pageIndex: 0, pageSize: 100 } },
   });
+  
+  const weightTotal =
+    Math.round(
+      data.config.components.reduce((s, c) => s + c.weight, 0) * 100,
+    ) / 100;
 
   return (
     <form
@@ -505,6 +524,17 @@ function GradeBookTable({
         sudah dinilai. Tanda * berarti nilai sementara karena ada komponen yang
         belum diisi.
       </p>
+      {Math.abs(weightTotal - 100) > 0.01 ? (
+        <div
+          role="alert"
+          className="alert alert-warning"
+        >
+          <span>
+            Total bobot komponen {weightTotal}%, seharusnya 100%. Nilai akhir
+            belum akurat. Perbaiki di pengaturan komponen nilai.
+          </span>
+        </div>
+      ) : null}
       <DataTable
         table={table}
         empty={
@@ -519,17 +549,36 @@ function GradeBookTable({
       <Pager table={table} />
       {save.error ? <ErrorAlert message={save.error.message} /> : null}
       <form.Subscribe
-        selector={(s) => [s.isDefaultValue, s.isSubmitting] as const}
+        selector={(s) =>
+          [
+            s.isDefaultValue,
+            s.isSubmitting,
+            countInvalidScores(s.values.scores),
+          ] as const
+        }
       >
-        {([pristine, submitting]) => (
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={pristine || submitting}
-            >
-              Simpan Nilai
-            </button>
+        {([pristine, submitting, invalid]) => (
+          <div className="space-y-2">
+            {invalid > 0 ? (
+              <div
+                role="alert"
+                className="alert alert-error"
+              >
+                <span>
+                  {invalid} nilai di luar rentang 0 - 100. Perbaiki sebelum
+                  menyimpan.
+                </span>
+              </div>
+            ) : null}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={pristine || submitting || invalid > 0}
+              >
+                Simpan Nilai
+              </button>
+            </div>
           </div>
         )}
       </form.Subscribe>
@@ -699,6 +748,23 @@ function GradeConfigForm({
           </div>
         )}
       </form.Field>
+      
+      <form.Subscribe
+        selector={(s) => sumWeights(s.values.components.map((c) => c.weight))}
+      >
+        {(total) => (
+          <p
+            role="status"
+            className={
+              Math.abs(total - 100) < 0.01
+                ? "text-sm font-medium text-success"
+                : "text-sm font-medium text-error"
+            }
+          >
+            Total bobot: {total}% {weightNote(total)}
+          </p>
+        )}
+      </form.Subscribe>
 
       <ErrorAlert message={save.error?.message} />
       <div className="modal-action">

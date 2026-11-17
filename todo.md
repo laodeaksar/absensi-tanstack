@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[█████████████████░░░] 84% Selesai
-- Selesai          : 16 Task (Seluruh P0, P1, P2 + P3 poin 13)
+[██████████████████░░] 89% Selesai
+- Selesai          : 17 Task (Seluruh P0, P1, P2 + P3 poin 13, 14)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 3 Task (P3)
+- Dalam Antrean    : 2 Task (P3)
 ```
 
 ---
@@ -102,7 +102,7 @@ Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak
   - _Lokasi_: `src/routes/__root.tsx`, `src/components/ui/offline-banner.tsx`
   - _Deskripsi_: Deteksi perubahan status jaringan (`window.addEventListener('online'/'offline')`).
   - _Tampilan_: Bar notifikasi oranye di bagian atas: _"Koneksi terputus. Anda sedang offline. Mohon tidak menutup halaman hingga jaringan kembali normal."_
-- [ ] **14. Validasi Batas Nilai KKM Interaktif**
+- [x] **14. Validasi Batas Nilai KKM Interaktif**
   - _Lokasi_: `src/routes/_app/grades.tsx`
   - _Deskripsi_: Peringatan visual langsung pada input nilai jika angka yang dimasukkan di luar rentang $0 - 100$ atau jika bobot total komponen nilai belum berjumlah $100\%$.
 - [ ] **15. Pemantauan Kehadiran Wali Kelas (Homeroom Overview)**

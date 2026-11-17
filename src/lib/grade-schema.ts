@@ -19,20 +19,20 @@ export const gradeFilterSchema = gradePeriodSchema.extend({
 });
 
 export const parseScore = (v: string) => (v.trim() === "" ? null : num(v));
-/** null = dikosongkan (hapus nilai), undefined = tidak valid. */
-/* export function parseScore(raw: string): number | null | undefined {
-  const t = raw.trim().replace(",", ".");
-  if (t === "") return null;
-  const n = Number(t);
-  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : undefined;
-} */
+
+export const isScoreInvalid = (v: string) =>
+  v.trim() !== "" && !(isNum(v) && num(v) >= 0 && num(v) <= 100);
+
+/** Total bobot, dibulatkan 2 desimal agar 33.3 + 33.3 + 33.4 tidak jadi 100.00000001. */
+export const sumWeights = (weights: string[]) =>
+  Math.round(
+    weights.reduce((s, w) => s + (isNum(w) ? num(w) : 0), 0) * 100,
+  ) / 100;
 
 const scoreText = z
   .string()
-  .refine(
-    (v) => v.trim() === "" || (isNum(v) && num(v) >= 0 && num(v) <= 100),
-    "0 - 100",
-  );
+  .refine((v) => !isScoreInvalid(v), "Nilai harus 0 - 100");
+
 
 export const gradeScoresSchema = z.object({
   scores: z.record(z.string(), z.record(z.string(), scoreText)),
@@ -65,10 +65,11 @@ export const gradeConfigSchema = z
       .max(LIMITS.maxComponents, `Maksimal ${LIMITS.maxComponents} komponen`),
   })
   .superRefine((v, ctx) => {
-    const total = v.components.reduce(
+    /* const total = v.components.reduce(
       (s, c) => s + (isNum(c.weight) ? num(c.weight) : 0),
       0,
-    );
+    ); */
+    const total = sumWeights(v.components.map((c) => c.weight));
     if (Math.abs(total - 100) > 0.001)
       ctx.addIssue({
         code: "custom",
