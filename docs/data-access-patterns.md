@@ -11,12 +11,12 @@ Dokumen ini menetapkan pola akses data yang dipakai di aplikasi EduAbsen agar ko
 
 ## Mekanisme akses data
 
-| Mekanisme | Dipakai untuk | Lokasi |
-| --- | --- | --- |
-| Realtime Convex (`convexQuery`, auth JWT) | Daftar dan detail ringan yang perlu live: siswa, kelas, guru, dashboard | `src/lib/queries.ts` |
-| Query RPC (`api.*` → `queryRoute`) | Form yang sedang diedit (absensi, penilaian), laporan dan rekap besar, `me` dan pengaturan publik untuk guard SSR | `queries.ts` + `api.ts` + `convex.server.ts` |
-| Mutasi (`api.*` → `mutationRoute`) | Semua perubahan data, dengan token sesi dari server | `api.ts` + `convex.server.ts` |
-| Server function | Sesi, login/logout, penerbitan JWT | `src/server/functions.ts` |
+| Mekanisme                                 | Dipakai untuk                                                                                                     | Lokasi                                       |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Realtime Convex (`convexQuery`, auth JWT) | Daftar dan detail ringan yang perlu live: siswa, kelas, guru, dashboard                                           | `src/lib/queries.ts`                         |
+| Query RPC (`api.*` → `queryRoute`)        | Form yang sedang diedit (absensi, penilaian), laporan dan rekap besar, `me` dan pengaturan publik untuk guard SSR | `queries.ts` + `api.ts` + `convex.server.ts` |
+| Mutasi (`api.*` → `mutationRoute`)        | Semua perubahan data, dengan token sesi dari server                                                               | `api.ts` + `convex.server.ts`                |
+| Server function                           | Sesi, login/logout, penerbitan JWT                                                                                | `src/server/functions.ts`                    |
 
 ## Aturan keamanan
 

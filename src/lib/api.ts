@@ -152,7 +152,7 @@ export const api = {
   saveSettings: (d: Partial<Settings>) => rpc<Msg>("saveSettings", d),
   changePassword: (oldPassword: string, newPassword: string) =>
     rpc<Msg>("changePassword", oldPassword, newPassword),
-classGradeRecap: (classId: string, academicYear: string) =>
+  classGradeRecap: (classId: string, academicYear: string) =>
     rpc<ClassGradeRecap>("getClassGradeRecap", classId, academicYear),
   studentGrades: (studentId: string) =>
     rpc<StudentGrades>("getStudentGrades", studentId),

@@ -14,12 +14,14 @@ Dokumen ini merangkum strategi review performa pada dashboard, laporan, dan fitu
 ### 1. Dashboard
 
 Area yang sering menampilkan ringkasan data:
+
 - jumlah siswa per kelas
 - absensi harian
 - persentase kehadiran
 - status siswa aktif
 
 Risiko:
+
 - memuat terlalu banyak detail untuk satu widget
 - menghitung ulang data besar di client secara berlebihan
 - query multi-join yang terlalu berat
@@ -27,11 +29,13 @@ Risiko:
 ### 2. Laporan
 
 Area yang biasanya menghasilkan output agregat seperti:
+
 - laporan absensi bulanan
 - rekap nilai kelas
 - laporan siswa per semester
 
 Risiko:
+
 - memanggil data mentah dalam jumlah besar untuk satu view
 - me-render banyak baris tanpa pagination atau filter yang memadai
 - pengulangan query yang tidak perlu saat user berinteraksi cepat
@@ -39,6 +43,7 @@ Risiko:
 ### 3. List data besar
 
 Area yang berpotensi besar:
+
 - data siswa
 - data guru
 - data absensi harian
@@ -46,6 +51,7 @@ Area yang berpotensi besar:
 - nilai per kelas dan siswa
 
 Risiko:
+
 - memproses terlalu banyak item di satu render
 - loading yang berkepanjangan
 - cache query yang tidak diatur dengan baik
@@ -57,6 +63,7 @@ Risiko:
 Periksa apakah query mengembalikan data yang benar-benar dibutuhkan atau justru data yang terlalu besar.
 
 Prioritas:
+
 - batasi field yang diambil
 - fokus pada data yang ditampilkan
 - hindari fetch seluruh dataset saat view hanya butuh subset
@@ -64,6 +71,7 @@ Prioritas:
 ### 2. Review pola filter dan pagination
 
 Untuk list yang besar, pastikan:
+
 - filter diterapkan sejak awal
 - pagination atau virtualized list dipertimbangkan bila memerlukan banyak baris
 - query bisa dibatasi berdasarkan range tanggal/kelas/role yang relevan
@@ -73,6 +81,7 @@ Untuk list yang besar, pastikan:
 Pada dashboard dan laporan, lebih baik membangun data ringkas di backend daripada menghitung banyak data di client.
 
 Contoh:
+
 - ringkasan harian per kelas
 - total status per tanggal
 - rekap nilai per siswa dalam satu query ringkas
@@ -80,6 +89,7 @@ Contoh:
 ### 4. Review query library strategy
 
 Periksa apakah query tersebut:
+
 - benar-benar perlu realtime
 - perlu refetch ulang saat focus window
 - bisa dijaga dengan `staleTime` yang lebih sehat

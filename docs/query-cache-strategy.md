@@ -21,11 +21,13 @@ Dokumen ini menetapkan kebijakan penggunaan cache query dan optimasi performa ap
 ### 1. Data statis atau jarang berubah
 
 Contoh:
+
 - master data sekolah
 - referensi mata pelajaran
 - konfigurasi umum
 
 Rekomendasi:
+
 - `staleTime` lebih panjang
 - gunakan cache yang stabil
 - hindari refetch yang terlalu agresif saat window focus kembali
@@ -33,11 +35,13 @@ Rekomendasi:
 ### 2. Data user/session
 
 Contoh:
+
 - `me`
 - profil pengguna aktif
 - status autentikasi
 
 Rekomendasi:
+
 - cache lebih aman dengan lifetime yang wajar
 - invalidasi saat terjadi perubahan auth atau logout
 - refresh saat session berubah, bukan hanya saat user fokus kembali
@@ -45,12 +49,14 @@ Rekomendasi:
 ### 3. Data yang sering berubah (realtime)
 
 Contoh:
+
 - absensi
 - tugas siswa
 - nilai
 - laporan dashboard
 
 Rekomendasi:
+
 - gunakan query realtime atau invalidation yang terukur
 - patuhi stale strategy yang memungkinkan data segar tetapi tidak terlalu sering tertabrak refetch berlebihan
 - hindari query besar di setiap perubahan kecil jika tidak perlu
@@ -58,11 +64,13 @@ Rekomendasi:
 ### 4. Data laporan dan dashboard agregat
 
 Contoh:
+
 - dashboard summary
 - laporan presensi bulanan
 - rekap nilai kelas
 
 Rekomendasi:
+
 - batasi scope data agar query tidak terlalu besar
 - gunakan agregasi atau precompute jika volume data besar
 - hindari request penuh saat hanya kebutuhan tampilan ringkas
@@ -89,12 +97,14 @@ Gunakan `staleTime` sesuai jenis query:
 Setiap query harus punya `queryKey` yang jelas dan scoped.
 
 Contoh:
+
 - `['me']`
 - `['students']`
 - `['attendance', date, classId]`
 - `['report', filters]`
 
 Tujuan:
+
 - cache tidak bertabrakan
 - debug query lebih mudah
 - invalidation bisa diprediksi

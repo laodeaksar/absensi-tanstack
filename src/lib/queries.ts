@@ -6,7 +6,6 @@ import { getMeFn, getPublicSettingsFn } from "~/server/functions";
 
 import type {
   Assignment,
-  ClassGradeRecap,
   ClassRow,
   DashboardData,
   GradeBook,
@@ -22,13 +21,11 @@ import type {
   Student,
   StudentClass,
   StudentDetail,
-  StudentGrades,
   Subject,
   SubjectReportFilters,
   SubmissionList,
   Teacher,
   TeachingRow,
-  ReportCard,
 } from "./types";
 
 import { api } from "./api";
@@ -277,7 +274,6 @@ export const myGradesQuery = (a: {
     select: (r): ReportCard => r as ReportCard,
   }); */
 
-
 export const classGradeRecapQuery = (a: {
   classId: string;
   academicYear: string;
@@ -305,7 +301,7 @@ export const reportCardQuery = (a: {
     queryFn: () => api.reportCard(a.studentId, a.academicYear, a.semester),
     staleTime: 0,
   });
-  
+
 export const homeroomOverviewQuery = queryOptions({
   ...convexQuery(convexApi.attendance.getHomeroomOverview, {}),
   select: (r): HomeroomOverview => r as HomeroomOverview,

@@ -24,6 +24,7 @@ Jika semua logic backend dibiarkan dalam satu struktur besar, maka:
 ### 1. Auth
 
 Domain ini mencakup:
+
 - login
 - logout
 - session
@@ -32,6 +33,7 @@ Domain ini mencakup:
 - role access
 
 Komponen terkait:
+
 - `src/server/functions.ts`
 - `src/lib/auth.ts`
 - route guard
@@ -40,6 +42,7 @@ Komponen terkait:
 ### 2. Master data
 
 Domain ini mencakup:
+
 - siswa
 - guru
 - kelas
@@ -48,22 +51,26 @@ Domain ini mencakup:
 - riwayat kelas
 
 Tujuan:
+
 - memastikan data master jelas, konsisten, dan tidak tercampur dengan operational logic.
 
 ### 3. Attendance
 
 Domain ini mencakup:
+
 - absensi harian
 - absensi per mata pelajaran
 - ringkasan harian
 - status kehadiran
 
 Tujuan:
+
 - memastikan absensi memiliki validasi tanggal, status, dan integritas data yang tepat.
 
 ### 4. Assignments
 
 Domain ini mencakup:
+
 - tugas
 - jadwal pengumpulan
 - status publikasi
@@ -73,34 +80,40 @@ Domain ini mencakup:
 ### 5. Grades
 
 Domain ini mencakup:
+
 - nilai siswa
 - KKM
 - komponen nilai
 - kenaikan kelas dan kelulusan
 
 Tujuan:
+
 - menghindari logika penilaian tersebar di banyak file yang tidak jelas kepemilikannya.
 
 ### 6. Reports
 
 Domain ini mencakup:
+
 - laporan absensi
 - laporan nilai
 - rekap kelas
 - dashboard agregat
 
 Tujuan:
+
 - menjaga query besar dan agregasi data tidak bercampur dengan operasi CRUD domain lain.
 
 ### 7. Settings
 
 Domain ini mencakup:
+
 - setting sekolah
 - tahun ajaran
 - konfigurasi operasional
 - kebijakan aplikasi
 
 Tujuan:
+
 - menjamin satu sumber kebenaran untuk parameter global aplikatif.
 
 ## Struktur modular yang disarankan
@@ -123,6 +136,7 @@ Contoh conceptual structure:
 - `convex/settings/`
 
 Setiap modul harus memiliki:
+
 - fungsi query utama
 - fungsi mutation utama
 - validasi domain
@@ -140,6 +154,7 @@ Setiap modul harus memiliki:
 ## Prinsip ownership
 
 Setiap domain harus punya owner yang jelas, minimal dalam bentuk:
+
 - file utama domain
 - daftar fungsi domain
 - daftar rule/business logic

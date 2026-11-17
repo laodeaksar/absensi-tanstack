@@ -1,13 +1,16 @@
 Impor massal dibuat dengan satu modal CSV yang bisa dipakai ulang, plus dua mutation di server. Belum diuji. Halaman guru masih menunggu file route-nya.
 
 **1. `src/lib/csv.ts`, tambahkan parser:**
+
 ```ts
 /** Parser CSV (RFC 4180). Pemisah , atau ; dideteksi dari baris header. Baris kosong dilewati. */
 export function parseCsv(text: string): string[][] {
   const src = text.replace(/^\uFEFF/, "");
   const head = src.split(/\r?\n/, 1)[0] ?? "";
   const delimiter =
-    (head.match(/;/g)?.length ?? 0) > (head.match(/,/g)?.length ?? 0) ? ";" : ",";
+    (head.match(/;/g)?.length ?? 0) > (head.match(/,/g)?.length ?? 0)
+      ? ";"
+      : ",";
 
   const rows: string[][] = [];
   let row: string[] = [];
@@ -44,6 +47,7 @@ export function parseCsv(text: string): string[][] {
 ```
 
 **2. `types.ts`:**
+
 ```ts
 export interface ImportResult {
   created: number;
@@ -52,9 +56,11 @@ export interface ImportResult {
 ```
 
 **3. Modal reusable `src/components/csv-import-modal.tsx`:**
+
 ```tsx
-import { useState } from "react";
 import type { ReactNode } from "react";
+
+import { useState } from "react";
 
 import type { ImportResult } from "~/lib/types";
 
@@ -75,7 +81,11 @@ const MAX_ROWS = 1000;
 const normalizeHeader = (h: string) =>
   h.trim().toLowerCase().replace(/\s+/g, "_");
 // Sel hasil ekspor kita berbentuk ="0123"
-const cleanCell = (v: string) => v.trim().replace(/^="(.*)"$/, "$1").trim();
+const cleanCell = (v: string) =>
+  v
+    .trim()
+    .replace(/^="(.*)"$/, "$1")
+    .trim();
 
 type Row = Record<string, string | number>;
 
@@ -324,6 +334,7 @@ export function CsvImportModal({
 ```
 
 **4. `master.ts`.** Tambahkan di bawah `saveStudent` dan `saveTeacher`. `assertStrongPassword`, `newHash`, dan `randomId` sudah terimpor karena dipakai `saveTeacher`.
+
 ```ts
 const MAX_STUDENT_CHUNK = 200;
 const MAX_TEACHER_CHUNK = 20; // hashing password cukup berat
@@ -354,7 +365,10 @@ function studentRowError(s: {
     return `NIS harus ${LIMITS.nisMin}-${LIMITS.nisMax} karakter.`;
   if (s.nisn && !RULES.nisn.test(s.nisn)) return "NISN harus 10 digit angka.";
   if (!s.name) return "Nama lengkap wajib diisi.";
-  if (s.name.length < LIMITS.studentNameMin || s.name.length > LIMITS.personName)
+  if (
+    s.name.length < LIMITS.studentNameMin ||
+    s.name.length > LIMITS.personName
+  )
     return `Nama lengkap harus ${LIMITS.studentNameMin}-${LIMITS.personName} karakter.`;
   if (s.gender === null) return "Jenis kelamin harus L atau P.";
   if (s.others.some((x) => x.length > 200))
@@ -542,9 +556,11 @@ export const importTeachers = mutation({
   },
 });
 ```
+
 Kalau `student_class_history` di skema punya field wajib lain, ikuti insert di `saveStudent`.
 
 **5. Route server dan API.** `convex.server.ts`, setelah `moveStudent`:
+
 ```ts
   importStudents: mutationRoute(
     api.master.importStudents,
@@ -554,123 +570,179 @@ Kalau `student_class_history` di skema punya field wajib lain, ikuti insert di `
     rows,
   })),
 ```
+
 `api.ts`, setelah `moveStudent`:
+
 ```ts
   importStudents: (rows: Record<string, string | number>[], classId?: string) =>
     rpc<ImportResult>("importStudents", rows, classId),
   importTeachers: (rows: Record<string, string | number>[]) =>
     rpc<ImportResult>("importTeachers", rows),
 ```
+
 Tambahkan `ImportResult` ke impor tipe di `api.ts`.
 
 **6. `students/index.tsx`.** Impor:
+
 ```tsx
 import { Upload } from "lucide-react";
 ```
+
 ```tsx
 import type { ImportField } from "~/components/csv-import-modal";
+
 import { CsvImportModal } from "~/components/csv-import-modal";
 ```
+
 Di atas komponen:
+
 ```tsx
 const STUDENT_IMPORT_FIELDS: ImportField[] = [
   { key: "nis", label: "NIS", required: true, example: "2026001", text: true },
-  { key: "nisn", label: "NISN, 10 digit (opsional)", example: "0012345678", text: true },
-  { key: "nama_lengkap", label: "Nama lengkap", required: true, example: "Budi Santoso" },
+  {
+    key: "nisn",
+    label: "NISN, 10 digit (opsional)",
+    example: "0012345678",
+    text: true,
+  },
+  {
+    key: "nama_lengkap",
+    label: "Nama lengkap",
+    required: true,
+    example: "Budi Santoso",
+  },
   { key: "jenis_kelamin", label: "L atau P", example: "L" },
   { key: "tempat_lahir", label: "Tempat lahir", example: "Bandung" },
   { key: "tanggal_lahir", label: "Tanggal lahir", example: "2010-05-17" },
   { key: "alamat", label: "Alamat", example: "Jl. Merdeka No. 1" },
   { key: "nama_orang_tua", label: "Nama orang tua", example: "Slamet" },
-  { key: "no_hp_orang_tua", label: "No. HP orang tua", example: "081234567890", text: true },
+  {
+    key: "no_hp_orang_tua",
+    label: "No. HP orang tua",
+    example: "081234567890",
+    text: true,
+  },
 ];
 ```
+
 Di `StudentsPage`:
+
 ```tsx
-  const [importing, setImporting] = useState(false);
-  const [importClass, setImportClass] = useState("");
+const [importing, setImporting] = useState(false);
+const [importClass, setImportClass] = useState("");
 ```
+
 Tombol di header, di samping "Tambah Siswa" (untuk admin):
+
 ```tsx
-          <HeaderButton
-            label="Impor CSV"
-            className="btn-outline"
-            icon={<Upload className="size-4" />}
-            onClick={() => setImporting(true)}
-          />
+<HeaderButton
+  label="Impor CSV"
+  className="btn-outline"
+  icon={<Upload className="size-4" />}
+  onClick={() => setImporting(true)}
+/>
 ```
+
 Modal, sebelum `{dialog}`:
+
 ```tsx
-      <CsvImportModal
-        open={importing}
-        onClose={() => setImporting(false)}
-        title="Impor Data Siswa"
-        templateName="siswa"
-        fields={STUDENT_IMPORT_FIELDS}
-        chunkSize={100}
-        send={(rows) => api.importStudents(rows, importClass || undefined)}
-        onFinished={() =>
-          void Promise.all([
-            qc.invalidateQueries({ queryKey: qk.students }),
-            qc.invalidateQueries({ queryKey: qk.studentClasses }),
-            qc.invalidateQueries({ queryKey: qk.dashboard }),
-          ])
-        }
-        extra={
-          <label className="form-control w-full">
-            <span className="label-text mb-1 block text-sm">
-              Tempatkan di kelas (opsional)
-            </span>
-            <select
-              className="select w-full"
-              value={importClass}
-              onChange={(e) => setImportClass(e.target.value)}
+<CsvImportModal
+  open={importing}
+  onClose={() => setImporting(false)}
+  title="Impor Data Siswa"
+  templateName="siswa"
+  fields={STUDENT_IMPORT_FIELDS}
+  chunkSize={100}
+  send={(rows) => api.importStudents(rows, importClass || undefined)}
+  onFinished={() =>
+    void Promise.all([
+      qc.invalidateQueries({ queryKey: qk.students }),
+      qc.invalidateQueries({ queryKey: qk.studentClasses }),
+      qc.invalidateQueries({ queryKey: qk.dashboard }),
+    ])
+  }
+  extra={
+    <label className="form-control w-full">
+      <span className="label-text mb-1 block text-sm">
+        Tempatkan di kelas (opsional)
+      </span>
+      <select
+        className="select w-full"
+        value={importClass}
+        onChange={(e) => setImportClass(e.target.value)}
+      >
+        <option value="">Tanpa kelas</option>
+        {classes
+          .filter((c) => isActive(c.is_active))
+          .map((c) => (
+            <option
+              key={c.class_id}
+              value={c.class_id}
             >
-              <option value="">Tanpa kelas</option>
-              {classes
-                .filter((c) => isActive(c.is_active))
-                .map((c) => (
-                  <option
-                    key={c.class_id}
-                    value={c.class_id}
-                  >
-                    {c.class_name} ({c.academic_year || "-"})
-                  </option>
-                ))}
-            </select>
-          </label>
-        }
-      />
+              {c.class_name} ({c.academic_year || "-"})
+            </option>
+          ))}
+      </select>
+    </label>
+  }
+/>
 ```
+
 Sesuaikan nama `classes` dan `qc` dengan variabel yang sudah ada di halaman itu.
 
 **7. `teachers/index.tsx`.** Belum saya punya, jadi ini potongan siap tempel. Polanya sama dengan siswa: tombol `Impor CSV` untuk admin di header, `useState(false)` untuk `importing`, lalu modal ini. Ganti `qk.teachers` kalau namanya berbeda:
+
 ```tsx
 const TEACHER_IMPORT_FIELDS: ImportField[] = [
-  { key: "username", label: "Username (3-30 karakter)", required: true, example: "budi.guru" },
-  { key: "nama_lengkap", label: "Nama lengkap", required: true, example: "Budi Hartono, S.Pd." },
-  { key: "nip", label: "NIP (opsional)", example: "198001012005011001", text: true },
-  { key: "no_hp", label: "No. HP (opsional)", example: "081234567890", text: true },
+  {
+    key: "username",
+    label: "Username (3-30 karakter)",
+    required: true,
+    example: "budi.guru",
+  },
+  {
+    key: "nama_lengkap",
+    label: "Nama lengkap",
+    required: true,
+    example: "Budi Hartono, S.Pd.",
+  },
+  {
+    key: "nip",
+    label: "NIP (opsional)",
+    example: "198001012005011001",
+    text: true,
+  },
+  {
+    key: "no_hp",
+    label: "No. HP (opsional)",
+    example: "081234567890",
+    text: true,
+  },
   { key: "email", label: "Email (opsional)", example: "budi@sekolah.sch.id" },
-  { key: "password", label: "Password awal, wajib kuat", required: true, example: "GantiSaya#2026" },
+  {
+    key: "password",
+    label: "Password awal, wajib kuat",
+    required: true,
+    example: "GantiSaya#2026",
+  },
 ];
 ```
+
 ```tsx
-      <CsvImportModal
-        open={importing}
-        onClose={() => setImporting(false)}
-        title="Impor Data Guru"
-        templateName="guru"
-        fields={TEACHER_IMPORT_FIELDS}
-        chunkSize={10}
-        send={(rows) => api.importTeachers(rows)}
-        onFinished={() =>
-          void qc.invalidateQueries({ queryKey: qk.teachers })
-        }
-      />
+<CsvImportModal
+  open={importing}
+  onClose={() => setImporting(false)}
+  title="Impor Data Guru"
+  templateName="guru"
+  fields={TEACHER_IMPORT_FIELDS}
+  chunkSize={10}
+  send={(rows) => api.importTeachers(rows)}
+  onFinished={() => void qc.invalidateQueries({ queryKey: qk.teachers })}
+/>
 ```
 
 Beberapa catatan:
+
 - Item 11 belum dicentang sampai tombol di halaman guru terpasang. Kirim `teachers/index.tsx` kalau mau saya tempatkan tepat.
 - Kelas guru (`assigned_classes`) tidak diisi lewat impor, tetapi diatur lewat menu Pengampu Mapel.
 - Berkas guru berisi password teks biasa, jadi hapus setelah impor. Semua akun hasil impor wajib ganti password saat login pertama (`must_change_password`).
@@ -680,9 +752,11 @@ Beberapa catatan:
 Ini tombol impor untuk `routes/_app/teachers/index.tsx` (belum diuji). Halaman ini hanya untuk admin, jadi tombolnya tidak perlu pengecekan peran.
 
 **1. Impor:**
+
 ```tsx
 import { Eye, Pencil, Plus, Upload, UserCheck, UserX } from "lucide-react";
 ```
+
 ```tsx
 import type { ImportField } from "~/components/csv-import-modal";
 
@@ -691,6 +765,7 @@ import { CsvImportModal } from "~/components/csv-import-modal";
 ```
 
 **2. Di atas `TeachersPage`:**
+
 ```tsx
 const TEACHER_IMPORT_FIELDS: ImportField[] = [
   {
@@ -728,42 +803,45 @@ const TEACHER_IMPORT_FIELDS: ImportField[] = [
 ```
 
 **3. State di `TeachersPage`, setelah `const [search, setSearch] = ...`:**
+
 ```tsx
-  const [importing, setImporting] = useState(false);
+const [importing, setImporting] = useState(false);
 ```
 
 **4. Tombol di header:**
+
 ```tsx
-      <PageHeader title="Manajemen Guru">
-        <HeaderButton
-          label="Impor CSV"
-          className="btn-outline"
-          icon={<Upload className="size-4" />}
-          onClick={() => setImporting(true)}
-        />
-        <HeaderButton
-          label="Tambah Guru"
-          icon={<Plus className="size-4" />}
-          onClick={() => setModal((m) => ({ ...m, open: true }))}
-        />
-      </PageHeader>
+<PageHeader title="Manajemen Guru">
+  <HeaderButton
+    label="Impor CSV"
+    className="btn-outline"
+    icon={<Upload className="size-4" />}
+    onClick={() => setImporting(true)}
+  />
+  <HeaderButton
+    label="Tambah Guru"
+    icon={<Plus className="size-4" />}
+    onClick={() => setModal((m) => ({ ...m, open: true }))}
+  />
+</PageHeader>
 ```
 
 **5. Modal, sebelum `{dialog}`:**
+
 ```tsx
-      <CsvImportModal
-        open={importing}
-        onClose={() => setImporting(false)}
-        title="Impor Data Guru"
-        templateName="guru"
-        fields={TEACHER_IMPORT_FIELDS}
-        chunkSize={10}
-        send={(rows) => api.importTeachers(rows)}
-        onFinished={() =>
-          void qc.invalidateQueries({ queryKey: qk.teachers })
-        }
-      />
-      {dialog}
+<CsvImportModal
+  open={importing}
+  onClose={() => setImporting(false)}
+  title="Impor Data Guru"
+  templateName="guru"
+  fields={TEACHER_IMPORT_FIELDS}
+  chunkSize={10}
+  send={(rows) => api.importTeachers(rows)}
+  onFinished={() => void qc.invalidateQueries({ queryKey: qk.teachers })}
+/>;
+{
+  dialog;
+}
 ```
 
 Semua bagian item 11 sekarang sudah terpasang: siswa dan guru, `csv-import-modal.tsx`, dua mutation, route server, dan `api.ts`. Perbarui `todo.md`:
@@ -776,6 +854,7 @@ Semua bagian item 11 sekarang sudah terpasang: siswa dan guru, `csv-import-modal
 - Dalam Antrean    : 5 Task (P2, P3)
 ```
 ````
+
 ```md
 - [x] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
   - _Hasil_: modal reusable `src/components/csv-import-modal.tsx` (template, validasi header, progres per batch, laporan baris yang dilewati), parser `parseCsv`, mutation `importStudents` dan `importTeachers`. Format CSV saja, password awal guru lewat kolom `password`, baris bermasalah dilewati.

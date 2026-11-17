@@ -227,10 +227,9 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
     api.grades.getClassGradeRecap,
     ([classId, academicYear]) => ({ classId, academicYear }),
   ),
-  getStudentGrades: queryRoute(
-    api.grades.getStudentGrades,
-    ([studentId]) => ({ studentId }),
-  ),
+  getStudentGrades: queryRoute(api.grades.getStudentGrades, ([studentId]) => ({
+    studentId,
+  })),
   getReportCard: queryRoute(
     api.grades.getReportCard,
     ([studentId, academicYear, semester]) => ({

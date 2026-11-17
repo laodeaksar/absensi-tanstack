@@ -14,6 +14,7 @@ Dokumen ini menetapkan kebijakan agar data di aplikasi EduAbsen memiliki definis
 ### 1. Auth & session
 
 Domain ini mencakup:
+
 - user
 - session
 - login attempt
@@ -21,11 +22,13 @@ Domain ini mencakup:
 - auth state
 
 Sumber kebenaran:
+
 - `users` untuk profil dan role
 - `sessions` untuk token aktif
 - `login_attempts` untuk status lockout
 
 Aturan:
+
 - role dan status aktivitas harus konsisten dengan data user aktif
 - session tidak boleh dianggap valid jika user sudah tidak aktif atau password diubah
 - logout dan invalidation harus membersihkan cache session dan state auth frontend
@@ -33,6 +36,7 @@ Aturan:
 ### 2. Master data
 
 Domain ini mencakup:
+
 - siswa
 - kelas
 - guru
@@ -41,12 +45,14 @@ Domain ini mencakup:
 - riwayat kelas siswa
 
 Sumber kebenaran:
+
 - `students` untuk identitas siswa
 - `classes` untuk definisi kelas
 - `student_class_history` untuk riwayat kelas
 - `teaching` dan `subjects` untuk pengampu dan mata pelajaran
 
 Aturan:
+
 - status aktif siswa harus dibedakan dengan riwayat kelasnya
 - data kelas harus tetap konsisten dengan tingkat dan tahun ajaran
 - riwayat kelas tidak boleh diprediksi dari data kelas terbaru saja
@@ -58,16 +64,19 @@ Aturan:
 ### 3. Attendance
 
 Domain ini mencakup:
+
 - absensi harian
 - absensi per mata pelajaran
 - ringkasan harian
 
 Sumber kebenaran:
+
 - `attendance` untuk catatan absensi harian
 - `subject_attendance` untuk absensi mata pelajaran
 - `attendance_daily` untuk agregasi ringkas
 
 Aturan:
+
 - ringkasan harian harus selalu konsisten dengan catatan detail
 - status kehadiran harus memakai nilai yang terdokumentasi dan seragam
 - perubahan data absensi harus mengikuti validasi tanggal dan role
@@ -75,6 +84,7 @@ Aturan:
 ### 4. Assignment & grading
 
 Domain ini mencakup:
+
 - tugas
 - soal
 - jawaban siswa
@@ -82,12 +92,14 @@ Domain ini mencakup:
 - KKM dan komponen penilaian
 
 Sumber kebenaran:
+
 - `assignments` untuk metadata tugas
 - `questions` untuk soal
 - `submissions` / data jawaban untuk hasil siswa
 - data nilai dan konfigurasi KKM tersimpan di tabel domain penilaian yang relevan
 
 Aturan:
+
 - status tugas, tenggat waktu, dan publikasi harus konsisten
 - nilai tidak boleh diproses dari data yang belum final
 - konfigurasi KKM dan bobot nilai harus ada satu interpretasi yang valid
@@ -95,15 +107,18 @@ Aturan:
 ### 5. Settings & operational config
 
 Domain ini mencakup:
+
 - pengaturan sekolah
 - konfigurasi tahun ajaran
 - status aktif aplikasi
 - parameter operasional
 
 Sumber kebenaran:
+
 - tabel `settings` dan parameter strategis yang dipakai di modul terkait
 
 Aturan:
+
 - konfigurasi tidak boleh tumpang tindih antar modul
 - default dan override harus terdokumentasi
 - perubahan setting harus memengaruhi semua konsumen yang memakai value tersebut
@@ -164,10 +179,10 @@ Satu domain tidak boleh membaca atau memodifikasi state domain lain tanpa kontra
 
 ## Definisi status
 
-| Konsep | Sumber | Aturan |
-| --- | --- | --- |
-| Siswa aktif | `students.is_active` | false untuk nonaktif dan lulus (`graduated_at` terisi) |
-| Anggota kelas | `student_class_history.is_active` DAN siswa aktif | hanya lewat `activeClassStudents` |
+| Konsep              | Sumber                                                   | Aturan                                                          |
+| ------------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| Siswa aktif         | `students.is_active`                                     | false untuk nonaktif dan lulus (`graduated_at` terisi)          |
+| Anggota kelas       | `student_class_history.is_active` DAN siswa aktif        | hanya lewat `activeClassStudents`                               |
 | Hubungan guru-kelas | `teaching` (mengajar), `classes.homeroom_teacher` (wali) | `users.assigned_classes` harus dijelaskan perannya atau dihapus |
 
 ## Aturan lintas domain (kontrak)

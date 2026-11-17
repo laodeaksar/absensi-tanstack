@@ -14,6 +14,7 @@ Dokumen ini menjelaskan strategi pengujian boundary untuk autentikasi dan role-b
 ### 1. Login dan session
 
 Uji skenario berikut:
+
 - user dengan kredensial valid berhasil login
 - user dengan kredensial invalid gagal login
 - user yang tidak login diarahkan ke `/login`
@@ -23,6 +24,7 @@ Uji skenario berikut:
 ### 2. Route guard
 
 Uji skenario berikut:
+
 - admin dapat mengakses route admin
 - guru dapat mengakses route guru tertentu
 - siswa tidak dapat mengakses route admin atau route guru yang sensitif
@@ -31,6 +33,7 @@ Uji skenario berikut:
 ### 3. Role-based access control
 
 Pada level fitur, pastikan:
+
 - admin bisa mengakses master data dan pengaturan
 - guru bisa mengakses absensi, tugas, nilai, dan laporan yang relevan
 - siswa hanya bisa mengakses dashboard siswa, tugas mereka, dan data nilai milik mereka
@@ -39,6 +42,7 @@ Pada level fitur, pastikan:
 ### 4. Password change flow
 
 Uji skenario berikut:
+
 - user yang harus ganti password diarahkan ke `/settings`
 - flow perubahan password berhasil dan sesi lama tidak lagi valid
 - route utama tidak bisa diakses jika password belum diganti
@@ -73,6 +77,7 @@ Uji skenario berikut:
 Uji logic guard dan redirect dengan penyedia context minimal.
 
 Contoh assert:
+
 - `requireUser` mengembalikan redirect jika user tidak ada
 - `allowRoles` memblokir akses berdasarkan role
 - `homeFor` mengembalikan route yang benar untuk siswa dan non-siswa
@@ -82,6 +87,7 @@ Contoh assert:
 Uji route utama dengan user session yang berbeda.
 
 Contoh:
+
 - admin -> `/dashboard` berhasil
 - siswa -> `/dashboard` redirect ke `/my-attendance`
 - guru -> `/students` boleh diakses atau tidak sesuai kebijakan app
@@ -89,6 +95,7 @@ Contoh:
 ### E2E
 
 Untuk alur utama, lakukan test end-to-end untuk:
+
 - login success/failure
 - redirect setelah login
 - access denied untuk role yang tidak punya izin

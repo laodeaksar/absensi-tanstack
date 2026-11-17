@@ -25,6 +25,7 @@ Jika aplikasi secara langsung mempercayai header client IP tanpa validasi proxy,
 Aplikasi hanya boleh membaca IP klien dari request yang berasal dari proxy atau edge layer yang tepercaya.
 
 Aturan:
+
 - Jika request datang dari jaringan yang tidak tepercaya, aplikasi tidak boleh mempercayai `x-forwarded-for`.
 - Gunakan environment atau konfigurasi deployment untuk menetapkan proxy yang trusted.
 - Hindari menerima header IP dari client yang terhubung langsung ke aplikasi tanpa reverse proxy.
@@ -32,6 +33,7 @@ Aturan:
 ### 2. Header yang digunakan harus dibatasi
 
 Gunakan header yang jelas dan aman, misalnya:
+
 - `x-forwarded-for` jika request benar-benar berasal dari trusted proxy
 - `x-real-ip` jika platform proxy menyediakan informasi yang konsisten
 
@@ -40,6 +42,7 @@ Jangan mempercayai variabel header secara umum tanpa validasi jaringan dan topol
 ### 3. IP adalah alat keamanan, bukan satu-satunya mekanisme
 
 IP bisa dipakai untuk:
+
 - rate limiting,
 - audit log,
 - brute-force lockout,
@@ -50,6 +53,7 @@ Namun IP tidak boleh menjadi satu-satunya lapisan keamanan. Untuk autentikasi ut
 ### 4. Implementasi harus transparan dan terdokumentasi
 
 Setiap environment harus memiliki definisi yang jelas:
+
 - apakah aplikasi berdiri di belakang reverse proxy,
 - proxy mana yang terpercaya,
 - header mana yang diizinkan,
