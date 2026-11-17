@@ -18,7 +18,7 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/grades-recap/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    kelas: typeof s.kelas === "string" ? s.kelas : undefined,
+    ...(typeof s.kelas === "string" && { kelas: s.kelas }),
   }),
   loader: ({ context }) => context.queryClient.query(classesQuery),
   component: GradeRecapPage,

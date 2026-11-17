@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_app/report-card/")({
   beforeLoad: ({ context }) =>
     allowRoles(context.me, ["admin", "guru", "siswa"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    siswa: typeof s.siswa === "string" ? s.siswa : undefined,
+    ...(typeof s.siswa === "string" ? { siswa: s.siswa } : {}),
     tahun: typeof s.tahun === "string" ? s.tahun : "",
     semester: (s.semester === "genap" ? "genap" : "ganjil") as GradeSemester,
   }),

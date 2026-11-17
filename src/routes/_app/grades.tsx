@@ -33,6 +33,7 @@ import { LIMITS } from "~/convex/limits";
 import { allowRoles } from "~/lib/auth";
 import {
   gradeConfigSchema,
+  gradeFilterSchema,
   gradeScoresSchema,
   isScoreInvalid,
   parseNum,

@@ -37,13 +37,13 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/reports")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    startDate: typeof s.startDate === "string" ? s.startDate : undefined,
-    endDate: typeof s.endDate === "string" ? s.endDate : undefined,
-    classId: typeof s.classId === "string" ? s.classId : undefined,
+    ...(typeof s.startDate === "string" && { startDate: s.startDate }),
+    ...(typeof s.endDate === "string" && { endDate: s.endDate }),
+    ...(typeof s.classId === "string" && { classId: s.classId }),
     // tab "mapel": rekap per mata pelajaran; pair = "classId|subjectId"
-    tab: s.tab === "mapel" ? ("mapel" as const) : undefined,
-    pair: typeof s.pair === "string" ? s.pair : undefined,
-    go: s.go === true || s.go === "true" ? true : undefined,
+    ...(s.tab === "mapel" && { tab: "mapel" as const }),
+    ...(typeof s.pair === "string" && { pair: s.pair }),
+    ...((s.go === true || s.go === "true") && { go: true }),
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -102,15 +102,6 @@ const columns = col.columns([
   }),
 ]);
 
-const NO_SEARCH = {
-  startDate: undefined,
-  endDate: undefined,
-  classId: undefined,
-  tab: undefined,
-  pair: undefined,
-  go: undefined,
-};
-
 function ReportsPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
@@ -120,7 +111,6 @@ function ReportsPage() {
     void navigate({
       to: "/reports",
       search: {
-        ...NO_SEARCH,
         tab: t === "mapel" ? "mapel" : undefined,
       },
     });
@@ -154,7 +144,6 @@ function ReportsPage() {
             void navigate({
               to: "/reports",
               search: {
-                ...NO_SEARCH,
                 ...next,
                 tab: "mapel",
                 go: true,
@@ -238,7 +227,6 @@ function DailyReportView() {
       void navigate({
         to: "/reports",
         search: {
-          ...NO_SEARCH,
           startDate: value.startDate || undefined,
           endDate: value.endDate || undefined,
           classId: value.classId || undefined,

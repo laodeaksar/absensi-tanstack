@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_app/my-attendance")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["siswa"]),
   // tab "mapel": kehadiran per mata pelajaran; kosong = harian
   validateSearch: (s: Record<string, unknown>) => ({
-    tab: s.tab === "mapel" ? ("mapel" as const) : undefined,
+    ...(s.tab === "mapel" && { tab: "mapel" as const }),
   }),
   component: MyAttendancePage,
 });
@@ -74,7 +74,9 @@ function MyAttendancePage() {
           type="button"
           className={`btn join-item btn-sm ${tab === "harian" ? "btn-primary" : ""}`}
           onClick={() =>
-            void navigate({ to: "/my-attendance", search: { tab: undefined } })
+            void navigate({
+              to: "/my-attendance",
+            })
           }
         >
           Harian

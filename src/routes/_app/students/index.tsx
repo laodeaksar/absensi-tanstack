@@ -53,9 +53,9 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/students/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    edit: typeof s.edit === "string" ? s.edit : undefined,
+    ...(typeof s.edit === "string" && { edit: s.edit }),
     // true = form Edit dibuka dari halaman detail, jadi kembali ke sana setelah selesai
-    back: s.back === true || s.back === "true" ? true : undefined,
+    ...((s.back === true || s.back === "true") && { back: true }),
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -274,7 +274,6 @@ function StudentsPage() {
     if (edit || back)
       void navigate({
         to: "/students",
-        search: { edit: undefined, back: undefined },
         replace: true,
       });
   }, [edit, back, navigate]);

@@ -37,10 +37,10 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/teachers/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    edit: typeof s.edit === "string" ? s.edit : undefined,
-    add: typeof s.add === "string" ? s.add : undefined,
+    ...(typeof s.edit === "string" && { edit: s.edit }),
+    ...(typeof s.add === "string" && { add: s.add }),
     // true = form Edit dibuka dari halaman detail, jadi kembali ke sana setelah selesai
-    back: s.back === true || s.back === "true" ? true : undefined,
+    ...((s.back === true || s.back === "true") && { back: true }),
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -229,7 +229,6 @@ function TeachersPage() {
     if (edit || add || back)
       void navigate({
         to: "/teachers",
-        search: { edit: undefined, add: undefined, back: undefined },
         replace: true,
       });
   }, [edit, add, back, navigate]);

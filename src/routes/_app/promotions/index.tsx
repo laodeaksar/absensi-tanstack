@@ -41,8 +41,8 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/promotions/")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    tingkat: typeof s.tingkat === "string" ? s.tingkat : undefined,
-    kelas: typeof s.kelas === "string" ? s.kelas : undefined,
+    ...(typeof s.tingkat === "string" && { tingkat: s.tingkat }),
+    ...(typeof s.kelas === "string" && { kelas: s.kelas }),
   }),
   loader: ({ context }) =>
     Promise.all([
@@ -264,7 +264,6 @@ function PromotionsPage() {
               className="btn btn-sm"
               onClick={() =>
                 void navigate({
-                  search: { tingkat: undefined, kelas: undefined },
                   replace: true,
                 })
               }
@@ -297,7 +296,6 @@ function PromotionsPage() {
               void navigate({
                 search: {
                   tingkat: e.target.value || undefined,
-                  kelas,
                 },
                 replace: true,
               });
@@ -320,7 +318,7 @@ function PromotionsPage() {
             value={kelas ?? ""}
             onChange={(e) => {
               void navigate({
-                search: { tingkat, kelas: e.target.value || undefined },
+                search: { kelas: e.target.value || undefined },
                 replace: true,
               });
               table.setPageIndex(0);

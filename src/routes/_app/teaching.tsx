@@ -603,7 +603,7 @@ function NoTeacherHelp({
       ) : null}
       <Link
         to="/teachers"
-        search={{ add: classId, edit: undefined, back: undefined }}
+        search={{ add: classId }}
         className="btn btn-sm btn-outline"
       >
         + Tambah guru baru

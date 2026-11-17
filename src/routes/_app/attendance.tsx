@@ -39,10 +39,10 @@ import { isActive } from "~/lib/types";
 export const Route = createFileRoute("/_app/attendance")({
   beforeLoad: ({ context }) => allowRoles(context.me, ["admin", "guru"]),
   validateSearch: (s: Record<string, unknown>) => ({
-    date: typeof s.date === "string" ? s.date : undefined,
-    classId: typeof s.classId === "string" ? s.classId : undefined,
+    ...(typeof s.date === "string" && { date: s.date }),
+    ...(typeof s.classId === "string" && { classId: s.classId }),
     // diisi bila yang dipilih absensi mata pelajaran
-    subjectId: typeof s.subjectId === "string" ? s.subjectId : undefined,
+    ...(typeof s.subjectId === "string" && { subjectId: s.subjectId }),
   }),
   loader: ({ context }) =>
     Promise.all([
