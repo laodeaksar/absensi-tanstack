@@ -1,9 +1,10 @@
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useTable } from "@tanstack/react-table";
-import { Printer } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import { useMemo } from "react";
 
+import type { CsvColumn } from "~/lib/csv";
 import type { SubjectReportRow } from "~/lib/types";
 
 import { HeaderButton, PageHeader } from "~/components/status-icons";
@@ -15,6 +16,7 @@ import {
   SelectField,
   TextField,
 } from "~/components/ui";
+import { downloadCsv, csvFilename } from "~/lib/csv";
 import { formatDate, monthStart, todayStr } from "~/lib/date";
 import {
   settingsQuery,

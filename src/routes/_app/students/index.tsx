@@ -323,6 +323,11 @@ function StudentsPage() {
         onReset: (student) => {
           void confirm(
             `Buat atau reset akun ${student.full_name}?\nUsername = NIS, password = NISN. Siswa diminta menggantinya saat login.`,
+            {
+              title: "Reset Akun Siswa",
+              confirmLabel: "Ya, reset akun",
+              requireText: student.full_name,
+            },
           ).then((confirmed) => {
             if (confirmed) resetAccount(student.student_id);
           });
@@ -331,6 +336,11 @@ function StudentsPage() {
         onGraduate: (student) => {
           void confirm(
             `Luluskan ${student.full_name}?\nRiwayat kelas ditutup, siswa dinonaktifkan, dan akun loginnya tidak bisa dipakai lagi.`,
+            {
+              title: "Luluskan Siswa",
+              confirmLabel: "Ya, luluskan",
+              requireText: student.full_name,
+            },
           ).then((confirmed) => {
             if (confirmed) graduateStudent(student.student_id);
           });

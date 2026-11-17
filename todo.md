@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[██████████████░░░░░░] 68% Selesai
-- Selesai          : 13 Task (Seluruh P0 + Seluruh P1 + P2 poin 9, 10)
+[████████████████░░░░] 79% Selesai
+- Selesai          : 15 Task (Seluruh P0 + Seluruh P1 + P2 poin 9, 10, 11, 12)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 6 Task (P2, P3)
+- Dalam Antrean    : 4 Task (P3)
 ```
 
 ---
@@ -79,13 +79,13 @@ Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer seko
     - Tombol panah atas/bawah (`ArrowUp` / `ArrowDown`) untuk berpindah antar-baris siswa.
     - Tombol cepat huruf: `H` (Hadir), `S` (Sakit), `I` (Izin), `A` (Alpa).
     - Tombol `Enter` untuk membuka modal isian keterangan.
-- [10] **10. Ekspor Laporan Presensi ke Excel / CSV**
+- [x] **10. Ekspor Laporan Presensi ke Excel / CSV**
   - _Lokasi_: `src/routes/_app/reports.tsx`, `src/components/subject-report-view.tsx`
   - _Deskripsi_: Tambahkan tombol _"Ekspor CSV"_ di samping tombol _"Cetak"_ agar rekap presensi bulanan dapat diolah lebih lanjut untuk keperluan laporan dinas/yayasan.
 - [ ] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
   - _Lokasi_: `src/routes/_app/students/index.tsx`, `src/routes/_app/teachers/index.tsx`
   - _Deskripsi_: Form unggah berkas CSV/Excel berbasis template standar untuk mengimpor puluhan hingga ratusan siswa baru sekaligus saat tahun ajaran baru.
-- [ ] **12. Konfirmasi Ganda untuk Tindakan Kritis**
+- [x] **12. Konfirmasi Ganda untuk Tindakan Kritis**
   - _Lokasi_: `src/hooks/use-confirm.tsx`, `src/routes/_app/students/index.tsx`
   - _Deskripsi_: Tambahkan dialog konfirmasi dengan pengetikan nama atau teks konfirmasi untuk tindakan permanen:
     - Meluluskan siswa (menonaktifkan akun).

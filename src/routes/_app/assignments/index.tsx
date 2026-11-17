@@ -289,6 +289,13 @@ function AssignmentsPage() {
               : "";
           void confirm(
             `Hapus tugas "${assignment.title}" beserta seluruh soalnya?${extra}`,
+            assignment.started_count > 0
+              ? {
+                  title: "Hapus Tugas",
+                  confirmLabel: "Ya, hapus tugas",
+                  requireText: "HAPUS",
+                }
+              : {},
           ).then((confirmed) => {
             if (confirmed) removeAssignment(assignment.assignment_id);
           });

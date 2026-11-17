@@ -105,6 +105,11 @@ function StudentDetailPage() {
                     if (
                       await confirm(
                         `Luluskan ${p.full_name}?\nRiwayat kelas ditutup, siswa dinonaktifkan, dan akun loginnya tidak bisa dipakai lagi.`,
+                        {
+                          title: "Luluskan Siswa",
+                          confirmLabel: "Ya, luluskan",
+                          requireText: p.full_name,
+                        },
                       )
                     )
                       graduate.mutate();

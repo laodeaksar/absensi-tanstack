@@ -169,6 +169,11 @@ function PromotionsPage() {
         onGraduate: (student) => {
           void confirm(
             `Luluskan ${student.full_name}?\nRiwayat kelas ditutup, siswa dinonaktifkan, dan akun loginnya tidak bisa dipakai lagi.`,
+            {
+              title: "Luluskan Siswa",
+              confirmLabel: "Ya, luluskan",
+              requireText: student.full_name,
+            },
           ).then((confirmed) => {
             if (confirmed) graduateStudent(student.student_id);
           });
