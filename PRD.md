@@ -325,17 +325,17 @@ Aplikasi memiliki 18 tabel inti yang terdefinisi pada berkas `convex/schema.ts`:
 
 ### Fase 2: Peningkatan Pengalaman Mobile & PWA (Prioritas Saat Ini)
 
-- [ ] PWA Standalone Manifest: Penambahan `manifest.webmanifest`, ikon launcher, dan meta tag tema untuk pemasangan di homescreen smartphone.
-- [ ] Antarmuka Absensi Ramah Sentuh (_Touch-Friendly Chips_): Mengganti checkbox tabel di layar mobile dengan tombol pill segmented (`[H] [S] [I] [A]`) berukuran touch target nyaman.
-- [ ] Kolom Sticky pada Tabel: Membuat kolom Nama Siswa tetap terlihat saat tabel di-scroll horizontal di layar ponsel.
-- [ ] Filter Cepat Siswa Belum Diabsen.
+- [x] PWA Standalone Manifest: Penambahan `manifest.webmanifest`, ikon launcher, dan meta tag tema untuk pemasangan di homescreen smartphone.
+- [x] Antarmuka Absensi Ramah Sentuh (_Touch-Friendly Chips_): Mengganti checkbox tabel di layar mobile dengan tombol pill segmented (`[H] [S] [I] [A]`) berukuran touch target nyaman.
+- [x] Kolom Sticky pada Tabel: Membuat kolom Nama Siswa tetap terlihat saat tabel di-scroll horizontal di layar ponsel.
+- [x] Filter Cepat Siswa Belum Diabsen.
 
 ### Fase 3: Visual Polish & Resiliensi Offline
 
-- [ ] Penggantian `PageSpinner` dengan komponen _Skeleton Shimmer_ animasi untuk transisi halaman yang lebih mulus.
-- [ ] Dukungan Mode Gelap (_Dark Mode_) dengan penyimpanan preferensi tema pengguna.
-- [ ] Indikator visual status koneksi (_Online/Offline Banner_) dan riwayat autosave draf.
-- [ ] Pintasan keyboard (_Keyboard Shortcuts_) untuk input data massal di laptop.
+- [x] Penggantian `PageSpinner` dengan komponen _Skeleton Shimmer_ animasi untuk transisi halaman yang lebih mulus.
+- [x] Dukungan Mode Gelap (_Dark Mode_) dengan penyimpanan preferensi tema pengguna.
+- [x] Indikator visual status koneksi (_Online/Offline Banner_) dan riwayat autosave draf.
+- [x] Pintasan keyboard (_Keyboard Shortcuts_) untuk input data massal di laptop.
 
 ### Fase 4: Integrasi Lanjutan & Komunikasi
 

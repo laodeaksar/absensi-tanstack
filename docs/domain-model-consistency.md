@@ -50,6 +50,10 @@ Aturan:
 - status aktif siswa harus dibedakan dengan riwayat kelasnya
 - data kelas harus tetap konsisten dengan tingkat dan tahun ajaran
 - riwayat kelas tidak boleh diprediksi dari data kelas terbaru saja
+- Invariant: siswa nonaktif (`students.is_active = false`) tidak memiliki riwayat kelas aktif.
+  Menonaktifkan siswa (form atau kelulusan) menutup seluruh riwayat aktifnya di mutation yang sama
+  (`closeActiveHistory`). Mengaktifkan kembali tidak mengembalikan kelas; siswa ditempatkan ulang lewat Pindah Kelas.
+- Definisi anggota kelas hanya lewat activeMemberIds (lib.ts).
 
 ### 3. Attendance
 
@@ -151,6 +155,26 @@ Pembagian domain berikut dianjurkan agar codebase lebih jelas:
 - `settings`
 
 Satu domain tidak boleh membaca atau memodifikasi state domain lain tanpa kontrak jelas.
+
+## Data turunan (bukan sumber kebenaran)
+
+- Nilai akhir, predikat, dan status KKM tidak disimpan. Dihitung oleh `buildRow` dari `grade_configs`,
+  `grade_scores`, dan rata-rata tugas. Semua konsumen (buku nilai, rekap, rapor, cek naik kelas) wajib memakainya.
+- `attendance_daily` adalah agregasi dari `attendance`. Bila berselisih, `attendance` yang benar.
+
+## Definisi status
+
+| Konsep | Sumber | Aturan |
+| --- | --- | --- |
+| Siswa aktif | `students.is_active` | false untuk nonaktif dan lulus (`graduated_at` terisi) |
+| Anggota kelas | `student_class_history.is_active` DAN siswa aktif | hanya lewat `activeClassStudents` |
+| Hubungan guru-kelas | `teaching` (mengajar), `classes.homeroom_teacher` (wali) | `users.assigned_classes` harus dijelaskan perannya atau dihapus |
+
+## Aturan lintas domain (kontrak)
+
+- `master-data` → `grades`: naik kelas dan lulus memanggil `assertMeetsKkm`.
+- `subjects` → `attendance`: memakai `activeMembers` dan `assertAttendanceEditable`.
+- Aturan tahun ajaran selesai: satu fungsi `isYearFinished` (`rules.ts`), dipakai server dan klien.
 
 ## Checklist penerapan
 

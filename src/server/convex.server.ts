@@ -223,6 +223,22 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
   getMyResult: queryRoute(api.assignment.getMyResult, ([assignmentId]) => ({
     assignmentId,
   })),
+  getClassGradeRecap: queryRoute(
+    api.grades.getClassGradeRecap,
+    ([classId, academicYear]) => ({ classId, academicYear }),
+  ),
+  getStudentGrades: queryRoute(
+    api.grades.getStudentGrades,
+    ([studentId]) => ({ studentId }),
+  ),
+  getReportCard: queryRoute(
+    api.grades.getReportCard,
+    ([studentId, academicYear, semester]) => ({
+      studentId,
+      academicYear,
+      semester,
+    }),
+  ),
 };
 
 export type RouteName = keyof typeof CONVEX_ROUTES;

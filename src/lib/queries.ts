@@ -252,7 +252,7 @@ export const myGradesQuery = (a: {
     select: (r): MyGrades => r as MyGrades,
   });
 
-export const classGradeRecapQuery = (a: {
+/* export const classGradeRecapQuery = (a: {
   classId: string;
   academicYear: string;
 }) =>
@@ -261,18 +261,13 @@ export const classGradeRecapQuery = (a: {
     select: (r): ClassGradeRecap => r as ClassGradeRecap,
   });
 
-export const studentGradesQuery = (studentId: string) =>
+ export const studentGradesQuery = (studentId: string) =>
   queryOptions({
     ...convexQuery(convexApi.grades.getStudentGrades, { studentId }),
     select: (r): StudentGrades => r as StudentGrades,
-  });
+  }); 
 
-export const homeroomOverviewQuery = queryOptions({
-  ...convexQuery(convexApi.attendance.getHomeroomOverview, {}),
-  select: (r): HomeroomOverview => r as HomeroomOverview,
-});
-
-export const reportCardQuery = (a: {
+  export const reportCardQuery = (a: {
   studentId?: string;
   academicYear: string;
   semester: GradeSemester;
@@ -280,4 +275,38 @@ export const reportCardQuery = (a: {
   queryOptions({
     ...convexQuery(convexApi.grades.getReportCard, a),
     select: (r): ReportCard => r as ReportCard,
+  }); */
+
+
+export const classGradeRecapQuery = (a: {
+  classId: string;
+  academicYear: string;
+}) =>
+  queryOptions({
+    queryKey: ["grade-recap", a.classId, a.academicYear],
+    queryFn: () => api.classGradeRecap(a.classId, a.academicYear),
+    staleTime: 0,
   });
+
+export const studentGradesQuery = (studentId: string) =>
+  queryOptions({
+    queryKey: ["student-grades", studentId],
+    queryFn: () => api.studentGrades(studentId),
+    staleTime: 0,
+  });
+
+export const reportCardQuery = (a: {
+  studentId?: string;
+  academicYear: string;
+  semester: GradeSemester;
+}) =>
+  queryOptions({
+    queryKey: ["report-card", a.studentId ?? "me", a.academicYear, a.semester],
+    queryFn: () => api.reportCard(a.studentId, a.academicYear, a.semester),
+    staleTime: 0,
+  });
+  
+export const homeroomOverviewQuery = queryOptions({
+  ...convexQuery(convexApi.attendance.getHomeroomOverview, {}),
+  select: (r): HomeroomOverview => r as HomeroomOverview,
+});
