@@ -18,11 +18,19 @@ import type { AttendanceEntry } from "~/lib/types";
 import { DataTable, Modal, SearchBox, TextAreaField } from "~/components/ui";
 import { LIMITS, needsNotes } from "~/convex/limits";
 import { STATUS_VALUES } from "~/convex/rules";
+import { useRowShortcuts } from "~/hooks/use-row-shortcuts";
 import { gridSchema } from "~/lib/attendance-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
 
 import { EmptyState } from "./empty-state";
+
+const SHORTCUT_STATUS = {
+  h: "Hadir",
+  s: "Sakit",
+  i: "Izin",
+  a: "Alpa",
+} as const;
 
 type Row = Omit<AttendanceEntry, "attendance_id"> & {
   originalIndex: number;
@@ -367,6 +375,34 @@ export function AttendanceGrid({
     },
   });
 
+  const { rowProps } = useRowShortcuts({
+    ids: displayRows.map((r) => r.student_id),
+    enabled: noteRow === null,
+    onKey: (key, id) => {
+      const row = rows.find((r) => r.student_id === id);
+      if (!row) return false;
+      const idx = row.originalIndex;
+      const status =
+        SHORTCUT_STATUS[key.toLowerCase() as keyof typeof SHORTCUT_STATUS];
+      if (status) {
+        triggerHaptic(15);
+        const next =
+          form.state.values.rows[idx]?.status === status ? "" : status;
+        form.setFieldValue(`rows[${idx}].status` as const, next);
+        if (next && needsNotes(next)) openNote(idx);
+        return true;
+      }
+      if (key === "Enter") {
+        const cur = form.state.values.rows[idx];
+        if (cur && needsNotes(cur.status)) {
+          openNote(idx);
+          return true;
+        }
+      }
+      return false;
+    },
+  });
+
   const computedEmpty = useMemo(() => {
     const reset = (label: string, onClick: () => void) => (
       <button
@@ -515,11 +551,17 @@ export function AttendanceGrid({
         </div>
       </div>
 
+      <p className="hidden border-b border-base-200 px-4 py-1.5 text-xs text-base-content/50 md:block">
+        Pintasan: ↑ ↓ pilih siswa · H S I A isi status · Enter isi keterangan ·
+        Esc batal
+      </p>
+
       {/* Area Tabel dengan Kolom Sticky */}
       <DataTable
         table={table}
         empty={computedEmpty}
         stickyCol1Width="2.75rem"
+        rowProps={(r) => rowProps(r.student_id)}
       />
 
       {/* Tautan kembali bila filter kosong */}

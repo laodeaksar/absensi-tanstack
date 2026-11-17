@@ -316,6 +316,32 @@ function GradeComponentHeader({
   );
 }
 
+function moveScoreFocus(
+  e: React.KeyboardEvent<HTMLDivElement>,
+  colKey: string,
+) {
+  if (e.nativeEvent.isComposing) return;
+  let dir = 0;
+  if (e.key === "ArrowDown") dir = 1;
+  else if (e.key === "ArrowUp") dir = -1;
+  else if (e.key === "Enter") dir = e.shiftKey ? -1 : 1;
+  if (!dir) return;
+  if (e.key === "Enter") e.preventDefault(); // cegah submit form
+  const cells = Array.from(
+    e.currentTarget
+      .closest("form")
+      ?.querySelectorAll<HTMLElement>(
+        `[data-score-col="${CSS.escape(colKey)}"]`,
+      ) ?? [],
+  );
+  const next =
+    cells[cells.indexOf(e.currentTarget) + dir]?.querySelector("input");
+  if (!next) return;
+  e.preventDefault();
+  next.focus();
+  next.select();
+}
+
 function GradeScoreCell({
   form,
   row,
@@ -330,7 +356,11 @@ function GradeScoreCell({
     return <>{row.values[component.key] ?? "-"}</>;
 
   return (
-    <div className="w-28">
+    <div
+      className="w-28"
+      data-score-col={component.key}
+      onKeyDown={(e) => moveScoreFocus(e, component.key)}
+    >
       <form.Field name={`scores.${row.student_id}.${component.key}`}>
         {(f) => (
           <TextField

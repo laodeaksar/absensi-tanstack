@@ -32,6 +32,7 @@ export function DataTable<TData extends Record<string, any>>({
   stickyHeader = true,
   stickyColumns,
   stickyCol1Width = "3rem",
+  rowProps,
 }: {
   table: Table<AppFeatures, TData>;
   emptyText?: string;
@@ -39,6 +40,7 @@ export function DataTable<TData extends Record<string, any>>({
   stickyHeader?: boolean;
   stickyColumns?: number | string[];
   stickyCol1Width?: string;
+  rowProps?: (original: TData) => React.HTMLAttributes<HTMLTableRowElement>;
 }) {
   const [compact, setCompact] = useState(false);
   const rows = table.getRowModel().rows;
@@ -158,7 +160,10 @@ export function DataTable<TData extends Record<string, any>>({
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={row.id}>
+              <tr
+                key={row.id}
+                {...rowProps?.(row.original)}
+              >
                 {row.getAllCells().map((cell, i) => {
                   const meta = cell.column.columnDef.meta as
                     | CellMeta

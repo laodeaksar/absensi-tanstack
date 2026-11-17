@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[████████████░░░░░░░░] 58% Selesai
-- Selesai          : 11 Task (Seluruh P0 + Seluruh P1)
+[█████████████░░░░░░░] 63% Selesai
+- Selesai          : 12 Task (Seluruh P0 + Seluruh P1 + P2 poin 9)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 8 Task (P2, P3)
+- Dalam Antrean    : 7 Task (P2, P3)
 ```
 
 ---
@@ -73,7 +73,7 @@ Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan mod
 
 Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer sekolah.
 
-- [ ] **9. Pintasan Keyboard (_Keyboard Shortcuts_) pada Input Absensi & Nilai**
+- [x] **9. Pintasan Keyboard (_Keyboard Shortcuts_) pada Input Absensi & Nilai**
   - _Lokasi_: `src/components/attendance-grid.tsx`, `src/routes/_app/grades.tsx`
   - _Fitur_:
     - Tombol panah atas/bawah (`ArrowUp` / `ArrowDown`) untuk berpindah antar-baris siswa.
