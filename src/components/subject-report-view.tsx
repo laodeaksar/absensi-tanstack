@@ -66,6 +66,17 @@ const columns = col.columns([
   }),
 ]);
 
+const CSV_COLUMNS: CsvColumn<SubjectReportRow>[] = [
+  { header: "NIS", value: (r) => r.nis, text: true },
+  { header: "Nama Siswa", value: (r) => r.full_name },
+  { header: "Hadir", value: (r) => r.hadir },
+  { header: "Sakit", value: (r) => r.sakit },
+  { header: "Izin", value: (r) => r.izin },
+  { header: "Alpa", value: (r) => r.alpa },
+  { header: "Total", value: (r) => r.total },
+  { header: "Persentase Hadir (%)", value: (r) => r.persentase },
+];
+
 /**
  * Rekap absensi per mata pelajaran (tab pada halaman Laporan).
  * Parameter pencarian dan pemindahan halaman dikelola halaman pemanggil lewat props.
@@ -195,12 +206,32 @@ export function SubjectReportView({
     setTimeout(() => window.print(), 50);
   };
 
+  const exportCsv = () =>
+    downloadCsv(
+      csvFilename(
+        "rekap-absensi-mapel",
+        meta?.class_name,
+        meta?.subject_name,
+        search.startDate,
+        search.endDate,
+      ),
+      CSV_COLUMNS,
+      data,
+    );
+
   return (
     <div className="space-y-4">
       <PageHeader
         title="Rekap Absensi Mata Pelajaran"
         className="no-print"
       >
+        <HeaderButton
+          label="Ekspor CSV"
+          className="btn-outline"
+          icon={<Download className="size-4" />}
+          onClick={exportCsv}
+          disabled={data.length === 0}
+        />
         <HeaderButton
           label="Cetak Rekap"
           className="btn-neutral"

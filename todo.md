@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[█████████████░░░░░░░] 63% Selesai
-- Selesai          : 12 Task (Seluruh P0 + Seluruh P1 + P2 poin 9)
+[██████████████░░░░░░] 68% Selesai
+- Selesai          : 13 Task (Seluruh P0 + Seluruh P1 + P2 poin 9, 10)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 7 Task (P2, P3)
+- Dalam Antrean    : 6 Task (P2, P3)
 ```
 
 ---
@@ -79,7 +79,7 @@ Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer seko
     - Tombol panah atas/bawah (`ArrowUp` / `ArrowDown`) untuk berpindah antar-baris siswa.
     - Tombol cepat huruf: `H` (Hadir), `S` (Sakit), `I` (Izin), `A` (Alpa).
     - Tombol `Enter` untuk membuka modal isian keterangan.
-- [ ] **10. Ekspor Laporan Presensi ke Excel / CSV**
+- [10] **10. Ekspor Laporan Presensi ke Excel / CSV**
   - _Lokasi_: `src/routes/_app/reports.tsx`, `src/components/subject-report-view.tsx`
   - _Deskripsi_: Tambahkan tombol _"Ekspor CSV"_ di samping tombol _"Cetak"_ agar rekap presensi bulanan dapat diolah lebih lanjut untuk keperluan laporan dinas/yayasan.
 - [ ] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
