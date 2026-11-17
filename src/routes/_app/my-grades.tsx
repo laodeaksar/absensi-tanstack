@@ -1,7 +1,7 @@
 import { useForm, useSelector } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { BookOpen, Printer } from "lucide-react";
 
 import type { GradeSemester } from "~/lib/types";
 
@@ -32,7 +32,20 @@ function MyGradesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Nilai Saya" />
+      <PageHeader title="Nilai Saya">
+        {parsed.success ? (
+          <Link
+            to="/report-card"
+            search={{
+              tahun: parsed.data.year,
+              semester: parsed.data.semester as GradeSemester,
+            }}
+            className="btn btn-sm btn-outline"
+          >
+            <Printer className="size-4" /> Cetak Rapor
+          </Link>
+        ) : null}
+      </PageHeader>
       <form
         noValidate
         onSubmit={(e) => e.preventDefault()}

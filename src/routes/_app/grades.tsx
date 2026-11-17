@@ -6,9 +6,9 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Settings2, Users, ClipboardList } from "lucide-react";
+import { Settings2, Users, ClipboardList, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { GradeBook, GradeSemester } from "~/lib/types";
@@ -393,9 +393,11 @@ function GradeStatusCell({ row }: Readonly<{ row: GradeRow }>) {
 function createGradeColumns({
   components,
   form,
+  args,
 }: Readonly<{
   components: GradeComponentDef[];
   form: ScoresForm;
+  args: GradeBookArgs;
 }>) {
   return col.columns([
     col.display({
@@ -432,6 +434,25 @@ function createGradeColumns({
       id: "status",
       header: "Status",
       cell: ({ row }) => <GradeStatusCell row={row.original} />,
+    }),
+    col.display({
+      id: "report",
+      header: "Rapor",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Link
+          to="/report-card"
+          search={{
+            siswa: row.original.student_id,
+            tahun: args.academicYear,
+            semester: args.semester,
+          }}
+          className="btn btn-ghost btn-xs"
+          aria-label={`Cetak rapor ${row.original.full_name}`}
+        >
+          <Printer className="size-4" />
+        </Link>
+      ),
     }),
   ]);
 }
@@ -492,8 +513,9 @@ function GradeBookTable({
   });
 
   const columns = useMemo(
-    () => createGradeColumns({ components: data.config.components, form }),
-    [data.config.components, form],
+    () =>
+      createGradeColumns({ components: data.config.components, form, args }),
+    [data.config.components, form, args],
   );
 
   const table = useTable({
@@ -502,11 +524,10 @@ function GradeBookTable({
     data: data.rows,
     initialState: { pagination: { pageIndex: 0, pageSize: 100 } },
   });
-  
+
   const weightTotal =
-    Math.round(
-      data.config.components.reduce((s, c) => s + c.weight, 0) * 100,
-    ) / 100;
+    Math.round(data.config.components.reduce((s, c) => s + c.weight, 0) * 100) /
+    100;
 
   return (
     <form
@@ -748,7 +769,7 @@ function GradeConfigForm({
           </div>
         )}
       </form.Field>
-      
+
       <form.Subscribe
         selector={(s) => sumWeights(s.values.components.map((c) => c.weight))}
       >

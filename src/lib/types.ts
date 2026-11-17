@@ -650,3 +650,27 @@ export interface HomeroomOverview {
   date: string;
   classes: HomeroomClass[];
 }
+
+export interface ReportCard {
+  school: {
+    name: string;
+    address: string;
+    principal_name: string;
+    principal_nip: string;
+  };
+  student: { full_name: string; nis: string; nisn: string };
+  class: { class_name: string; grade_level: string; academic_year: string };
+  academicYear: string;
+  semester: string;
+  homeroom: { name: string; nip: string } | null;
+  rows: {
+    subject_id: string;
+    subject_name: string;
+    kkm: number;
+    final: number | null;
+    predicate: string;
+    passed: boolean;
+    complete: boolean;
+  }[];
+  printed_at: string;
+}

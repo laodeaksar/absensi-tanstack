@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[███████████████████░] 95% Selesai
-- Selesai          : 18 Task (Seluruh P0, P1, P2 + P3 poin 13, 14, 15)
+[████████████████████] 100% Selesai
+- Selesai          : 19 Task (Seluruh P0, P1, P2, P3)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 1 Task (P3)
+- Dalam Antrean    : 0 Task
 ```
 
 ---
@@ -108,7 +108,7 @@ Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak
 - [x] **15. Pemantauan Kehadiran Wali Kelas (Homeroom Overview)**
   - _Lokasi_: `src/routes/_app/dashboard.tsx`
   - _Deskripsi_: Tambahkan tab atau widget khusus bagi guru yang berstatus wali kelas untuk melihat rangkuman absensi harian dan mata pelajaran khusus kelas bimbingannya dalam satu layar.
-- [ ] **16. Integrasi Cetak Rapor Siswa Resmi (Format PDF)**
+- [x] **16. Integrasi Cetak Rapor Siswa Resmi (Format PDF)**
   - _Lokasi_: `src/routes/_app/grades.tsx`, `src/routes/_app/my-grades.tsx`
   - _Deskripsi_: Template halaman cetak rapor nilai per semester lengkap dengan tanda tangan Kepala Sekolah dan Wali Kelas.
 

@@ -28,6 +28,7 @@ import type {
   SubmissionList,
   Teacher,
   TeachingRow,
+  ReportCard,
 } from "./types";
 
 import { api } from "./api";
@@ -270,3 +271,13 @@ export const homeroomOverviewQuery = queryOptions({
   ...convexQuery(convexApi.attendance.getHomeroomOverview, {}),
   select: (r): HomeroomOverview => r as HomeroomOverview,
 });
+
+export const reportCardQuery = (a: {
+  studentId?: string;
+  academicYear: string;
+  semester: GradeSemester;
+}) =>
+  queryOptions({
+    ...convexQuery(convexApi.grades.getReportCard, a),
+    select: (r): ReportCard => r as ReportCard,
+  });

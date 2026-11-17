@@ -424,7 +424,9 @@ export const getHomeroomOverview = query({
           ...members.get(student_id)!,
           count: n,
         }))
-        .sort((a, b) => b.count - a.count || a.full_name.localeCompare(b.full_name))
+        .sort(
+          (a, b) => b.count - a.count || a.full_name.localeCompare(b.full_name),
+        )
         .slice(0, 5);
 
       // Absensi per mata pelajaran hari ini

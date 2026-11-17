@@ -13,6 +13,8 @@ import {
   studentById,
   subjectById,
   teachingRowOf,
+  userById,
+  todayStr,
 } from "./lib";
 import { LIMITS } from "./limits";
 import {
@@ -446,6 +448,106 @@ export const getMyGrades = query({
     }
     rows.sort((x, y) => x.subject_name.localeCompare(y.subject_name));
     return { rows };
+  },
+});
+
+/** Data rapor satu siswa per semester. Siswa: dirinya sendiri. Admin: siapa saja. Guru: hanya wali kelas siswa itu. */
+export const getReportCard = query({
+  args: {
+    token: v.optional(v.string()),
+    studentId: v.optional(v.string()),
+    academicYear: v.string(),
+    semester: semesterArg,
+  },
+  handler: async (ctx, a) => {
+    const user = await requireAuth(ctx, a.token, { allowStudent: true });
+    const studentId = user.role === "siswa" ? user.student_id : a.studentId;
+    if (!studentId) fail("Pilih siswa terlebih dahulu.");
+
+    const student = await studentById(ctx, studentId!);
+    if (!student) fail("Data siswa tidak ditemukan.");
+
+    const hist = await ctx.db
+      .query("student_class_history")
+      .withIndex("by_student", (q) => q.eq("student_id", studentId!))
+      .collect();
+    const h =
+      hist.find((x) => x.academic_year === a.academicYear) ??
+      hist.find((x) => x.is_active);
+    if (!h) fail("Siswa tidak memiliki kelas pada tahun ajaran ini.");
+    const cls = await classById(ctx, h!.class_id);
+    if (!cls) fail("Kelas tidak ditemukan.");
+    if (user.role === "guru" && cls!.homeroom_teacher !== user.user_id)
+      fail("FORBIDDEN");
+
+    const teaching = await ctx.db
+      .query("teaching")
+      .withIndex("by_class_subject", (q) => q.eq("class_id", cls!.class_id))
+      .collect();
+    const rows = [];
+    for (const subjectId of new Set(teaching.map((t) => t.subject_id))) {
+      const cfg = await loadConfig(ctx, cls!.class_id, subjectId);
+      const { averages } = await taskAverages(
+        ctx,
+        cls!.class_id,
+        subjectId,
+        a.academicYear,
+        a.semester,
+      );
+      const scores = await ctx.db
+        .query("grade_scores")
+        .withIndex("by_cell", (q) =>
+          q
+            .eq("class_id", cls!.class_id)
+            .eq("subject_id", subjectId)
+            .eq("academic_year", a.academicYear)
+            .eq("semester", a.semester)
+            .eq("student_id", studentId!),
+        )
+        .collect();
+      const manual: Record<string, number> = {};
+      for (const s of scores) manual[s.component] = s.score;
+      const r = buildRow(cfg, averages.get(studentId!), manual);
+      rows.push({
+        subject_id: subjectId,
+        subject_name: (await subjectById(ctx, subjectId))?.name ?? "-",
+        kkm: cfg.kkm,
+        final: r.final,
+        predicate: r.predicate,
+        passed: r.passed,
+        complete: r.complete,
+      });
+    }
+    rows.sort((x, y) => x.subject_name.localeCompare(y.subject_name));
+
+    const wali = cls!.homeroom_teacher
+      ? await userById(ctx, cls!.homeroom_teacher)
+      : null;
+    const settings = await getSettingsMap(ctx);
+
+    return {
+      school: {
+        name: settings.school_name,
+        address: settings.school_address,
+        principal_name: settings.principal_name,
+        principal_nip: settings.principal_nip,
+      },
+      student: {
+        full_name: student!.full_name,
+        nis: student!.nis,
+        nisn: student!.nisn,
+      },
+      class: {
+        class_name: cls!.class_name,
+        grade_level: cls!.grade_level,
+        academic_year: cls!.academic_year,
+      },
+      academicYear: a.academicYear,
+      semester: a.semester,
+      homeroom: wali ? { name: wali.full_name, nip: wali.nip } : null,
+      rows,
+      printed_at: todayStr(0),
+    };
   },
 });
 

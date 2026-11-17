@@ -25,14 +25,12 @@ export const isScoreInvalid = (v: string) =>
 
 /** Total bobot, dibulatkan 2 desimal agar 33.3 + 33.3 + 33.4 tidak jadi 100.00000001. */
 export const sumWeights = (weights: string[]) =>
-  Math.round(
-    weights.reduce((s, w) => s + (isNum(w) ? num(w) : 0), 0) * 100,
-  ) / 100;
+  Math.round(weights.reduce((s, w) => s + (isNum(w) ? num(w) : 0), 0) * 100) /
+  100;
 
 const scoreText = z
   .string()
   .refine((v) => !isScoreInvalid(v), "Nilai harus 0 - 100");
-
 
 export const gradeScoresSchema = z.object({
   scores: z.record(z.string(), z.record(z.string(), scoreText)),

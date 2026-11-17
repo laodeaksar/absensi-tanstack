@@ -26,6 +26,7 @@ import { Route as AppAssignmentsIndexRouteImport } from './routes/_app/assignmen
 import { Route as AppGradesRecapIndexRouteImport } from './routes/_app/grades-recap/index'
 import { Route as AppGradesRecapStudentIdRouteImport } from './routes/_app/grades-recap/$studentId'
 import { Route as AppPromotionsIndexRouteImport } from './routes/_app/promotions/index'
+import { Route as AppReportCardIndexRouteImport } from './routes/_app/report-card/index'
 import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
 import { Route as AppStudentsStudentIdRouteImport } from './routes/_app/students/$studentId'
 import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
@@ -120,6 +121,11 @@ const AppPromotionsIndexRoute = AppPromotionsIndexRouteImport.update({
   path: '/promotions/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportCardIndexRoute = AppReportCardIndexRouteImport.update({
+  id: '/report-card/',
+  path: '/report-card/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppStudentsIndexRoute = AppStudentsIndexRouteImport.update({
   id: '/students/',
   path: '/students/',
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/assignments/': typeof AppAssignmentsIndexRoute
   '/grades-recap/': typeof AppGradesRecapIndexRoute
   '/promotions/': typeof AppPromotionsIndexRoute
+  '/report-card/': typeof AppReportCardIndexRoute
   '/students/': typeof AppStudentsIndexRoute
   '/tasks/': typeof AppTasksIndexRoute
   '/teachers/': typeof AppTeachersIndexRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/assignments': typeof AppAssignmentsIndexRoute
   '/grades-recap': typeof AppGradesRecapIndexRoute
   '/promotions': typeof AppPromotionsIndexRoute
+  '/report-card': typeof AppReportCardIndexRoute
   '/students': typeof AppStudentsIndexRoute
   '/tasks': typeof AppTasksIndexRoute
   '/teachers': typeof AppTeachersIndexRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/_app/assignments/': typeof AppAssignmentsIndexRoute
   '/_app/grades-recap/': typeof AppGradesRecapIndexRoute
   '/_app/promotions/': typeof AppPromotionsIndexRoute
+  '/_app/report-card/': typeof AppReportCardIndexRoute
   '/_app/students/': typeof AppStudentsIndexRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
   '/_app/teachers/': typeof AppTeachersIndexRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/assignments/'
     | '/grades-recap/'
     | '/promotions/'
+    | '/report-card/'
     | '/students/'
     | '/tasks/'
     | '/teachers/'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/assignments'
     | '/grades-recap'
     | '/promotions'
+    | '/report-card'
     | '/students'
     | '/tasks'
     | '/teachers'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/_app/assignments/'
     | '/_app/grades-recap/'
     | '/_app/promotions/'
+    | '/_app/report-card/'
     | '/_app/students/'
     | '/_app/tasks/'
     | '/_app/teachers/'
@@ -464,6 +476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPromotionsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/report-card/': {
+      id: '/_app/report-card/'
+      path: '/report-card'
+      fullPath: '/report-card/'
+      preLoaderRoute: typeof AppReportCardIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/students/': {
       id: '/_app/students/'
       path: '/students'
@@ -548,6 +567,7 @@ interface AppRouteChildren {
   AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
   AppGradesRecapIndexRoute: typeof AppGradesRecapIndexRoute
   AppPromotionsIndexRoute: typeof AppPromotionsIndexRoute
+  AppReportCardIndexRoute: typeof AppReportCardIndexRoute
   AppStudentsIndexRoute: typeof AppStudentsIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
   AppTeachersIndexRoute: typeof AppTeachersIndexRoute
@@ -574,6 +594,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
   AppGradesRecapIndexRoute: AppGradesRecapIndexRoute,
   AppPromotionsIndexRoute: AppPromotionsIndexRoute,
+  AppReportCardIndexRoute: AppReportCardIndexRoute,
   AppStudentsIndexRoute: AppStudentsIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
   AppTeachersIndexRoute: AppTeachersIndexRoute,

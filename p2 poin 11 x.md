@@ -1,9 +1,11 @@
 Ini tombol impor untuk `routes/_app/teachers/index.tsx` (belum diuji). Halaman ini hanya untuk admin, jadi tombolnya tidak perlu pengecekan peran.
 
 **1. Impor:**
+
 ```tsx
 import { Eye, Pencil, Plus, Upload, UserCheck, UserX } from "lucide-react";
 ```
+
 ```tsx
 import type { ImportField } from "~/components/csv-import-modal";
 
@@ -12,6 +14,7 @@ import { CsvImportModal } from "~/components/csv-import-modal";
 ```
 
 **2. Di atas `TeachersPage`:**
+
 ```tsx
 const TEACHER_IMPORT_FIELDS: ImportField[] = [
   {
@@ -49,50 +52,55 @@ const TEACHER_IMPORT_FIELDS: ImportField[] = [
 ```
 
 **3. State di `TeachersPage`, setelah `const [search, setSearch] = ...`:**
+
 ```tsx
-  const [importing, setImporting] = useState(false);
+const [importing, setImporting] = useState(false);
 ```
 
 **4. Tombol di header:**
+
 ```tsx
-      <PageHeader title="Manajemen Guru">
-        <HeaderButton
-          label="Impor CSV"
-          className="btn-outline"
-          icon={<Upload className="size-4" />}
-          onClick={() => setImporting(true)}
-        />
-        <HeaderButton
-          label="Tambah Guru"
-          icon={<Plus className="size-4" />}
-          onClick={() => setModal((m) => ({ ...m, open: true }))}
-        />
-      </PageHeader>
+<PageHeader title="Manajemen Guru">
+  <HeaderButton
+    label="Impor CSV"
+    className="btn-outline"
+    icon={<Upload className="size-4" />}
+    onClick={() => setImporting(true)}
+  />
+  <HeaderButton
+    label="Tambah Guru"
+    icon={<Plus className="size-4" />}
+    onClick={() => setModal((m) => ({ ...m, open: true }))}
+  />
+</PageHeader>
 ```
 
 **5. Modal, sebelum `{dialog}`:**
+
 ```tsx
-      <CsvImportModal
-        open={importing}
-        onClose={() => setImporting(false)}
-        title="Impor Data Guru"
-        templateName="guru"
-        fields={TEACHER_IMPORT_FIELDS}
-        chunkSize={10}
-        send={(rows) => api.importTeachers(rows)}
-        onFinished={() =>
-          void qc.invalidateQueries({ queryKey: qk.teachers })
-        }
-      />
-      {dialog}
+<CsvImportModal
+  open={importing}
+  onClose={() => setImporting(false)}
+  title="Impor Data Guru"
+  templateName="guru"
+  fields={TEACHER_IMPORT_FIELDS}
+  chunkSize={10}
+  send={(rows) => api.importTeachers(rows)}
+  onFinished={() => void qc.invalidateQueries({ queryKey: qk.teachers })}
+/>;
+{
+  dialog;
+}
 ```
 
 Ini tombol impor untuk `routes/_app/teachers/index.tsx` (belum diuji). Halaman ini hanya untuk admin, jadi tombolnya tidak perlu pengecekan peran.
 
 **1. Impor:**
+
 ```tsx
 import { Eye, Pencil, Plus, Upload, UserCheck, UserX } from "lucide-react";
 ```
+
 ```tsx
 import type { ImportField } from "~/components/csv-import-modal";
 
@@ -101,6 +109,7 @@ import { CsvImportModal } from "~/components/csv-import-modal";
 ```
 
 **2. Di atas `TeachersPage`:**
+
 ```tsx
 const TEACHER_IMPORT_FIELDS: ImportField[] = [
   {
@@ -138,42 +147,45 @@ const TEACHER_IMPORT_FIELDS: ImportField[] = [
 ```
 
 **3. State di `TeachersPage`, setelah `const [search, setSearch] = ...`:**
+
 ```tsx
-  const [importing, setImporting] = useState(false);
+const [importing, setImporting] = useState(false);
 ```
 
 **4. Tombol di header:**
+
 ```tsx
-      <PageHeader title="Manajemen Guru">
-        <HeaderButton
-          label="Impor CSV"
-          className="btn-outline"
-          icon={<Upload className="size-4" />}
-          onClick={() => setImporting(true)}
-        />
-        <HeaderButton
-          label="Tambah Guru"
-          icon={<Plus className="size-4" />}
-          onClick={() => setModal((m) => ({ ...m, open: true }))}
-        />
-      </PageHeader>
+<PageHeader title="Manajemen Guru">
+  <HeaderButton
+    label="Impor CSV"
+    className="btn-outline"
+    icon={<Upload className="size-4" />}
+    onClick={() => setImporting(true)}
+  />
+  <HeaderButton
+    label="Tambah Guru"
+    icon={<Plus className="size-4" />}
+    onClick={() => setModal((m) => ({ ...m, open: true }))}
+  />
+</PageHeader>
 ```
 
 **5. Modal, sebelum `{dialog}`:**
+
 ```tsx
-      <CsvImportModal
-        open={importing}
-        onClose={() => setImporting(false)}
-        title="Impor Data Guru"
-        templateName="guru"
-        fields={TEACHER_IMPORT_FIELDS}
-        chunkSize={10}
-        send={(rows) => api.importTeachers(rows)}
-        onFinished={() =>
-          void qc.invalidateQueries({ queryKey: qk.teachers })
-        }
-      />
-      {dialog}
+<CsvImportModal
+  open={importing}
+  onClose={() => setImporting(false)}
+  title="Impor Data Guru"
+  templateName="guru"
+  fields={TEACHER_IMPORT_FIELDS}
+  chunkSize={10}
+  send={(rows) => api.importTeachers(rows)}
+  onFinished={() => void qc.invalidateQueries({ queryKey: qk.teachers })}
+/>;
+{
+  dialog;
+}
 ```
 
 Semua bagian item 11 sekarang sudah terpasang: siswa dan guru, `csv-import-modal.tsx`, dua mutation, route server, dan `api.ts`. Perbarui `todo.md`:
@@ -186,6 +198,7 @@ Semua bagian item 11 sekarang sudah terpasang: siswa dan guru, `csv-import-modal
 - Dalam Antrean    : 5 Task (P2, P3)
 ```
 ````
+
 ```md
 - [x] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
   - _Hasil_: modal reusable `src/components/csv-import-modal.tsx` (template, validasi header, progres per batch, laporan baris yang dilewati), parser `parseCsv`, mutation `importStudents` dan `importTeachers`. Format CSV saja, password awal guru lewat kolom `password`, baris bermasalah dilewati.
@@ -203,6 +216,7 @@ Semua bagian item 11 sekarang sudah terpasang: siswa dan guru, `csv-import-modal
 - Dalam Antrean    : 5 Task (P2, P3)
 ```
 ````
+
 ```md
 - [x] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
   - _Hasil_: modal reusable `src/components/csv-import-modal.tsx` (template, validasi header, progres per batch, laporan baris yang dilewati), parser `parseCsv`, mutation `importStudents` dan `importTeachers`. Format CSV saja, password awal guru lewat kolom `password`, baris bermasalah dilewati.

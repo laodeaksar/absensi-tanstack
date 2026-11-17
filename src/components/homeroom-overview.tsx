@@ -75,16 +75,34 @@ function ClassOverview({
         ) : (
           <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              <Stat label="Hadir" value={d.hadir} tone={STAT_TONE.hadir} />
-              <Stat label="Sakit" value={d.sakit} tone={STAT_TONE.sakit} />
-              <Stat label="Izin" value={d.izin} tone={STAT_TONE.izin} />
-              <Stat label="Alpa" value={d.alpa} tone={STAT_TONE.alpa} />
-              <Stat label="Belum diabsen" value={unmarked} />
+              <Stat
+                label="Hadir"
+                value={d.hadir}
+                tone={STAT_TONE.hadir}
+              />
+              <Stat
+                label="Sakit"
+                value={d.sakit}
+                tone={STAT_TONE.sakit}
+              />
+              <Stat
+                label="Izin"
+                value={d.izin}
+                tone={STAT_TONE.izin}
+              />
+              <Stat
+                label="Alpa"
+                value={d.alpa}
+                tone={STAT_TONE.alpa}
+              />
+              <Stat
+                label="Belum diabsen"
+                value={unmarked}
+              />
             </div>
             {unmarked > 0 ? (
               <p className="text-xs text-base-content/60">
-                Belum diabsen:{" "}
-                {cls.unmarked.map((s) => s.full_name).join(", ")}
+                Belum diabsen: {cls.unmarked.map((s) => s.full_name).join(", ")}
                 {cls.unmarked_count > cls.unmarked.length
                   ? ` dan ${cls.unmarked_count - cls.unmarked.length} lainnya`
                   : ""}
@@ -186,7 +204,11 @@ function ClassOverview({
                     <td>{s.filled ? s.hadir : "-"}</td>
                     <td>{s.filled ? s.sakit : "-"}</td>
                     <td>{s.filled ? s.izin : "-"}</td>
-                    <td className={s.alpa ? "font-semibold text-error" : undefined}>
+                    <td
+                      className={
+                        s.alpa ? "font-semibold text-error" : undefined
+                      }
+                    >
                       {s.filled ? s.alpa : "-"}
                     </td>
                   </tr>

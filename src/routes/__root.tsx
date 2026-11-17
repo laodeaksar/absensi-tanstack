@@ -12,9 +12,9 @@ import {
 } from "@tanstack/react-router";
 
 import { Toaster } from "~/components/toaster";
+import { OfflineBanner } from "~/components/ui/offline-banner";
 
 import appCss from "~/styles.css?url";
-import { OfflineBanner } from "~/components/ui/offline-banner";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -112,7 +112,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <HeadContent />
       </head>
       <body className="h-dvh overflow-hidden bg-base-200 text-base-content antialiased">
-      <OfflineBanner />
+        <OfflineBanner />
         {children}
         <Scripts />
       </body>
