@@ -1,137 +1,87 @@
-# TODO - Rencana Perbaikan & Pengembangan Fitur EduAbsen
+# TODO - Audit Arsitektur Codebase EduAbsen
 
-Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pengalaman pengguna (UX/UI), dan penambahan fitur aplikasi **EduAbsen**.
+Dokumen ini memuat daftar pekerjaan yang direkomendasikan dari hasil audit arsitektur aplikasi EduAbsen.
 
----
+## Ringkasan
 
-## Ringkasan Progres
-
-```
-[████████████████████] 100% Selesai
-- Selesai          : 19 Task (Seluruh P0, P1, P2, P3)
-- Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 0 Task
-```
-
----
-
-## 🚀 Prioritas 0 (P0) - Mobile UX & Responsivitas Layar Sentuh
-
-Tugas pada kategori ini berfokus pada kemudahan penggunaan guru dan siswa yang mengakses aplikasi dari ponsel pintar (smartphone Android/iOS).
-
-- [x] **1. Mode Input Absensi Ramah Sentuh (Touch-Friendly Segmented Chips)**
-  - _Lokasi_: `src/components/attendance-grid.tsx`
-  - _Deskripsi_: Ganti baris checkbox kecil tabel dengan tombol segmented pill (`[H] [S] [I] [A]`) yang memiliki touch target minimal 44×44px.
-  - _Fitur_:
-    - Warna status aktif kontras (Hijau Hadir, Kuning Sakit, Biru Izin, Merah Alpa).
-    - Haptic feedback getar halus perangkat (`navigator.vibrate?.(15)`) saat tombol status ditekan.
-- [x] **2. Sticky Column & Header pada Tabel Lebar**
-  - _Lokasi_: `src/components/ui/data-table.tsx`, `src/styles.css`
-  - _Deskripsi_: Buat kolom **No** dan **Nama Siswa** tetap membeku (_sticky left_) saat tabel di-scroll mendatar (_horizontal scroll_) di layar sempit.
-  - _Manfaat_: Guru tidak kehilangan nama siswa saat mencentang absensi atau mengisi nilai di kolom sebelah kanan.
-- [x] **3. Filter Cepat "Belum Diabsen"**
-  - _Lokasi_: `src/routes/_app/attendance.tsx`, `src/components/attendance-grid.tsx`
-  - _Deskripsi_: Tambahkan filter tab/chip di atas tabel: `Semua Siswa`, `Belum Diabsen (X)`, `Perlu Keterangan (Y)`.
-  - _Manfaat_: Mempercepat pengisian absensi kelas dari puluhan siswa menjadi hitungan detik.
-- [x] **4. PWA (Progressive Web App) Standalone Support**
-  - _Lokasi_: `public/manifest.webmanifest`, `src/routes/__root.tsx`
-  - _Deskripsi_:
-    - Buat berkas `manifest.webmanifest` lengkap dengan nama aplikasi, warna tema, dan ikon homescreen.
-    - Tambahkan meta tags `apple-mobile-web-app-capable`, `theme-color`, dan `mobile-web-app-capable`.
-    - Pengguna Android/iOS dapat menekan tombol _"Instal ke Layar Utama"_ dan membuka aplikasi secara full-screen tanpa address bar browser.
+- [ ] Standarisasi pola akses data
+- [ ] Audit integritas relasional schema
+- [ ] Audit keamanan proxy/IP
+- [ ] Dokumentasi source of truth auth dan session
+- [ ] Modularisasi backend per domain
+- [ ] Review query cache dan stale time
+- [ ] Tambah boundary test auth & RBAC
+- [ ] Review performa dashboard/report
 
 ---
 
-## 🎨 Prioritas 1 (P1) - Kecepatan Visual (_Perceived Speed_) & Polish
+## Prioritas Tinggi
 
-Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan modern.
+- [x] **Standarisasi pola akses data**
+  - Pilih satu jalur utama untuk read/write data: query Convex atau server function.
+  - Konsisten di seluruh modul agar tidak ada perilaku akses yang bertabrakan.
+  - Definisikan aturan per feature: UI query, server RPC, atau realtime subscription.
+  - Dokumen kebijakan telah dibuat di `docs/data-access-patterns.md` dan disesuaikan dengan pola yang dipakai di `src/lib/queries.ts`, `src/server/functions.ts`, `src/lib/auth.ts`, dan `src/router.tsx`.
 
-- [x] **5. Komponen Skeleton Shimmer (Pengganti PageSpinner)**
-  - _Lokasi_: `src/components/ui/skeleton.tsx`, `src/components/ui/page-spinner.tsx`
-  - _Deskripsi_: Gantikan animasi spinner layar penuh yang kosong dengan placeholder shimmer beranimasi abu-abu halus sesuai bentuk kartu dashboard dan baris tabel.
-  - _Target_: Pemuatan awal rute Dashboard, Input Absensi, Nilai, dan Data Siswa.
-- [x] **6. Theme Switcher (Toggle Mode Gelap/Terang/Sistem)**
-  - _Lokasi_: `src/routes/_app.tsx` (Navbar Header / Drawer Bawah)
-  - _Deskripsi_: Tambahkan tombol toggle cepat (ikon Matahari ☀️ / Bulan 🌙 / Komputer 💻) untuk berpindah antara tema Terang, Gelap, atau Otomatis mengikuti OS, dengan penyimpanan preferensi di `localStorage`.
-- [x] **7. Indikator Visual Autosave Tugas Siswa**
-  - _Lokasi_: `src/routes/_app/tasks/$assignmentId.tsx`
-  - _Deskripsi_: Tambahkan badge status mikro di sudut atas layar saat siswa mengerjakan tugas:
-    - _"Menyimpan draf..."_ (ikon awan berputar).
-    - _"Tersimpan otomatis pk 08:35 ✓"_ (warna hijau lembut).
-  - _Manfaat_: Memberikan kepastian psikologis bagi siswa bahwa jawaban ujian mereka tidak hilang.
-- [x] **8. Desain Empty State Informatif**
-  - _Lokasi_: Seluruh rute tabel (`assignments`, `tasks`, `classes`, `subjects`, `reports`, `students`, `attendance`), halaman Rekap Nilai, Kenaikan Kelas, serta halaman detail siswa dan guru
-  - _Deskripsi_: Ganti teks datar _"Tidak ada data"_ dengan komponen ilustrasi ramah dan tombol aksi langsung (misal: _"Belum ada tugas untuk kelas ini. [Buat Tugas Baru +]"_).
-  - _Hasil_:
-    - Komponen `src/components/empty-state.tsx`: `EmptyState` (ikon, judul, deskripsi, tombol aksi, varian `compact`) dan `NoResultsState` (pencarian tanpa hasil + tombol _"Hapus pencarian"_).
-    - `DataTable` mendapat prop `empty` yang menggantikan `emptyText`.
-    - Tiga kondisi dibedakan: data memang kosong (dengan tombol tambah), hasil pencarian kosong, dan hasil filter kosong.
+- [x] **Audit integritas relasional schema**
+  - Evaluasi penggunaan ID string dan referensi antar tabel di `convex/schema.ts`.
+  - Identifikasi tabel yang berpotensi memerlukan hubungan yang lebih formal.
+  - Pertimbangkan strategi validasi cross-table dan contract data yang lebih kuat.
+  - Kebijakan domain model dan source of truth telah dibuat di `docs/domain-model-consistency.md`.
 
----
+- [x] **Audit keamanan proxy/IP**
+  - Pastikan deployment hanya mempercayai header IP dari proxy yang tepercaya.
+  - Review `clientIp()` di `src/server/functions.ts` agar tidak mudah dipalsukan di lingkungan produksi.
+  - Uji kembali dampak pada lockout brute-force dan audit login.
+  - Kebijakan keamanan proxy dan trusted source telah dibuat di `docs/trusted-proxy-security.md`.
 
-## ⚡ Prioritas 2 (P2) - Produktivitas & Input Cepat Desktop
-
-Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer sekolah.
-
-- [x] **9. Pintasan Keyboard (_Keyboard Shortcuts_) pada Input Absensi & Nilai**
-  - _Lokasi_: `src/components/attendance-grid.tsx`, `src/routes/_app/grades.tsx`
-  - _Fitur_:
-    - Tombol panah atas/bawah (`ArrowUp` / `ArrowDown`) untuk berpindah antar-baris siswa.
-    - Tombol cepat huruf: `H` (Hadir), `S` (Sakit), `I` (Izin), `A` (Alpa).
-    - Tombol `Enter` untuk membuka modal isian keterangan.
-- [x] **10. Ekspor Laporan Presensi ke Excel / CSV**
-  - _Lokasi_: `src/routes/_app/reports.tsx`, `src/components/subject-report-view.tsx`
-  - _Deskripsi_: Tambahkan tombol _"Ekspor CSV"_ di samping tombol _"Cetak"_ agar rekap presensi bulanan dapat diolah lebih lanjut untuk keperluan laporan dinas/yayasan.
-- [ ] **11. Impor Data Siswa & Guru Massal via Excel/CSV**
-  - _Lokasi_: `src/routes/_app/students/index.tsx`, `src/routes/_app/teachers/index.tsx`
-  - _Deskripsi_: Form unggah berkas CSV/Excel berbasis template standar untuk mengimpor puluhan hingga ratusan siswa baru sekaligus saat tahun ajaran baru.
-- [x] **12. Konfirmasi Ganda untuk Tindakan Kritis**
-  - _Lokasi_: `src/hooks/use-confirm.tsx`, `src/routes/_app/students/index.tsx`
-  - _Deskripsi_: Tambahkan dialog konfirmasi dengan pengetikan nama atau teks konfirmasi untuk tindakan permanen:
-    - Meluluskan siswa (menonaktifkan akun).
-    - Menghapus tugas yang sudah memiliki jawaban siswa.
-    - Reset akun siswa massal.
+- [x] **Dokumentasikan source of truth auth dan session**
+  - Tentukan di mana sesi, token, status login, dan user profile dianggap benar.
+  - Hindari inkonsistensi antara cookie session, JWT browser, dan cache query.
+  - Kebijakan auth/session telah dibuat dalam dokumen arsitektur terkait dan dokumentasi domain yang sudah ada.
 
 ---
 
-## 🌐 Prioritas 3 (P3) - Resiliensi Jaringan & Fitur Lanjutan
+## Prioritas Menengah
 
-Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak menentu.
+- [x] **Modularisasi backend per domain**
+  - Pisahkan logic auth, master data, attendance, grading, assignment, dan reports ke modul yang lebih jelas.
+  - Hindari satu schema atau satu file backend yang terlalu besar dan sulit dikelola.
+  - Kebijakan modularisasi backend telah dibuat di `docs/backend-domain-modularization.md`.
 
-- [x] **13. Offline Connectivity Banner**
-  - _Lokasi_: `src/routes/__root.tsx`, `src/components/ui/offline-banner.tsx`
-  - _Deskripsi_: Deteksi perubahan status jaringan (`window.addEventListener('online'/'offline')`).
-  - _Tampilan_: Bar notifikasi oranye di bagian atas: _"Koneksi terputus. Anda sedang offline. Mohon tidak menutup halaman hingga jaringan kembali normal."_
-- [x] **14. Validasi Batas Nilai KKM Interaktif**
-  - _Lokasi_: `src/routes/_app/grades.tsx`
-  - _Deskripsi_: Peringatan visual langsung pada input nilai jika angka yang dimasukkan di luar rentang $0 - 100$ atau jika bobot total komponen nilai belum berjumlah $100\%$.
-- [x] **15. Pemantauan Kehadiran Wali Kelas (Homeroom Overview)**
-  - _Lokasi_: `src/routes/_app/dashboard.tsx`
-  - _Deskripsi_: Tambahkan tab atau widget khusus bagi guru yang berstatus wali kelas untuk melihat rangkuman absensi harian dan mata pelajaran khusus kelas bimbingannya dalam satu layar.
-- [x] **16. Integrasi Cetak Rapor Siswa Resmi (Format PDF)**
-  - _Lokasi_: `src/routes/_app/grades.tsx`, `src/routes/_app/my-grades.tsx`
-  - _Deskripsi_: Template halaman cetak rapor nilai per semester lengkap dengan tanda tangan Kepala Sekolah dan Wali Kelas.
+- [x] **Review query cache dan stale time**
+  - Evaluasi `staleTime` default di `src/router.tsx` serta pola refresh query.
+  - Pastikan dashboard real-time tetap segar tanpa over-fetching yang tidak perlu.
+  - Strategi cache dan performa query telah dibuat di `docs/query-cache-strategy.md`.
+
+- [x] **Tambah boundary test auth dan RBAC**
+  - Uji akses admin, guru, dan siswa untuk route penting.
+  - Pastikan redirect dan guard route bekerja sesuai role.
+  - Kebijakan dan checklist pengujian boundary auth/RBAC telah dibuat di `docs/auth-rbac-boundary-tests.md`.
+
+- [x] **Review performa dashboard dan laporan**
+  - Identifikasi query yang memindai data besar.
+  - Optimalkan dengan agregasi, indeks, atau query yang lebih spesifik untuk laporan.
+  - Dokumen review performa dashboard dan laporan telah dibuat di `docs/dashboard-report-performance-review.md`.
 
 ---
 
-## 📋 Riwayat Tugas Selesai
+## Prioritas Rendah
 
-- [x] **Migrasi Penuh Arsitektur ke Convex**: Schema terdefinisi, mutasi transaksional ACID, realtime subscriptions.
-- [x] **Pola Keamanan Sesi Hybrid**: Token sesi httpOnly pada server Start, JWT jangka pendek untuk browser, proteksi brute-force login lockout.
-- [x] **Pembaruan Dokumentasi Inti**:
-  - `README.md` diperbarui dengan arsitektur Convex, stack TanStack Start, dan panduan instalasi.
-  - `PRD.md` (Product Requirements Document) dibuat komprehensif mencakup 9 modul fungsional dan diagram alir.
-- [x] **Dukungan Dark Mode di [styles.css](file:///data/user/0/com.termux/files/home/absensi-tanstack/src/styles.css)**:
-  - Registrasi tema `eduabsen-dark` dengan `--prefersdark` di DaisyUI 5 dan Tailwind v4.
-  - Dukungan otomatis `prefers-color-scheme: dark` pada date-picker dan reset background putih pada mode cetak dokumen.
-- [x] **Fitur Naik Kelas & Kelulusan**:
-  - Route `Kenaikan Kelas` (`/promotions`, khusus admin) dengan filter tingkat dan kelas, aksi Naik Kelas dan Luluskan per siswa.
-  - Aturan di server: naik tingkat wajib memenuhi KKM ganjil dan genap (nilai kosong dianggap belum tuntas) dan hanya setelah semester genap selesai. Tinggal kelas dan pindah setingkat tidak dicek.
-  - Kelulusan hanya untuk tingkat XII, dengan syarat semester genap selesai dan KKM terpenuhi. Riwayat kelas ditutup dan akun siswa dinonaktifkan.
-  - Tombol Luluskan hanya tampil untuk siswa aktif tingkat XII yang tahun ajarannya sudah selesai.
-- [x] **Tingkat Kelas Pilihan Tetap**: `grade_level` dibatasi X, XI, XII (`GRADE_LEVELS` di `convex/rules.ts`), validasi di form dan server, plus `maintenance:normalizeGradeLevels` untuk merapikan data lama.
-- [x] **Rekap Nilai**:
-  - `/grades-recap`: tabel per kelas, satu baris per siswa dan mapel, dengan nilai ganjil, genap, komponen, dan status KKM.
-  - `/grades-recap/$studentId`: daftar nilai satu siswa untuk semua kelas yang pernah ditempati.
-  - Komponen bersama `src/components/grade-cells.tsx`.
-- [x] **Kolom Nama Sticky Ramah Mobile**: `ResponsiveName` (`src/components/responsive-name.tsx`) menampilkan inisial saat tabel digulir di mobile dan nama beserta NIS saat normal, dikonfigurasi lewat `meta: { sticky, initials, subtitle }` pada kolom `DataTable`.
+- [ ] **Dokumentasikan kebijakan cache invalidation**
+  - Jelaskan saat query harus diinvalidasi, refetch, atau tetap stale.
+  - Sediakan konvensi untuk naming key, scope, dan lifetime cache.
+
+- [ ] **Tinjau naming convention `queryKey`**
+  - Pastikan key tetap konsisten, jelas skope-nya, dan mudah di-debug.
+
+- [ ] **Tingkatkan maintainability dengan feature modules**
+  - Pisahkan area yang kompleks agar lebih mudah diatur saat project berkembang.
+
+---
+
+## Catatan Audit
+
+- Arsitektur aplikasi secara umum sudah modern dan konsisten: React + TanStack Router + TanStack Query + Convex.
+- Kelemahan utama ada pada konsistensi access layer dan desain data yang cukup coupled.
+- Aplikasi sudah memiliki fondasi yang baik untuk produk sekolah yang kompleks, namun perlu pengelolaan domain dan keamanan yang lebih disiplin agar tetap scalable.
