@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[████████████████░░░░] 79% Selesai
-- Selesai          : 15 Task (Seluruh P0 + Seluruh P1 + P2 poin 9, 10, 11, 12)
+[█████████████████░░░] 84% Selesai
+- Selesai          : 16 Task (Seluruh P0, P1, P2 + P3 poin 13)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 4 Task (P3)
+- Dalam Antrean    : 3 Task (P3)
 ```
 
 ---
@@ -98,7 +98,7 @@ Optimasi untuk admin dan guru yang bekerja menggunakan laptop atau komputer seko
 
 Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak menentu.
 
-- [ ] **13. Offline Connectivity Banner**
+- [x] **13. Offline Connectivity Banner**
   - _Lokasi_: `src/routes/__root.tsx`, `src/components/ui/offline-banner.tsx`
   - _Deskripsi_: Deteksi perubahan status jaringan (`window.addEventListener('online'/'offline')`).
   - _Tampilan_: Bar notifikasi oranye di bagian atas: _"Koneksi terputus. Anda sedang offline. Mohon tidak menutup halaman hingga jaringan kembali normal."_
