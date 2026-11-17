@@ -13,6 +13,8 @@ import {
   randomId,
   requireAuth,
   studentById,
+  userById,
+  subjectById,
   todayStr,
 } from "./lib";
 import { LIMITS, needsNotes } from "./limits";
@@ -338,6 +340,141 @@ export const getDashboardStats = query({
         tidakHadir: dates.map((d) => byDate.get(d)!.t),
       },
     };
+  },
+});
+
+/** Ringkasan kelas bimbingan untuk wali kelas: absensi harian, per mapel, dan siswa yang perlu perhatian. */
+export const getHomeroomOverview = query({
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, { token }) => {
+    const user = await requireAuth(ctx, token);
+    const today = todayStr(0);
+    const from = todayStr(-6);
+
+    const classes = (await ctx.db.query("classes").collect()).filter(
+      (c) => c.is_active && c.homeroom_teacher === user.user_id,
+    );
+
+    const result = [];
+    for (const cls of classes) {
+      const members = new Map<string, { nis: string; full_name: string }>();
+      for (const id of await activeMembers(ctx, cls.class_id)) {
+        const s = await studentById(ctx, id);
+        if (s?.is_active)
+          members.set(id, { nis: s.nis, full_name: s.full_name });
+      }
+
+      // Absensi harian hari ini
+      const todayRows = (
+        await ctx.db
+          .query("attendance")
+          .withIndex("by_class_date", (q) =>
+            q.eq("class_id", cls.class_id).eq("attendance_date", today),
+          )
+          .collect()
+      ).filter((r) => members.has(r.student_id));
+      const count = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
+      const attention: {
+        student_id: string;
+        nis: string;
+        full_name: string;
+        status: string;
+        notes: string;
+      }[] = [];
+      for (const r of todayRows) {
+        const f = STATUS_FIELD[r.status as keyof typeof STATUS_FIELD];
+        if (f) count[f]++;
+        if (r.status !== "Hadir")
+          attention.push({
+            student_id: r.student_id,
+            ...members.get(r.student_id)!,
+            status: r.status,
+            notes: r.notes,
+          });
+      }
+      const order = ["Alpa", "Sakit", "Izin"];
+      attention.sort(
+        (a, b) =>
+          order.indexOf(a.status) - order.indexOf(b.status) ||
+          a.full_name.localeCompare(b.full_name),
+      );
+      const marked = new Set(todayRows.map((r) => r.student_id));
+      const unmarkedAll = [...members]
+        .filter(([id]) => !marked.has(id))
+        .map(([student_id, m]) => ({ student_id, full_name: m.full_name }))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+      // Alpa terbanyak 7 hari terakhir
+      const weekRows = await ctx.db
+        .query("attendance")
+        .withIndex("by_class_date", (q) =>
+          q
+            .eq("class_id", cls.class_id)
+            .gte("attendance_date", from)
+            .lte("attendance_date", today),
+        )
+        .collect();
+      const alpaCount = new Map<string, number>();
+      for (const r of weekRows)
+        if (r.status === "Alpa" && members.has(r.student_id))
+          alpaCount.set(r.student_id, (alpaCount.get(r.student_id) ?? 0) + 1);
+      const frequentAlpa = [...alpaCount]
+        .map(([student_id, n]) => ({
+          student_id,
+          ...members.get(student_id)!,
+          count: n,
+        }))
+        .sort((a, b) => b.count - a.count || a.full_name.localeCompare(b.full_name))
+        .slice(0, 5);
+
+      // Absensi per mata pelajaran hari ini
+      const teaching = await ctx.db
+        .query("teaching")
+        .withIndex("by_class_subject", (q) => q.eq("class_id", cls.class_id))
+        .collect();
+      const subjects = [];
+      for (const t of teaching) {
+        const rows = (
+          await ctx.db
+            .query("subject_attendance")
+            .withIndex("by_class_subject_date", (q) =>
+              q
+                .eq("class_id", cls.class_id)
+                .eq("subject_id", t.subject_id)
+                .eq("attendance_date", today),
+            )
+            .collect()
+        ).filter((r) => members.has(r.student_id));
+        const c = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
+        for (const r of rows) {
+          const f = STATUS_FIELD[r.status as keyof typeof STATUS_FIELD];
+          if (f) c[f]++;
+        }
+        subjects.push({
+          subject_id: t.subject_id,
+          subject_name: (await subjectById(ctx, t.subject_id))?.name ?? "-",
+          teacher: (await userById(ctx, t.teacher_id))?.full_name ?? "-",
+          filled: rows.length,
+          ...c,
+        });
+      }
+      subjects.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
+
+      result.push({
+        class_id: cls.class_id,
+        class_name: cls.class_name,
+        grade_level: cls.grade_level,
+        academic_year: cls.academic_year,
+        total: members.size,
+        daily: { filled: marked.size, ...count },
+        attention,
+        unmarked: unmarkedAll.slice(0, 8),
+        unmarked_count: unmarkedAll.length,
+        frequentAlpa,
+        subjects,
+      });
+    }
+    return { date: today, classes: result };
   },
 });
 

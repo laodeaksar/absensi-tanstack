@@ -17,6 +17,7 @@ import type {
   MySubjectAttendance,
   MyTask,
   ReportFilters,
+  HomeroomOverview,
   Settings,
   Student,
   StudentClass,
@@ -264,3 +265,8 @@ export const studentGradesQuery = (studentId: string) =>
     ...convexQuery(convexApi.grades.getStudentGrades, { studentId }),
     select: (r): StudentGrades => r as StudentGrades,
   });
+
+export const homeroomOverviewQuery = queryOptions({
+  ...convexQuery(convexApi.attendance.getHomeroomOverview, {}),
+  select: (r): HomeroomOverview => r as HomeroomOverview,
+});

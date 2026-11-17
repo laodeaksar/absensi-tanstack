@@ -605,3 +605,48 @@ export interface StudentGrades {
     }[];
   }[];
 }
+
+export interface HomeroomClass {
+  class_id: string;
+  class_name: string;
+  grade_level: string;
+  academic_year: string;
+  total: number;
+  daily: {
+    filled: number;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpa: number;
+  };
+  attention: {
+    student_id: string;
+    nis: string;
+    full_name: string;
+    status: string;
+    notes: string;
+  }[];
+  unmarked: { student_id: string; full_name: string }[];
+  unmarked_count: number;
+  frequentAlpa: {
+    student_id: string;
+    nis: string;
+    full_name: string;
+    count: number;
+  }[];
+  subjects: {
+    subject_id: string;
+    subject_name: string;
+    teacher: string;
+    filled: number;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpa: number;
+  }[];
+}
+
+export interface HomeroomOverview {
+  date: string;
+  classes: HomeroomClass[];
+}

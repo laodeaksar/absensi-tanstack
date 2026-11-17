@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[██████████████████░░] 89% Selesai
-- Selesai          : 17 Task (Seluruh P0, P1, P2 + P3 poin 13, 14)
+[███████████████████░] 95% Selesai
+- Selesai          : 18 Task (Seluruh P0, P1, P2 + P3 poin 13, 14, 15)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 2 Task (P3)
+- Dalam Antrean    : 1 Task (P3)
 ```
 
 ---
@@ -105,7 +105,7 @@ Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak
 - [x] **14. Validasi Batas Nilai KKM Interaktif**
   - _Lokasi_: `src/routes/_app/grades.tsx`
   - _Deskripsi_: Peringatan visual langsung pada input nilai jika angka yang dimasukkan di luar rentang $0 - 100$ atau jika bobot total komponen nilai belum berjumlah $100\%$.
-- [ ] **15. Pemantauan Kehadiran Wali Kelas (Homeroom Overview)**
+- [x] **15. Pemantauan Kehadiran Wali Kelas (Homeroom Overview)**
   - _Lokasi_: `src/routes/_app/dashboard.tsx`
   - _Deskripsi_: Tambahkan tab atau widget khusus bagi guru yang berstatus wali kelas untuk melihat rangkuman absensi harian dan mata pelajaran khusus kelas bimbingannya dalam satu layar.
 - [ ] **16. Integrasi Cetak Rapor Siswa Resmi (Format PDF)**

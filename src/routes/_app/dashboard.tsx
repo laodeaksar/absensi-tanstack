@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Percent, Thermometer, UserCheck, UserX, Users } from "lucide-react";
+import { HomeroomOverview } from "~/components/homeroom-overview";
 
 import { StatusDonut, TrendChart } from "~/components/charts";
 import { allowRoles } from "~/lib/auth";
@@ -47,6 +48,7 @@ function StatCard({
 }
 
 function DashboardPage() {
+  const { me } = Route.useRouteContext();
   const { data } = useSuspenseQuery(dashboardQuery);
   const { stats, chartData } = data;
 
@@ -112,6 +114,7 @@ function DashboardPage() {
           </div>
         </div>
       </div>
+      {me.role === "guru" ? <HomeroomOverview /> : null}
     </div>
   );
 }
