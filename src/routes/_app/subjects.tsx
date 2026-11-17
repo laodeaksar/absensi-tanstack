@@ -6,11 +6,12 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Pencil, Plus, Power, PowerOff, Trash2 } from "lucide-react";
+import { BookOpen, Pencil, Plus, Power, PowerOff, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { Subject, SubjectInput } from "~/lib/types";
 
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { HeaderButton, PageHeader } from "~/components/status-icons";
 import {
   ActionMenu,
@@ -207,6 +208,29 @@ function SubjectsPage() {
     initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
   });
 
+  const empty = search.trim() ? (
+    <NoResultsState
+      subject="Mata pelajaran"
+      query={search.trim()}
+      onClear={() => setSearch("")}
+    />
+  ) : (
+    <EmptyState
+      icon={<BookOpen />}
+      title="Belum ada mata pelajaran"
+      description="Tambahkan mata pelajaran pertama, lalu tetapkan guru pengampunya."
+      action={
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => setModal({ open: true, subject: null })}
+        >
+          <Plus className="size-4" /> Tambah Mapel
+        </button>
+      }
+    />
+  );
+
   return (
     <div className="space-y-4">
       <PageHeader title="Mata Pelajaran">
@@ -230,7 +254,7 @@ function SubjectsPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Belum ada mata pelajaran."
+          empty={empty}
         />
         <Pager table={table} />
       </div>

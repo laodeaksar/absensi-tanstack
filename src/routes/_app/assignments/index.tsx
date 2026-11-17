@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { Assignment } from "~/lib/types";
 
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import {
   PublishStatusIcon,
   PageHeader,
@@ -316,6 +317,29 @@ function AssignmentsPage() {
     },
   });
 
+  const empty = search.trim() ? (
+    <NoResultsState
+      subject="Tugas"
+      query={search.trim()}
+      onClear={() => setSearch("")}
+    />
+  ) : (
+    <EmptyState
+      icon={<ListChecks />}
+      title="Belum ada tugas"
+      description="Buat tugas pertama untuk kelas dan mata pelajaran yang Anda ampu."
+      action={
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => setModal({ open: true, item: null })}
+        >
+          <Plus className="size-4" /> Buat Tugas
+        </button>
+      }
+    />
+  );
+
   return (
     <div className="space-y-4">
       <PageHeader title="Tugas">
@@ -339,7 +363,7 @@ function AssignmentsPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Belum ada tugas."
+          empty={empty}
         />
         <Pager table={table} />
       </div>

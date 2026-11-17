@@ -6,12 +6,13 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { ArrowUpRight, Eye, GraduationCap } from "lucide-react";
+import { ArrowUpRight, Eye, GraduationCap, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 
 import type { Student, StudentClass } from "~/lib/types";
 
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { PageHeader } from "~/components/status-icons";
 import {
   ActionMenu,
@@ -237,6 +238,46 @@ function PromotionsPage() {
     initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
   });
 
+  const renderEmpty = () => {
+    if (search.trim())
+      return (
+        <NoResultsState
+          subject="Siswa"
+          query={search.trim()}
+          onClear={() => setSearch("")}
+        />
+      );
+    if (kelas || tingkat)
+      return (
+        <EmptyState
+          icon={<Users />}
+          title="Tidak ada siswa aktif"
+          description="Tidak ada siswa aktif pada tingkat atau kelas yang dipilih."
+          action={
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() =>
+                void navigate({
+                  search: { tingkat: undefined, kelas: undefined },
+                  replace: true,
+                })
+              }
+            >
+              Tampilkan semua kelas
+            </button>
+          }
+        />
+      );
+    return (
+      <EmptyState
+        icon={<Users />}
+        title="Belum ada siswa aktif"
+        description="Tambahkan siswa dan tempatkan di kelas lewat menu Data Siswa."
+      />
+    );
+  };
+
   return (
     <div className="space-y-4">
       <PageHeader title="Kenaikan Kelas" />
@@ -301,7 +342,7 @@ function PromotionsPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Tidak ada siswa aktif di kelas ini."
+          empty={renderEmpty()}
         />
         <Pager table={table} />
       </div>

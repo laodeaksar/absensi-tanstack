@@ -4,10 +4,12 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { CalendarX2 } from "lucide-react";
 import { useMemo } from "react";
 
 import { AttendanceGrid } from "~/components/attendance-grid";
+import { EmptyState } from "~/components/empty-state";
 import {
   ErrorAlert,
   SelectField,
@@ -275,11 +277,27 @@ function AttendancePage() {
             )}
           </form.Subscribe>
           {targets.length === 0 ? (
-            <p className="text-warning text-sm md:col-span-full">
-              {me.role === "guru"
-                ? "Anda belum mengampu kelas atau mata pelajaran. Hubungi admin untuk mengaturnya."
-                : "Belum ada kelas aktif atau pengampu mata pelajaran. Atur di menu Data Kelas dan Pengampu Mapel."}
-            </p>
+            <div className="md:col-span-full">
+              <EmptyState
+                icon={<CalendarX2 />}
+                title="Belum ada kelas untuk diabsen"
+                description={
+                  me.role === "guru"
+                    ? "Anda belum mengampu kelas atau mata pelajaran. Hubungi admin untuk mengaturnya."
+                    : "Belum ada kelas aktif atau pengampu mata pelajaran. Buat kelas dan atur pengampunya terlebih dahulu."
+                }
+                action={
+                  me.role === "admin" ? (
+                    <Link
+                      to="/teaching"
+                      className="btn btn-sm btn-primary"
+                    >
+                      Atur Pengampu Mapel
+                    </Link>
+                  ) : undefined
+                }
+              />
+            </div>
           ) : null}
           <button
             type="submit"

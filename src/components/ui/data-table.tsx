@@ -1,4 +1,5 @@
 import type { Table } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 
 import { FlexRender } from "@tanstack/react-table";
 import {
@@ -8,6 +9,7 @@ import {
   ChevronRight,
   ChevronsUpDown,
 } from "lucide-react";
+import { useState } from "react";
 
 import type { AppFeatures } from "~/lib/table";
 
@@ -19,21 +21,26 @@ type CellMeta = {
   sticky?: unknown;
   /** Mobile hanya inisial, sm ke atas nama lengkap. Nilai sel harus string. */
   initials?: boolean;
+  /** Baris kedua di bawah nama (mis. NIS). */
+  subtitle?: (row: any) => ReactNode;
 };
 
 export function DataTable<TData extends Record<string, any>>({
   table,
   emptyText,
+  empty,
   stickyHeader = true,
   stickyColumns,
   stickyCol1Width = "3rem",
 }: {
   table: Table<AppFeatures, TData>;
-  emptyText: string;
+  emptyText?: string;
+  empty?: ReactNode;
   stickyHeader?: boolean;
   stickyColumns?: number | string[];
   stickyCol1Width?: string;
 }) {
+  const [compact, setCompact] = useState(false);
   const rows = table.getRowModel().rows;
   const headerGroups = table.getHeaderGroups();
   const colCount = table.getAllLeafColumns().length;
@@ -82,6 +89,10 @@ export function DataTable<TData extends Record<string, any>>({
   return (
     <div
       className="overflow-x-auto relative"
+      onScroll={(e) => {
+        const x = e.currentTarget.scrollLeft;
+        setCompact((prev) => (prev ? x > 4 : x > 24));
+      }}
       style={
         {
           "--sticky-col-1-width": stickyCol1Width,
@@ -138,9 +149,11 @@ export function DataTable<TData extends Record<string, any>>({
             <tr>
               <td
                 colSpan={colCount}
-                className="p-8 text-center text-base-content/60"
+                className={
+                  empty ? undefined : "p-8 text-center text-base-content/60"
+                }
               >
-                {emptyText}
+                {empty ?? emptyText}
               </td>
             </tr>
           ) : (
@@ -161,7 +174,11 @@ export function DataTable<TData extends Record<string, any>>({
                       className={stickyClass || undefined}
                     >
                       {meta?.initials ? (
-                        <ResponsiveName name={String(cell.getValue() ?? "")} />
+                        <ResponsiveName
+                          name={String(cell.getValue() ?? "")}
+                          subtitle={meta.subtitle?.(row.original)}
+                          compact={compact}
+                        />
                       ) : (
                         <FlexRender cell={cell} />
                       )}

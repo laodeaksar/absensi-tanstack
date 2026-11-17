@@ -1,12 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Eye, PenLine } from "lucide-react";
+import { Eye, PenLine, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { SubmissionRow, SubmissionStatus } from "~/lib/types";
 
 import { BackLink } from "~/components/back-link";
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { SubmissionStatusIcon } from "~/components/status-icons";
 import { DataTable, Pager, SearchBox, Tip } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
@@ -165,6 +166,20 @@ function SubmissionsPage() {
   const count = (s: SubmissionStatus) =>
     res.data.filter((r) => r.status === s).length;
 
+  const empty = search.trim() ? (
+    <NoResultsState
+      subject="Siswa"
+      query={search.trim()}
+      onClear={() => setSearch("")}
+    />
+  ) : (
+    <EmptyState
+      icon={<Users />}
+      title="Belum ada siswa di kelas ini"
+      description="Tambahkan siswa ke kelas ini lewat menu Data Siswa."
+    />
+  );
+
   return (
     <div className="space-y-4">
       <div>
@@ -216,7 +231,7 @@ function SubmissionsPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Belum ada siswa di kelas ini."
+          empty={empty}
         />
         <Pager table={table} />
       </div>

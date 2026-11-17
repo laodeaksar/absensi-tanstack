@@ -7,10 +7,10 @@ Dokumen pelacak tugas (_task tracking_) untuk rencana perbaikan, peningkatan pen
 ## Ringkasan Progres
 
 ```
-[███████████████░░░░░] 75% Selesai
-- Selesai          : 10 Task (Seluruh P0 + P1 poin 5, 6, 7)
+[████████████░░░░░░░░] 58% Selesai
+- Selesai          : 11 Task (Seluruh P0 + Seluruh P1)
 - Sedang Berjalan  : 0 Task
-- Dalam Antrean    : 9 Task (P1, P2, P3)
+- Dalam Antrean    : 8 Task (P2, P3)
 ```
 
 ---
@@ -59,9 +59,13 @@ Tugas untuk menghilangkan jeda visual dan membuat aplikasi terasa instan dan mod
     - _"Menyimpan draf..."_ (ikon awan berputar).
     - _"Tersimpan otomatis pk 08:35 ✓"_ (warna hijau lembut).
   - _Manfaat_: Memberikan kepastian psikologis bagi siswa bahwa jawaban ujian mereka tidak hilang.
-- [ ] **8. Desain Empty State Informatif**
-  - _Lokasi_: Seluruh rute tabel (`assignments`, `tasks`, `classes`, `subjects`, `reports`)
+- [x] **8. Desain Empty State Informatif**
+  - _Lokasi_: Seluruh rute tabel (`assignments`, `tasks`, `classes`, `subjects`, `reports`, `students`, `attendance`), halaman Rekap Nilai, Kenaikan Kelas, serta halaman detail siswa dan guru
   - _Deskripsi_: Ganti teks datar _"Tidak ada data"_ dengan komponen ilustrasi ramah dan tombol aksi langsung (misal: _"Belum ada tugas untuk kelas ini. [Buat Tugas Baru +]"_).
+  - _Hasil_:
+    - Komponen `src/components/empty-state.tsx`: `EmptyState` (ikon, judul, deskripsi, tombol aksi, varian `compact`) dan `NoResultsState` (pencarian tanpa hasil + tombol _"Hapus pencarian"_).
+    - `DataTable` mendapat prop `empty` yang menggantikan `emptyText`.
+    - Tiga kondisi dibedakan: data memang kosong (dengan tombol tambah), hasil pencarian kosong, dan hasil filter kosong.
 
 ---
 
@@ -120,3 +124,14 @@ Fitur untuk institusi sekolah dengan tantangan infrastruktur internet yang tidak
 - [x] **Dukungan Dark Mode di [styles.css](file:///data/user/0/com.termux/files/home/absensi-tanstack/src/styles.css)**:
   - Registrasi tema `eduabsen-dark` dengan `--prefersdark` di DaisyUI 5 dan Tailwind v4.
   - Dukungan otomatis `prefers-color-scheme: dark` pada date-picker dan reset background putih pada mode cetak dokumen.
+- [x] **Fitur Naik Kelas & Kelulusan**:
+  - Route `Kenaikan Kelas` (`/promotions`, khusus admin) dengan filter tingkat dan kelas, aksi Naik Kelas dan Luluskan per siswa.
+  - Aturan di server: naik tingkat wajib memenuhi KKM ganjil dan genap (nilai kosong dianggap belum tuntas) dan hanya setelah semester genap selesai. Tinggal kelas dan pindah setingkat tidak dicek.
+  - Kelulusan hanya untuk tingkat XII, dengan syarat semester genap selesai dan KKM terpenuhi. Riwayat kelas ditutup dan akun siswa dinonaktifkan.
+  - Tombol Luluskan hanya tampil untuk siswa aktif tingkat XII yang tahun ajarannya sudah selesai.
+- [x] **Tingkat Kelas Pilihan Tetap**: `grade_level` dibatasi X, XI, XII (`GRADE_LEVELS` di `convex/rules.ts`), validasi di form dan server, plus `maintenance:normalizeGradeLevels` untuk merapikan data lama.
+- [x] **Rekap Nilai**:
+  - `/grades-recap`: tabel per kelas, satu baris per siswa dan mapel, dengan nilai ganjil, genap, komponen, dan status KKM.
+  - `/grades-recap/$studentId`: daftar nilai satu siswa untuk semua kelas yang pernah ditempati.
+  - Komponen bersama `src/components/grade-cells.tsx`.
+- [x] **Kolom Nama Sticky Ramah Mobile**: `ResponsiveName` (`src/components/responsive-name.tsx`) menampilkan inisial saat tabel digulir di mobile dan nama beserta NIS saat normal, dikonfigurasi lewat `meta: { sticky, initials, subtitle }` pada kolom `DataTable`.

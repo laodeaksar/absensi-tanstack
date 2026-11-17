@@ -20,6 +20,7 @@ import { useMemo, useState } from "react";
 import type { Question, QuestionInput } from "~/lib/types";
 
 import { BackLink } from "~/components/back-link";
+import { EmptyState } from "~/components/empty-state";
 import { OptionListField } from "~/components/option-list-field";
 import { HeaderButton, PageHeader } from "~/components/status-icons";
 import {
@@ -314,7 +315,22 @@ function QuestionsPage() {
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <DataTable
           table={table}
-          emptyText="Belum ada soal. Klik Tambah Soal."
+          empty={
+            <EmptyState
+              icon={<ListChecks />}
+              title="Belum ada soal"
+              description="Buat soal pertama untuk tugas yang anda buat."
+              action={
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => setModal({ open: true, question: null })}
+                >
+                  <Plus className="size-4" /> Buat soal
+                </button>
+              }
+            />
+          }
         />
       </div>
 

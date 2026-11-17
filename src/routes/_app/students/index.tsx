@@ -13,12 +13,14 @@ import {
   ArrowRightLeft,
   Eye,
   GraduationCap,
+  SearchX,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import type { Student, StudentClass, StudentInput } from "~/lib/types";
 
+import { EmptyState } from "~/components/empty-state";
 import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
   ActiveStatusIcon,
@@ -379,6 +381,44 @@ function StudentsPage() {
     },
   });
 
+  const empty = search.trim() ? (
+    <EmptyState
+      icon={<SearchX />}
+      title="Siswa tidak ditemukan"
+      description={`Tidak ada hasil untuk "${search.trim()}".`}
+      action={
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={() => setSearch("")}
+        >
+          Hapus pencarian
+        </button>
+      }
+    />
+  ) : (
+    <EmptyState
+      icon={<GraduationCap />}
+      title="Belum ada siswa"
+      description={
+        isAdmin
+          ? "Tambahkan siswa pertama untuk mulai mengelola kelas dan absensi."
+          : "Belum ada siswa di kelas yang Anda ampu."
+      }
+      action={
+        isAdmin ? (
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => setModal({ open: true, student: null })}
+          >
+            <Plus className="size-4" /> Tambah Siswa
+          </button>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <div className="space-y-4">
       <PageHeader title={isAdmin ? "Master Data Siswa" : "Data Siswa"}>
@@ -425,11 +465,7 @@ function StudentsPage() {
         </div>
         <DataTable
           table={table}
-          emptyText={
-            isAdmin
-              ? "Tidak ada data siswa."
-              : "Belum ada siswa di kelas yang Anda ampu."
-          }
+          empty={empty}
         />
         <Pager table={table} />
       </div>

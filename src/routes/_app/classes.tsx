@@ -6,11 +6,12 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, School } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { ClassInput, ClassRow } from "~/lib/types";
 
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { PageHeader, HeaderButton } from "~/components/status-icons";
 import {
   ActiveStatusIcon,
@@ -147,6 +148,29 @@ function ClassesPage() {
     },
   });
 
+  const empty = search.trim() ? (
+    <NoResultsState
+      subject="Kelas"
+      query={search.trim()}
+      onClear={() => setSearch("")}
+    />
+  ) : (
+    <EmptyState
+      icon={<School />}
+      title="Belum ada kelas"
+      description="Buat kelas pertama, lalu tambahkan siswa dan pengampu mapelnya."
+      action={
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => setModal({ open: true, cls: null })}
+        >
+          <Plus className="size-4" /> Tambah Kelas
+        </button>
+      }
+    />
+  );
+
   return (
     <div className="space-y-4">
       <PageHeader title="Master Data Kelas">
@@ -170,7 +194,7 @@ function ClassesPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Tidak ada data kelas."
+          empty={empty}
         />
         <Pager table={table} />
       </div>

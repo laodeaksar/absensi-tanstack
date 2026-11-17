@@ -2,11 +2,12 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Printer } from "lucide-react";
+import { FileSearch, Printer } from "lucide-react";
 import { useMemo } from "react";
 
 import type { ReportRow } from "~/lib/types";
 
+import { EmptyState } from "~/components/empty-state";
 import {
   AttendanceStatusIcon,
   HeaderButton,
@@ -305,6 +306,20 @@ function DailyReportView() {
     setTimeout(() => window.print(), 50);
   };
 
+  const empty = search.go ? (
+    <EmptyState
+      icon={<FileSearch />}
+      title="Tidak ada data absensi"
+      description="Tidak ada catatan absensi pada rentang tanggal dan kelas yang dipilih. Coba ubah filternya."
+    />
+  ) : (
+    <EmptyState
+      icon={<FileSearch />}
+      title="Laporan belum ditampilkan"
+      description="Atur filter di atas untuk menampilkan data laporan."
+    />
+  );
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -432,11 +447,7 @@ function DailyReportView() {
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <DataTable
           table={table}
-          emptyText={
-            search.go
-              ? "Tidak ada data ditemukan."
-              : "Gunakan filter untuk menampilkan data laporan."
-          }
+          empty={empty}
         />
         <Pager table={table} />
       </div>

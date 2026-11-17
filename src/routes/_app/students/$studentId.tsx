@@ -1,8 +1,15 @@
 import { useSuspenseQuery, useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GraduationCap, Pencil, ClipboardList } from "lucide-react";
+import {
+  GraduationCap,
+  Pencil,
+  ClipboardList,
+  CalendarX2,
+  School,
+} from "lucide-react";
 
 import { BackLink } from "~/components/back-link";
+import { EmptyState } from "~/components/empty-state";
 import { Info } from "~/components/info";
 import {
   AttendanceStatusIcon,
@@ -45,10 +52,6 @@ function Section({
     </section>
   );
 }
-
-const Empty = ({ text }: Readonly<{ text: string }>) => (
-  <div className="text-sm text-base-content/40">{text}</div>
-);
 
 function StudentDetailPage() {
   const { studentId } = Route.useParams();
@@ -178,7 +181,12 @@ function StudentDetailPage() {
             ))}
           </ul>
         ) : (
-          <Empty text="Belum ada riwayat kelas." />
+          <EmptyState
+            compact
+            icon={<School />}
+            title="Belum ada riwayat kelas"
+            description="Siswa ini belum ditempatkan di kelas."
+          />
         )}
       </Section>
 
@@ -227,7 +235,11 @@ function StudentDetailPage() {
             ))}
           </ul>
         ) : (
-          <Empty text="Belum ada catatan kehadiran." />
+          <EmptyState
+            compact
+            icon={<CalendarX2 />}
+            title="Belum ada catatan kehadiran"
+          />
         )}
       </Section>
 
@@ -260,7 +272,11 @@ function StudentDetailPage() {
             </table>
           </div>
         ) : (
-          <Empty text="Belum ada kehadiran per mata pelajaran." />
+          <EmptyState
+            compact
+            icon={<CalendarX2 />}
+            title="Belum ada kehadiran per mata pelajaran"
+          />
         )}
       </Section>
 
@@ -296,7 +312,11 @@ function StudentDetailPage() {
             ))}
           </ul>
         ) : (
-          <Empty text="Belum ada tugas yang dikerjakan." />
+          <EmptyState
+            compact
+            icon={<ClipboardList />}
+            title="Belum ada tugas yang dikerjakan"
+          />
         )}
       </Section>
       {dialog}

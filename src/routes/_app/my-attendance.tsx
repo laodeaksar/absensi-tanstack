@@ -2,10 +2,12 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
+import { CalendarX2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { MyAttendance } from "~/lib/types";
 
+import { EmptyState } from "~/components/empty-state";
 import { MySubjectAttendanceView } from "~/components/my-subject-attendance-view";
 import {
   DataTable,
@@ -240,7 +242,13 @@ function DailyAttendanceView({ range }: Readonly<{ range: Range }>) {
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <DataTable
           table={table}
-          emptyText="Belum ada data absensi pada periode ini."
+          empty={
+            <EmptyState
+              icon={<CalendarX2 />}
+              title="Belum ada data absensi"
+              description="Tidak ada catatan absensi pada periode ini. Coba ubah rentang tanggalnya."
+            />
+          }
         />
         <Pager table={table} />
       </div>

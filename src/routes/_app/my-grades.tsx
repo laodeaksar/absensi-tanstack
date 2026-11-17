@@ -1,9 +1,11 @@
 import { useForm, useSelector } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { BookOpen } from "lucide-react";
 
 import type { GradeSemester } from "~/lib/types";
 
+import { EmptyState } from "~/components/empty-state";
 import { PageHeader } from "~/components/status-icons";
 import { SelectField, TextField } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
@@ -76,10 +78,13 @@ function Grades({
   );
   if (!data.rows.length)
     return (
-      <p className="text-sm text-base-content/60">
-        Belum ada mata pelajaran di kelas Anda.
-      </p>
+      <EmptyState
+        icon={<BookOpen />}
+        title="Belum ada mata pelajaran"
+        description="Mata pelajaran untuk kelas Anda belum diatur. Hubungi admin atau wali kelas."
+      />
     );
+
   return (
     <div className="space-y-3">
       {data.rows.map((r) => (

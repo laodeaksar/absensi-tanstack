@@ -6,11 +6,12 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { TeachingRow } from "~/lib/types";
 
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { HeaderButton, PageHeader } from "~/components/status-icons";
 import {
   ActionMenu,
@@ -213,6 +214,29 @@ function TeachingPage() {
     initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
   });
 
+  const empty = search.trim() ? (
+    <NoResultsState
+      subject="Pengampu"
+      query={search.trim()}
+      onClear={() => setSearch("")}
+    />
+  ) : (
+    <EmptyState
+      icon={<BookOpen />}
+      title="Belum ada guru pengampu"
+      description="Tentukan guru pengampu tiap mapel di tiap kelas agar mereka bisa membuat tugas dan mengisi absensi."
+      action={
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => setModal({ open: true, row: null })}
+        >
+          <Plus className="size-4" /> Tambah Pengampu
+        </button>
+      }
+    />
+  );
+
   return (
     <div className="space-y-4">
       <PageHeader title="Pengampu Mata Pelajaran">
@@ -242,7 +266,7 @@ function TeachingPage() {
         </div>
         <DataTable
           table={table}
-          emptyText="Belum ada guru pengampu."
+          empty={empty}
         />
         <Pager table={table} />
       </div>

@@ -13,22 +13,27 @@ export function initialsOf(name: string, max = 2): string {
     .toUpperCase();
 }
 
-/** Mobile: hanya inisial. Layar sm ke atas: nama lengkap (dan subjudul bila ada). */
+/** `compact`: di mobile hanya inisial; sm ke atas tetap nama lengkap. */
 export function ResponsiveName({
   name,
   subtitle,
-}: Readonly<{ name: string; subtitle?: ReactNode }>) {
+  compact = false,
+}: Readonly<{ name: string; subtitle?: ReactNode; compact?: boolean }>) {
   return (
     <>
-      <span
-        role="img"
-        aria-label={name}
-        title={name}
-        className="inline-flex size-8 items-center justify-center rounded-full bg-base-300 text-xs font-semibold sm:hidden"
+      {compact ? (
+        <span
+          role="img"
+          aria-label={name}
+          title={name}
+          className="inline-flex size-8 items-center justify-center rounded-full bg-base-300 text-xs font-semibold sm:hidden"
+        >
+          {initialsOf(name)}
+        </span>
+      ) : null}
+      <div
+        className={compact ? "hidden min-w-32 pr-2 sm:block" : "min-w-32 pr-2"}
       >
-        {initialsOf(name)}
-      </span>
-      <div className="hidden min-w-32 pr-2 sm:block">
         <span className="block truncate font-medium">{name}</span>
         {subtitle ? (
           <span className="block truncate text-[11px] text-base-content/50">

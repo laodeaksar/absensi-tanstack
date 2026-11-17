@@ -1,9 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Pencil } from "lucide-react";
+import { Pencil, ClipboardList, BookOpen } from "lucide-react";
 import { useMemo } from "react";
 
 import { BackLink } from "~/components/back-link";
+import { EmptyState } from "~/components/empty-state";
 import { Info } from "~/components/info";
 import { PageHeader, PublishStatusIcon } from "~/components/status-icons";
 import { ActiveBadge } from "~/components/ui";
@@ -177,9 +178,12 @@ function TeacherDetailPage() {
             ))}
           </ul>
         ) : (
-          <div className="text-sm text-base-content/40">
-            Belum mengampu mata pelajaran.
-          </div>
+          <EmptyState
+            compact
+            icon={<BookOpen />}
+            title="Belum mengampu mata pelajaran"
+            description="Atur pengampu di menu Pengampu Mapel."
+          />
         )}
       </Section>
 
@@ -221,7 +225,12 @@ function TeacherDetailPage() {
             ))}
           </ul>
         ) : (
-          <div className="text-sm text-base-content/40">Belum ada tugas.</div>
+          <EmptyState
+            compact
+            icon={<ClipboardList />}
+            title="Belum ada tugas"
+            description="Guru ini belum membuat tugas."
+          />
         )}
       </Section>
     </div>

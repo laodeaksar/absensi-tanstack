@@ -8,6 +8,7 @@ import { useMemo } from "react";
 
 import type { MyTask, SubmissionStatus } from "~/lib/types";
 
+import { EmptyState } from "~/components/empty-state";
 import { SubmissionStatusIcon } from "~/components/status-icons";
 import { DataTable, Pager, Tip } from "~/components/ui";
 import { nowLocalInput } from "~/lib/assignment-schema";
@@ -171,7 +172,13 @@ function TasksPage() {
       <div className="card overflow-hidden border border-base-300 bg-base-100">
         <DataTable
           table={table}
-          emptyText="Belum ada tugas untuk kelas Anda."
+          empty={
+            <EmptyState
+              icon={<ClipboardCheck />}
+              title="Belum ada tugas"
+              description="Tugas dari guru untuk kelas Anda akan muncul di sini."
+            />
+          }
         />
         <Pager table={table} />
       </div>

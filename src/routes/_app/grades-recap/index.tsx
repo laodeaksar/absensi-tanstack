@@ -1,10 +1,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
+import { ClipboardList } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 
-import type { ClassRow, GradeRecapCell } from "~/lib/types";
+import type { GradeRecapCell } from "~/lib/types";
 
+import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { SemesterCell } from "~/components/grade-cells";
 import { PageHeader } from "~/components/status-icons";
 import { DataTable, Pager, SearchBox } from "~/components/ui";
@@ -86,60 +88,6 @@ const columns = col.columns([
   }),
 ]);
 
-function RecapList({
-  cls,
-  search,
-}: Readonly<{ cls: ClassRow; search: string }>) {
-  const { data } = useSuspenseQuery(
-    classGradeRecapQuery({
-      classId: cls.class_id,
-      academicYear: cls.academic_year,
-    }),
-  );
-
-  const rows = useMemo<RecapRow[]>(() => {
-    const q = search.trim().toLowerCase();
-    const subjects = new Map(data.subjects.map((s) => [s.subject_id, s]));
-    const result: RecapRow[] = [];
-    for (const s of data.students) {
-      if (q && !`${s.full_name} ${s.nis}`.toLowerCase().includes(q)) continue;
-      for (const g of s.grades) {
-        const sub = subjects.get(g.subject_id);
-        if (!sub) continue;
-        result.push({
-          id: `${s.student_id}|${g.subject_id}`,
-          student_id: s.student_id,
-          nis: s.nis,
-          full_name: s.full_name,
-          subject_name: sub.subject_name,
-          kkm: sub.kkm,
-          components: sub.components,
-          ganjil: g.ganjil,
-          genap: g.genap,
-        });
-      }
-    }
-    return result;
-  }, [data, search]);
-
-  const table = useTable({
-    features,
-    columns,
-    data: rows,
-    initialState: { pagination: { pageIndex: 0, pageSize: 20 } },
-  });
-
-  return (
-    <>
-      <DataTable
-        table={table}
-        emptyText="Belum ada data nilai di kelas ini."
-      />
-      <Pager table={table} />
-    </>
-  );
-}
-
 function GradeRecapPage() {
   const { kelas } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -192,24 +140,112 @@ function GradeRecapPage() {
           />
         </div>
         {selected ? (
-          <Suspense
-            fallback={
-              <div className="flex justify-center p-8">
-                <span className="loading loading-spinner" />
-              </div>
-            }
-          >
-            <RecapList
-              cls={selected}
-              search={search}
-            />
-          </Suspense>
+          <GradeRecapTable
+            classId={selected.class_id}
+            academicYear={selected.academic_year}
+            search={search}
+          />
         ) : (
-          <p className="p-6 text-center text-sm text-base-content/60">
-            Pilih kelas untuk melihat rekap nilai.
-          </p>
+          <EmptyState
+            icon={<ClipboardList />}
+            title="Pilih kelas"
+            description="Pilih kelas untuk melihat rekap nilai siswanya."
+          />
         )}
       </div>
     </div>
+  );
+}
+
+type GradeRecapTableProps = {
+  classId: string;
+  academicYear: string;
+  search: string;
+};
+
+function GradeRecapTable({
+  classId,
+  academicYear,
+  search,
+}: GradeRecapTableProps) {
+  const { data } = useSuspenseQuery(
+    classGradeRecapQuery({
+      classId,
+      academicYear,
+    }),
+  );
+
+  const rows = useMemo<RecapRow[]>(() => {
+    const q = search.trim().toLowerCase();
+    const subjects = new Map(data.subjects.map((s) => [s.subject_id, s]));
+
+    const result: RecapRow[] = [];
+
+    for (const s of data.students) {
+      if (q && !`${s.full_name} ${s.nis}`.toLowerCase().includes(q)) {
+        continue;
+      }
+
+      for (const g of s.grades) {
+        const sub = subjects.get(g.subject_id);
+        if (!sub) continue;
+
+        result.push({
+          id: `${s.student_id}|${g.subject_id}`,
+          student_id: s.student_id,
+          nis: s.nis,
+          full_name: s.full_name,
+          subject_name: sub.subject_name,
+          kkm: sub.kkm,
+          components: sub.components,
+          ganjil: g.ganjil,
+          genap: g.genap,
+        });
+      }
+    }
+
+    return result;
+  }, [data, search]);
+
+  const table = useTable({
+    features,
+    columns,
+    data: rows,
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 20,
+      },
+    },
+  });
+
+  const empty = search.trim() ? (
+    <NoResultsState
+      subject="Siswa"
+      query={search.trim()}
+      onClear={() => {}}
+    />
+  ) : (
+    <EmptyState
+      icon={<ClipboardList />}
+      title="Belum ada data nilai"
+      description="Kelas ini belum memiliki siswa aktif atau pengampu mata pelajaran."
+    />
+  );
+
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center p-8">
+          <span className="loading loading-spinner" />
+        </div>
+      }
+    >
+      <DataTable
+        table={table}
+        empty={empty}
+      />
+      <Pager table={table} />
+    </Suspense>
   );
 }

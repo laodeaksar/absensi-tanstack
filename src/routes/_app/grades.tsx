@@ -8,11 +8,12 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTable } from "@tanstack/react-table";
-import { Settings2 } from "lucide-react";
+import { Settings2, Users, ClipboardList } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { GradeBook, GradeSemester } from "~/lib/types";
 
+import { EmptyState } from "~/components/empty-state";
 import {
   HeaderButton,
   PageHeader,
@@ -254,9 +255,11 @@ function GradesPage() {
       </form>
 
       {!args ? (
-        <p className="text-sm text-base-content/60">
-          Pilih kelas, mata pelajaran, dan tahun ajaran untuk menampilkan nilai.
-        </p>
+        <EmptyState
+          icon={<ClipboardList />}
+          title="Pilih kelas dan mata pelajaran"
+          description="Pilih kelas, mata pelajaran, dan tahun ajaran untuk menampilkan nilai."
+        />
       ) : book.isPending ? (
         <TableSkeleton
           rows={6}
@@ -474,7 +477,13 @@ function GradeBookTable({
       </p>
       <DataTable
         table={table}
-        emptyText="Belum ada siswa di kelas ini."
+        empty={
+          <EmptyState
+            icon={<Users />}
+            title="Belum ada siswa di kelas ini"
+            description="Tambahkan siswa ke kelas ini lewat menu Data Siswa."
+          />
+        }
         stickyColumns={["student"]}
       />
       <Pager table={table} />

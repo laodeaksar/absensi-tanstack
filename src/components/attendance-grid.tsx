@@ -3,7 +3,14 @@ import type { AnyFormApi } from "@tanstack/react-form";
 import { useForm, useSelector } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useTable } from "@tanstack/react-table";
-import { MessageSquareText, RotateCcw, Save } from "lucide-react";
+import {
+  CheckCircle2,
+  MessageSquareText,
+  RotateCcw,
+  Save,
+  SearchX,
+  Users,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { AttendanceEntry } from "~/lib/types";
@@ -14,6 +21,8 @@ import { STATUS_VALUES } from "~/convex/rules";
 import { gridSchema } from "~/lib/attendance-schema";
 import { columnHelperFor, features } from "~/lib/table";
 import { toast } from "~/lib/toast";
+
+import { EmptyState } from "./empty-state";
 
 type Row = Omit<AttendanceEntry, "attendance_id"> & {
   originalIndex: number;
@@ -242,16 +251,6 @@ export function AttendanceGrid({
     return result;
   }, [rows, filter, formValues, search]);
 
-  const computedEmptyText = useMemo(() => {
-    if (rows.length === 0) return emptyText;
-    if (search.trim())
-      return `Tidak ada siswa yang cocok dengan pencarian "${search}".`;
-    if (filter === "unmarked") return "Semua siswa sudah diabsen! 🎉";
-    if (filter === "need_notes")
-      return "Semua keterangan absensi sudah lengkap.";
-    return emptyText;
-  }, [rows.length, search, filter, emptyText]);
-
   const columns = useMemo(
     () =>
       col.columns([
@@ -268,17 +267,13 @@ export function AttendanceGrid({
         col.accessor("full_name", {
           header: "Nama Siswa",
           enableSorting: false,
-          meta: { sticky: 2, initials: true },
-          /* cell: ({ row }) => (
-            <div className="min-w-32 max-w-48 sm:max-w-none pr-2">
-              <span className="font-medium block truncate">
-                {row.original.full_name}
-              </span>
-              <span className="text-[11px] text-base-content/50 sm:hidden block truncate">
-                NIS {row.original.nis}
-              </span>
-            </div>
-          ), */
+          meta: {
+            sticky: 2,
+            initials: true,
+            subtitle: (r: Row) => (
+              <span className="sm:hidden">NIS {r.nis}</span>
+            ),
+          },
         }),
         col.accessor("nis", {
           id: "nis",
@@ -371,6 +366,60 @@ export function AttendanceGrid({
       },
     },
   });
+
+  const computedEmpty = useMemo(() => {
+    const reset = (label: string, onClick: () => void) => (
+      <button
+        type="button"
+        className="btn btn-sm"
+        onClick={onClick}
+      >
+        {label}
+      </button>
+    );
+    if (rows.length === 0)
+      return (
+        <EmptyState
+          icon={<Users />}
+          title="Belum ada siswa"
+          description={emptyText}
+        />
+      );
+    if (search.trim())
+      return (
+        <EmptyState
+          icon={<SearchX />}
+          title="Siswa tidak ditemukan"
+          description={`Tidak ada siswa yang cocok dengan "${search.trim()}".`}
+          action={reset("Hapus pencarian", () => setSearch(""))}
+        />
+      );
+    if (filter === "unmarked")
+      return (
+        <EmptyState
+          icon={<CheckCircle2 />}
+          title="Semua siswa sudah diabsen"
+          description="Tidak ada siswa yang belum diabsen."
+          action={reset("Tampilkan semua siswa", () => setFilter("all"))}
+        />
+      );
+    if (filter === "need_notes")
+      return (
+        <EmptyState
+          icon={<CheckCircle2 />}
+          title="Keterangan sudah lengkap"
+          description="Semua keterangan absensi sudah terisi."
+          action={reset("Tampilkan semua siswa", () => setFilter("all"))}
+        />
+      );
+    return (
+      <EmptyState
+        icon={<Users />}
+        title="Belum ada siswa"
+        description={emptyText}
+      />
+    );
+  }, [rows.length, search, filter, emptyText]);
 
   return (
     <form
@@ -469,7 +518,7 @@ export function AttendanceGrid({
       {/* Area Tabel dengan Kolom Sticky */}
       <DataTable
         table={table}
-        emptyText={computedEmptyText}
+        empty={computedEmpty}
         stickyCol1Width="2.75rem"
       />
 
