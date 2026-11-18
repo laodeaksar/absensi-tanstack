@@ -77,13 +77,13 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
   })),
   saveStudent: mutationRoute(api.master.saveStudent, ([data]) => ({ data })),
   moveStudent: mutationRoute(
-    api.master.moveStudent,
+    api.promotion.moveStudent,
     ([studentId, classId]) => ({
       studentId,
       classId,
     }),
   ),
-  graduateStudent: mutationRoute(api.master.graduateStudent, ([studentId]) => ({
+  graduateStudent: mutationRoute(api.promotion.graduateStudent, ([studentId]) => ({
     studentId,
   })),
   listStudentClasses: queryRoute(api.master.listStudentClasses),

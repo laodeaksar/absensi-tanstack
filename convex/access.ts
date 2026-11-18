@@ -1,6 +1,6 @@
 import type { Doc } from "./_generated/dataModel";
 
-import { QueryCtx } from "./_generated/server";
+import { MutationCtx, QueryCtx } from "./_generated/server";
 import { fail } from "./errors";
 import { sha256Hex } from "./security";
 

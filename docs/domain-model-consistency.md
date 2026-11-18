@@ -190,6 +190,7 @@ Satu domain tidak boleh membaca atau memodifikasi state domain lain tanpa kontra
 - `master-data` → `grades`: naik kelas dan lulus memanggil `assertMeetsKkm`.
 - `subjects` → `attendance`: memakai `activeMembers` dan `assertAttendanceEditable`.
 - Aturan tahun ajaran selesai: satu fungsi `isYearFinished` (`rules.ts`), dipakai server dan klien.
+- `promotion.ts` boleh mengimpor `master` dan `grades`. Sebaliknya dilarang.
 
 ## Checklist penerapan
 
