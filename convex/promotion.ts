@@ -2,12 +2,12 @@ import { v } from "convex/values";
 
 import { mutation } from "./_generated/server";
 import { requireAuth } from "./access";
+import { fail } from "./errors";
 import { assertMeetsKkm } from "./grades";
 import { classById, nowIso, randomId, studentById } from "./lib";
 import { syncStudentAccount } from "./master";
 import { GRADUATION_LEVEL, gradeRank } from "./rules";
 import { getSettingsMap } from "./settings";
-import { fail } from "./errors";
 
 /**
  * Kenaikan kelas dan kelulusan. Lapisan orkestrasi: boleh membaca `master` dan `grades`,

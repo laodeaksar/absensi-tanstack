@@ -225,7 +225,7 @@ export const mySubjectAttendanceQuery = (f: {
   endDate: string;
 }) =>
   queryOptions({
-    ...convexQuery(convexApi.subjects.getMySubjectAttendance, { filters: f }),
+    ...convexQuery(convexApi.attendance.getMySubjectAttendance, { filters: f }),
     select: (r): MySubjectAttendance => r as MySubjectAttendance,
   });
 

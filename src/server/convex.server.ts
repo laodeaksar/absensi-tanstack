@@ -83,9 +83,12 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
       classId,
     }),
   ),
-  graduateStudent: mutationRoute(api.promotion.graduateStudent, ([studentId]) => ({
-    studentId,
-  })),
+  graduateStudent: mutationRoute(
+    api.promotion.graduateStudent,
+    ([studentId]) => ({
+      studentId,
+    }),
+  ),
   listStudentClasses: queryRoute(api.master.listStudentClasses),
   saveClass: mutationRoute(api.master.saveClass, ([data]) => ({ data })),
   saveTeacher: mutationRoute(api.master.saveTeacher, ([data]) => ({ data })),
@@ -136,15 +139,15 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
     ([teachingId]) => ({ teachingId }),
   ),
   getSubjectAttendanceForm: queryRoute(
-    api.subjects.getSubjectAttendanceForm,
+    api.attendance.getSubjectAttendanceForm,
     ([date, classId, subjectId]) => ({ date, classId, subjectId }),
   ),
   submitSubjectAttendance: mutationRoute(
-    api.subjects.submitSubjectAttendance,
+    api.attendance.submitSubjectAttendance,
     ([date, classId, subjectId, rows]) => ({ date, classId, subjectId, rows }),
   ),
   getMySubjectAttendance: queryRoute(
-    api.subjects.getMySubjectAttendance,
+    api.attendance.getMySubjectAttendance,
     ([filters]) => ({ filters }),
   ),
   getSubjectReportData: queryRoute(

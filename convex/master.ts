@@ -18,11 +18,7 @@ import {
   userById,
 } from "./lib";
 import { LIMITS } from "./limits";
-import {
-  RULES,
-  isAcademicYear,
-  isGradeLevel,
-} from "./rules";
+import { RULES, isAcademicYear, isGradeLevel } from "./rules";
 import { newHash, assertStrongPassword } from "./security";
 import { getSettingsMap } from "./settings";
 

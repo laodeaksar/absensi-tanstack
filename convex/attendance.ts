@@ -5,7 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { requireAuth } from "./access";
+import { assertTeaches, requireAuth } from "./access";
 import { fail } from "./errors";
 import {
   activeMemberIds,
@@ -13,11 +13,18 @@ import {
   isRealDate,
   nowIso,
   randomId,
+  round1,
   studentById,
+  subjectById,
   todayStr,
 } from "./lib";
 import { LIMITS, needsNotes } from "./limits";
-import { STATUS_VALUES, STATUS_FIELD } from "./rules";
+import {
+  STATUS_VALUES,
+  STATUS_FIELD,
+  MAX_REPORT_ROWS,
+  MAX_RANGE_DAYS,
+} from "./rules";
 import { getSettingsMap } from "./settings";
 
 const attendanceRow = v.object({
@@ -28,6 +35,10 @@ const attendanceRow = v.object({
 const myFilters = v.object({
   startDate: v.optional(v.string()),
   endDate: v.optional(v.string()),
+});
+const myRange = v.object({
+  startDate: v.string(),
+  endDate: v.string(),
 });
 
 /** Cerminan assertAttendanceEditable lama: format/nilai tanggal, tanggal masa depan, jendela edit guru. */
@@ -372,6 +383,201 @@ export const getMyAttendance = query({
         : null,
       summary,
       records,
+    };
+  },
+});
+
+/* ---------- absensi per mata pelajaran ---------- */
+
+export const getSubjectAttendanceForm = query({
+  args: {
+    token: v.string(),
+    date: v.string(),
+    classId: v.string(),
+    subjectId: v.string(),
+  },
+  handler: async (ctx, { token, date, classId, subjectId }) => {
+    const user = await requireAuth(ctx, token);
+    if (!isRealDate(date)) fail("Format tanggal tidak valid.");
+    await assertTeaches(ctx, user, classId, subjectId);
+
+    const rows = [];
+    for (const id of await activeMemberIds(ctx, classId)) {
+      const s = await studentById(ctx, id);
+      if (!s || !s.is_active) continue;
+      const a = await ctx.db
+        .query("subject_attendance")
+        .withIndex("by_student_subject_date", (q) =>
+          q
+            .eq("student_id", id)
+            .eq("subject_id", subjectId)
+            .eq("attendance_date", date),
+        )
+        .first();
+      rows.push({
+        student_id: s.student_id,
+        nis: s.nis || "-",
+        full_name: s.full_name || "Tanpa Nama",
+        status: a ? a.status || "Belum Ada" : "Belum Ada",
+        notes: a ? a.notes : "",
+        attendance_id: a ? a.attendance_id : null,
+      });
+    }
+    rows.sort((x, y) => x.full_name.localeCompare(y.full_name));
+    return { data: rows };
+  },
+});
+
+export const submitSubjectAttendance = mutation({
+  args: {
+    token: v.string(),
+    date: v.string(),
+    classId: v.string(),
+    subjectId: v.string(),
+    rows: v.array(attendanceRow),
+  },
+  handler: async (ctx, { token, date, classId, subjectId, rows }) => {
+    const user = await requireAuth(ctx, token);
+    // Aturan tanggal sama dengan absensi harian: tidak boleh masa depan, jendela edit untuk guru
+    await assertAttendanceEditable(ctx, user, date);
+    await assertTeaches(ctx, user, classId, subjectId);
+    if (!(await classById(ctx, classId))) fail("Kelas tidak ditemukan.");
+    const subject = await subjectById(ctx, subjectId);
+    if (!subject || !subject.is_active) fail("Mata pelajaran tidak valid.");
+
+    const members = new Set(await activeMemberIds(ctx, classId));
+    const now = nowIso();
+    const seen = new Set<string>();
+    let skipped = 0;
+    for (const raw of rows as Record<string, unknown>[]) {
+      const sid = String(raw?.student_id ?? "");
+      const status = String(raw?.status ?? "");
+      if (
+        !sid ||
+        !members.has(sid) ||
+        !(STATUS_VALUES as readonly string[]).includes(status) ||
+        seen.has(sid)
+      ) {
+        skipped++;
+        continue;
+      }
+      seen.add(sid);
+      const notes = String(raw.notes ?? "")
+        .trim()
+        .slice(0, LIMITS.notesMax);
+      if (needsNotes(status) && notes.length < LIMITS.notesMin) {
+        skipped++;
+        continue;
+      }
+      const ex = await ctx.db
+        .query("subject_attendance")
+        .withIndex("by_student_subject_date", (q) =>
+          q
+            .eq("student_id", sid)
+            .eq("subject_id", subjectId)
+            .eq("attendance_date", date),
+        )
+        .first();
+      if (ex) {
+        await ctx.db.patch(ex._id, {
+          status,
+          notes,
+          class_id: classId,
+          recorded_by: user.user_id,
+          updated_at: now,
+        });
+      } else {
+        await ctx.db.insert("subject_attendance", {
+          attendance_id: randomId("SAT"),
+          attendance_date: date,
+          class_id: classId,
+          subject_id: subjectId,
+          student_id: sid,
+          status,
+          notes,
+          recorded_by: user.user_id,
+          created_at: now,
+          updated_at: now,
+        });
+      }
+    }
+    return {
+      message:
+        "Absensi mata pelajaran berhasil disimpan." +
+        (skipped ? ` ${skipped} baris dilewati (tidak valid).` : ""),
+    };
+  },
+});
+
+/** Siswa melihat kehadiran per mata pelajaran miliknya sendiri dalam rentang tanggal. */
+export const getMySubjectAttendance = query({
+  args: { token: v.optional(v.string()), filters: myRange },
+  handler: async (ctx, { token, filters }) => {
+    const user = await requireAuth(ctx, token, { allowStudent: true });
+    if (user.role !== "siswa" || !user.student_id) fail("FORBIDDEN");
+    const sid = user.student_id;
+
+    const { startDate, endDate } = filters;
+    if (!isRealDate(startDate) || !isRealDate(endDate))
+      fail("Format tanggal tidak valid.");
+    if (startDate > endDate)
+      fail("Tanggal mulai tidak boleh setelah tanggal akhir.");
+    const days = (Date.parse(endDate) - Date.parse(startDate)) / 86_400_000 + 1;
+    if (days > MAX_RANGE_DAYS) fail(`Rentang maksimal ${MAX_RANGE_DAYS} hari.`);
+
+    const recs = await ctx.db
+      .query("subject_attendance")
+      .withIndex("by_student_date", (q) =>
+        q
+          .eq("student_id", sid)
+          .gte("attendance_date", startDate)
+          .lte("attendance_date", endDate),
+      )
+      .order("desc")
+      .take(MAX_REPORT_ROWS + 1);
+    if (recs.length > MAX_REPORT_ROWS)
+      fail("Data terlalu banyak. Persempit rentang tanggal.");
+
+    const names = new Map(
+      (await ctx.db.query("subjects").collect()).map((s) => [
+        s.subject_id,
+        s.name,
+      ]),
+    );
+    type Tally = { hadir: number; sakit: number; izin: number; alpa: number };
+    const tally = new Map<string, Tally>();
+    for (const r of recs) {
+      let t = tally.get(r.subject_id);
+      if (!t) {
+        t = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
+        tally.set(r.subject_id, t);
+      }
+      if (r.status === "Hadir") t.hadir++;
+      else if (r.status === "Sakit") t.sakit++;
+      else if (r.status === "Izin") t.izin++;
+      else if (r.status === "Alpa") t.alpa++;
+    }
+
+    const summary = [...tally].map(([subjectId, t]) => {
+      const total = t.hadir + t.sakit + t.izin + t.alpa;
+      return {
+        subject_id: subjectId,
+        subject_name: names.get(subjectId) ?? "-",
+        ...t,
+        total,
+        persentase: total > 0 ? round1((t.hadir / total) * 100) : 0,
+      };
+    });
+    summary.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
+
+    return {
+      summary,
+      records: recs.map((r) => ({
+        date: r.attendance_date,
+        subject_name: names.get(r.subject_id) ?? "-",
+        status: r.status || "-",
+        notes: r.notes,
+      })),
     };
   },
 });
