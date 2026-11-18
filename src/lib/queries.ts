@@ -164,13 +164,13 @@ export const reviewQuery = (submissionId: string) =>
   });
 
 export const myTasksQuery = queryOptions({
-  ...convexQuery(convexApi.assignment.listMyTasks, {}),
+  ...convexQuery(convexApi.submission.listMyTasks, {}),
   select: unwrap<MyTask[]>,
 });
 
 export const myResultQuery = (id: string) =>
   queryOptions({
-    ...convexQuery(convexApi.assignment.getMyResult, { assignmentId: id }),
+    ...convexQuery(convexApi.submission.getMyResult, { assignmentId: id }),
     select: (r): MyResult => r as unknown as MyResult,
   });
 

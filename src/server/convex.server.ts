@@ -205,25 +205,25 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
       grades,
     }),
   ),
-  listMyTasks: queryRoute(api.assignment.listMyTasks),
-  startTask: mutationRoute(api.assignment.startTask, ([assignmentId]) => ({
+  listMyTasks: queryRoute(api.submission.listMyTasks),
+  startTask: mutationRoute(api.submission.startTask, ([assignmentId]) => ({
     assignmentId,
   })),
-  submitTask: mutationRoute(
-    api.assignment.submitTask,
+  /* submitTask: mutationRoute(
+    api.submission.submitTask,
     ([assignmentId, answers]) => ({
       assignmentId,
       answers,
     }),
   ),
   saveDraft: mutationRoute(
-    api.assignment.saveDraft,
+    api.submission.saveDraft,
     ([assignmentId, answers]) => ({
       assignmentId,
       answers,
     }),
-  ),
-  getMyResult: queryRoute(api.assignment.getMyResult, ([assignmentId]) => ({
+  ), */
+  getMyResult: queryRoute(api.submission.getMyResult, ([assignmentId]) => ({
     assignmentId,
   })),
   getClassGradeRecap: queryRoute(
