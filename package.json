@@ -10,7 +10,8 @@
     "lint": "oxlint",
     "format": "oxfmt .",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:deps": "node scripts/check-convex-deps.mjs"
   },
   "dependencies": {
     "@convex-dev/react-query": "^0.1.0",

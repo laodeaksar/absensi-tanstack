@@ -1,7 +1,7 @@
 // Kompatibilitas: impor lama dari "./lib" tetap berfungsi
-/* export { fail } from "./errors";
-export * from "./access";
-export * from "./security"; */
+// export { fail } from "./errors";
+// export * from "./access";
+// export * from "./security";
 
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
