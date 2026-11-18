@@ -86,3 +86,17 @@ export async function canTeach(
   const row = await teachingRowOf(ctx, classId, subjectId);
   return !!row && row.teacher_id === user.user_id;
 }
+
+/** Guru hanya boleh bila ia pengampu pasangan kelas + mapel; admin boleh, asalkan pasangannya terdaftar. */
+export async function assertTeaches(
+  ctx: QueryCtx,
+  user: Doc<"users">,
+  classId: string,
+  subjectId: string,
+) {
+  const row = await teachingRowOf(ctx, classId, subjectId);
+  if (!row) fail("Mata pelajaran ini belum diampu di kelas tersebut.");
+  if (user.role !== "admin" && row.teacher_id !== user.user_id)
+    fail("Anda bukan guru pengampu mata pelajaran ini di kelas tersebut.");
+  return row;
+}

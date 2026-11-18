@@ -102,6 +102,7 @@ Domain ini mencakup:
 Tujuan:
 
 - menjaga query besar dan agregasi data tidak bercampur dengan operasi CRUD domain lain.
+- `reports.ts` hanya membaca (tanpa mutation) dan tidak boleh diimpor modul lain.
 
 ### 7. Settings
 

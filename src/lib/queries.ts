@@ -105,7 +105,7 @@ export const teachersQuery = queryOptions({
   select: unwrap<Teacher[]>,
 });
 export const dashboardQuery = queryOptions({
-  ...convexQuery(convexApi.attendance.getDashboardStats, {}),
+  ...convexQuery(convexApi.reports.getDashboardStats, {}),
   select: (r): DashboardData => r as DashboardData,
 });
 
@@ -249,31 +249,6 @@ export const myGradesQuery = (a: {
     select: (r): MyGrades => r as MyGrades,
   });
 
-/* export const classGradeRecapQuery = (a: {
-  classId: string;
-  academicYear: string;
-}) =>
-  queryOptions({
-    ...convexQuery(convexApi.grades.getClassGradeRecap, a),
-    select: (r): ClassGradeRecap => r as ClassGradeRecap,
-  });
-
- export const studentGradesQuery = (studentId: string) =>
-  queryOptions({
-    ...convexQuery(convexApi.grades.getStudentGrades, { studentId }),
-    select: (r): StudentGrades => r as StudentGrades,
-  }); 
-
-  export const reportCardQuery = (a: {
-  studentId?: string;
-  academicYear: string;
-  semester: GradeSemester;
-}) =>
-  queryOptions({
-    ...convexQuery(convexApi.grades.getReportCard, a),
-    select: (r): ReportCard => r as ReportCard,
-  }); */
-
 export const classGradeRecapQuery = (a: {
   classId: string;
   academicYear: string;
@@ -303,6 +278,6 @@ export const reportCardQuery = (a: {
   });
 
 export const homeroomOverviewQuery = queryOptions({
-  ...convexQuery(convexApi.attendance.getHomeroomOverview, {}),
+  ...convexQuery(convexApi.reports.getHomeroomOverview, {}),
   select: (r): HomeroomOverview => r as HomeroomOverview,
 });

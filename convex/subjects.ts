@@ -1,10 +1,9 @@
 import { v } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
-import type { QueryCtx } from "./_generated/server";
 
 import { mutation, query } from "./_generated/server";
-import { requireAuth, teachingRowOf } from "./access";
+import { requireAuth, teachingRowOf, assertTeaches } from "./access";
 import { assertAttendanceEditable } from "./attendance";
 import { fail } from "./errors";
 import {
@@ -20,9 +19,7 @@ import {
   userById,
 } from "./lib";
 import { LIMITS, needsNotes } from "./limits";
-import { MAX_RANGE_DAYS, RULES, STATUS_VALUES } from "./rules";
-
-const MAX_REPORT_ROWS = 10_000;
+import { MAX_RANGE_DAYS, RULES, STATUS_VALUES, MAX_REPORT_ROWS } from "./rules";
 
 // Semua opsional: tombol Aktif/Nonaktifkan hanya mengirim { subject_id, is_active }
 const subjectInput = v.object({
@@ -49,27 +46,6 @@ const myRange = v.object({
   startDate: v.string(),
   endDate: v.string(),
 });
-
-const subjectReportFilters = v.object({
-  startDate: v.string(),
-  endDate: v.string(),
-  classId: v.string(),
-  subjectId: v.string(),
-});
-
-/** Guru hanya boleh bila ia pengampu pasangan kelas + mapel; admin boleh, asalkan pasangannya terdaftar. */
-async function assertTeaches(
-  ctx: QueryCtx,
-  user: Doc<"users">,
-  classId: string,
-  subjectId: string,
-) {
-  const row = await teachingRowOf(ctx, classId, subjectId);
-  if (!row) fail("Mata pelajaran ini belum diampu di kelas tersebut.");
-  if (user.role !== "admin" && row.teacher_id !== user.user_id)
-    fail("Anda bukan guru pengampu mata pelajaran ini di kelas tersebut.");
-  return row;
-}
 
 /* ---------- mata pelajaran ---------- */
 
@@ -448,84 +424,6 @@ export const submitSubjectAttendance = mutation({
       message:
         "Absensi mata pelajaran berhasil disimpan." +
         (skipped ? ` ${skipped} baris dilewati (tidak valid).` : ""),
-    };
-  },
-});
-
-/** Rekap per siswa untuk satu kelas + mata pelajaran dalam rentang tanggal. */
-export const getSubjectReportData = query({
-  args: { token: v.string(), filters: subjectReportFilters },
-  handler: async (ctx, { token, filters }) => {
-    const user = await requireAuth(ctx, token);
-    const { startDate, endDate, classId, subjectId } = filters;
-    if (!isRealDate(startDate) || !isRealDate(endDate))
-      fail("Format tanggal tidak valid.");
-    if (startDate > endDate)
-      fail("Tanggal mulai tidak boleh setelah tanggal akhir.");
-    const days = (Date.parse(endDate) - Date.parse(startDate)) / 86_400_000 + 1;
-    if (days > MAX_RANGE_DAYS)
-      fail(`Rentang laporan maksimal ${MAX_RANGE_DAYS} hari.`);
-    await assertTeaches(ctx, user, classId, subjectId);
-
-    const records = await ctx.db
-      .query("subject_attendance")
-      .withIndex("by_class_subject_date", (q) =>
-        q
-          .eq("class_id", classId)
-          .eq("subject_id", subjectId)
-          .gte("attendance_date", startDate)
-          .lte("attendance_date", endDate),
-      )
-      .take(MAX_REPORT_ROWS + 1);
-    if (records.length > MAX_REPORT_ROWS)
-      fail("Data terlalu banyak. Persempit rentang tanggal.");
-
-    type Tally = { hadir: number; sakit: number; izin: number; alpa: number };
-    const tally = new Map<string, Tally>();
-    const dates = new Set<string>();
-    const bucket = (sid: string) => {
-      let t = tally.get(sid);
-      if (!t) {
-        t = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
-        tally.set(sid, t);
-      }
-      return t;
-    };
-    for (const r of records) {
-      dates.add(r.attendance_date);
-      const t = bucket(r.student_id);
-      if (r.status === "Hadir") t.hadir++;
-      else if (r.status === "Sakit") t.sakit++;
-      else if (r.status === "Izin") t.izin++;
-      else if (r.status === "Alpa") t.alpa++;
-    }
-    // Siswa aktif kelas tanpa data tetap tampil (nol), supaya terlihat siapa yang belum tercatat
-    for (const id of await activeMemberIds(ctx, classId)) bucket(id);
-
-    const data = [];
-    for (const [sid, t] of tally) {
-      const s = await studentById(ctx, sid);
-      const total = t.hadir + t.sakit + t.izin + t.alpa;
-      data.push({
-        student_id: sid,
-        nis: s?.nis || "-",
-        full_name: s?.full_name || "Tanpa Nama",
-        ...t,
-        total,
-        persentase: total > 0 ? round1((t.hadir / total) * 100) : 0,
-      });
-    }
-    data.sort((a, b) => a.full_name.localeCompare(b.full_name));
-
-    const cls = await classById(ctx, classId);
-    const subject = await subjectById(ctx, subjectId);
-    return {
-      data,
-      meta: {
-        class_name: cls?.class_name ?? "-",
-        subject_name: subject?.name ?? "-",
-        meetings: dates.size,
-      },
     };
   },
 });

@@ -27,6 +27,15 @@ export const STATUS_VALUES = ["Hadir", "Sakit", "Izin", "Alpa"] as const;
 /** Rentang laporan maksimal (hari). Dicek di klien (rangeIssue) dan di server. */
 export const MAX_RANGE_DAYS = 366;
 
+export const STATUS_FIELD = {
+  Hadir: "hadir",
+  Sakit: "sakit",
+  Izin: "izin",
+  Alpa: "alpa",
+} as const;
+
+export const MAX_REPORT_ROWS = 10_000;
+
 /* ---------- kebijakan password kuat ---------- */
 // Dipakai saat MEMBUAT atau MENGGANTI password (guru baru, ganti password).
 // Jangan dipakai di form login: akun lama dan password awal siswa (NISN) harus tetap bisa masuk.

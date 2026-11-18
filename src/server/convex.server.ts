@@ -113,8 +113,8 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
       rows,
     }),
   ),
-  getDashboardStats: queryRoute(api.attendance.getDashboardStats),
-  getReportData: queryRoute(api.attendance.getReportData, ([filters]) => ({
+  getDashboardStats: queryRoute(api.reports.getDashboardStats),
+  getReportData: queryRoute(api.reports.getReportData, ([filters]) => ({
     filters,
   })),
   getMyAttendance: queryRoute(api.attendance.getMyAttendance, ([filters]) => ({
@@ -148,7 +148,7 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
     ([filters]) => ({ filters }),
   ),
   getSubjectReportData: queryRoute(
-    api.subjects.getSubjectReportData,
+    api.reports.getSubjectReportData,
     ([filters]) => ({ filters }),
   ),
 
@@ -224,14 +224,14 @@ export const CONVEX_ROUTES: Record<string, ConvexRoute> = {
     assignmentId,
   })),
   getClassGradeRecap: queryRoute(
-    api.grades.getClassGradeRecap,
+    api.reports.getClassGradeRecap,
     ([classId, academicYear]) => ({ classId, academicYear }),
   ),
-  getStudentGrades: queryRoute(api.grades.getStudentGrades, ([studentId]) => ({
+  getStudentGrades: queryRoute(api.reports.getStudentGrades, ([studentId]) => ({
     studentId,
   })),
   getReportCard: queryRoute(
-    api.grades.getReportCard,
+    api.reports.getReportCard,
     ([studentId, academicYear, semester]) => ({
       studentId,
       academicYear,
