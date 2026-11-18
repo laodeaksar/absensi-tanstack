@@ -50,14 +50,6 @@ export async function loadConfig(
     : { kkm: DEFAULT_KKM, components: DEFAULT_GRADE_COMPONENTS, saved: false };
 }
 
-/* async function activeStudentIds(ctx: QueryCtx, classId: string) {
-  const hist = await ctx.db
-    .query("student_class_history")
-    .withIndex("by_class", (q) => q.eq("class_id", classId))
-    .collect();
-  return new Set(hist.filter((h) => h.is_active).map((h) => h.student_id));
-} */
-
 /** Rata-rata persentase tugas yang sudah dinilai, per siswa, untuk kelas, mapel, dan semester. */
 export async function taskAverages(
   ctx: QueryCtx,

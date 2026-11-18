@@ -32,7 +32,7 @@ export function ResponsiveName({
         </span>
       ) : null}
       <div
-        className={compact ? "hidden min-w-32 pr-2 sm:block" : "min-w-32 pr-2"}
+        className={compact ? "hidden min-w-32 pr-2 sm:block" : "min-w-20 pr-2"}
       >
         <span className="block truncate font-medium">{name}</span>
         {subtitle ? (

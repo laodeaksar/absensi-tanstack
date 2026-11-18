@@ -1271,7 +1271,7 @@ export const autoCloseSubmission = internalMutation({
 
 /**
  * Sekali jalan setelah deploy: jadwalkan penutupan untuk pengerjaan "berlangsung" yang dibuat sebelum patch ini.
- *   npx convex run assignment:scheduleOpenSubmissions
+ * npx convex run assignment:scheduleOpenSubmissions
  */
 export const scheduleOpenSubmissions = internalMutation({
   args: {},

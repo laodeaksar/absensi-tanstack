@@ -98,12 +98,6 @@ export const fetchMasterData = query({
       }
       return { data: rows };
     }
-    /* if (type === "students") {
-      if (user.role !== "admin") fail("FORBIDDEN");
-      return {
-        data: (await ctx.db.query("students").collect()).map(strip),
-      };
-    } */
     return { data: [] };
   },
 });
