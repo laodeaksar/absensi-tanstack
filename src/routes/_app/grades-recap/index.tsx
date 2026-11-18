@@ -9,7 +9,7 @@ import type { GradeRecapCell } from "~/lib/types";
 import { EmptyState, NoResultsState } from "~/components/empty-state";
 import { SemesterCell } from "~/components/grade-cells";
 import { PageHeader } from "~/components/status-icons";
-import { DataTable, Pager, SearchBox } from "~/components/ui";
+import { DataTable, Pager, SearchBox, TableSkeleton } from "~/components/ui";
 import { allowRoles } from "~/lib/auth";
 import { classesQuery, classGradeRecapQuery } from "~/lib/queries";
 import { columnHelperFor, features } from "~/lib/table";
@@ -236,9 +236,10 @@ function GradeRecapTable({
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center p-8">
-          <span className="loading loading-spinner" />
-        </div>
+        <TableSkeleton
+          rows={4}
+          cols={5}
+        />
       }
     >
       <DataTable
