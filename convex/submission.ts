@@ -12,9 +12,9 @@ import {
   maxScoreOf,
   questionOut,
   questionsOf,
-} from "./assignment-core";
+} from "./assignment.core";
 import { fail } from "./errors";
-import { nowIso, num, randomId, round1, round2 } from "./lib";
+import { nowIso, num, randomId, round1, round2, dueMs } from "./lib";
 import { LIMITS } from "./limits";
 
 export const listMyTasks = query({

@@ -15,7 +15,7 @@ import {
   maxScoreOf,
   questionOut,
   questionsOf,
-} from "./assignment-core";
+} from "./assignment.core";
 import { fail } from "./errors";
 import {
   activeMemberIds,

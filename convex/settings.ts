@@ -5,9 +5,9 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { fail } from "./errors";
 import { nowIso, tzOffsetMinutes } from "./lib";
-export { requireAuth } from "./access";
 import { LIMITS } from "./limits";
 import { RULES, isAcademicYear, isMonthDay, periodFor } from "./rules";
+import { requireAuth } from "./access";
 
 export const SETTINGS_DEFAULTS: Record<string, string> = {
   school_name: "EduAbsen",

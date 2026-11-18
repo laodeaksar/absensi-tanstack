@@ -1,0 +1,27 @@
+{
+  "id": "1795009303466933-1",
+  "title": "Explain what this codebase does",
+  "updatedAt": "2026-11-18T21:42:14.826795",
+  "messages": [
+    {
+      "id": "1795009322836332-2",
+      "role": "user",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Explain what this codebase does"
+        }
+      ]
+    },
+    {
+      "id": "1795009322836465-3",
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "AI provider temporarily unavailable\n----\nRequest ID: req_caafe8e3\nRef: 21.1795009335260\nUpstreamResponseCode: 503\nModel: gemini-4-argon\n----\n- The AI provider failed to process your request (temporary server issue or oversized prompt).\n- This was retried automatically.\nHow to fix:\n- Send \"Continue\" to resume from where it stopped. If that does not work, start a new session/chat.\n- Wait a moment and retry with a shorter or simpler prompt.\n- Do not keep retrying the exact same request.\n**Billing:**\n- This request still counts as a request and is billed based on its input (minimum 1,000 prompt / 1,000 completion / 1,000 cached tokens).\n- Do not resend the same request — it will keep failing and keep consuming your quota.\n**Recommended tools:**\n- These responses are optimized for opencode, Claude Code, and Codex.\n- If you are using a non-standard client and keep hitting errors, switch to one of the supported tools above."
+        }
+      ]
+    }
+  ]
+}

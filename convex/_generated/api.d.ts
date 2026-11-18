@@ -29,6 +29,7 @@ import type * as security from "../security.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
 import type * as subjects from "../subjects.js";
+import type * as submission from "../submission.js";
 
 import type {
   ApiFromModules,
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   settings: typeof settings;
   subjects: typeof subjects;
+  submission: typeof submission;
 }>;
 
 /**

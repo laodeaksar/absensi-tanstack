@@ -43,9 +43,9 @@ const ALLOWED = {
   subjects: ["lib", "access", "rules", "limits", "errors"],
   attendance: ["lib", "access", "settings", "rules", "limits", "errors"],
   grades: ["lib", "access", "settings", "rules", "limits", "errors"],
-  "assignment-core": ["lib", "rules", "limits", "errors"],
-  assignment: ["assignment-core", "lib", "access", "rules", "limits", "errors"],
-  submission: ["assignment-core", "lib", "access", "rules", "limits", "errors"],
+  "assignment.core": ["lib", "rules", "limits", "errors"],
+  assignment: ["assignment.core", "lib", "access", "rules", "limits", "errors"],
+  submission: ["assignment.core", "lib", "access", "rules", "limits", "errors"],
 
   // Lapisan orkestrasi dan baca: boleh membaca domain lain, tidak boleh diimpor siapa pun
   promotion: [
