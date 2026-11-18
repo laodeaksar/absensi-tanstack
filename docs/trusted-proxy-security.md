@@ -68,6 +68,31 @@ Fungsi `clientIp()` di `src/server/functions.ts` harus diperlakukan sebagai help
 - jika tidak, fallback ke value kosong atau tindakan aman,
 - catat event saat IP tidak valid atau tidak dapat dipercaya.
 
+## Konfigurasi di repo
+
+| Variabel              | Fungsi                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `TRUSTED_IP_HEADER`   | Header IP dari proxy tepercaya. Kosong berarti IP tidak dipercaya (default aman).        |
+| `TRUSTED_PROXY_HOPS`  | Jumlah proxy tepercaya untuk `x-forwarded-for` (default 1). IP klien diambil dari kanan. |
+| `LOGIN_SHARED_SECRET` | Kunci bersama aplikasi dan Convex. Tanpa itu, IP diabaikan oleh `login`.                 |
+
+Contoh: Cloudflare `cf-connecting-ip`; nginx dengan `proxy_set_header X-Real-IP $remote_addr` memakai `x-real-ip`;
+platform yang menimpa `x-forwarded-for` memakai `x-forwarded-for` dengan `TRUSTED_PROXY_HOPS=1`.
+
+Batas gagal login: 5 per `username|IP`, 20 per username. Tanpa IP tepercaya hanya batas per username yang berlaku.
+
+### Production (Cloudflare)
+
+- `TRUSTED_IP_HEADER=cf-connecting-ip`. Cloudflare menimpa header ini pada setiap request.
+- Server hanya boleh dijangkau lewat Cloudflare: Tunnel tanpa port publik, atau firewall yang hanya menerima
+  rentang IP Cloudflare. Tanpa itu, header dapat dipalsukan lewat koneksi langsung.
+- `LOGIN_SHARED_SECRET` sama di environment aplikasi dan di Convex (`npx convex env set`), berbeda antara
+  production dan staging.
+- Lapisan tambahan: aturan Rate Limiting Cloudflare untuk endpoint login. IP tetap bukan satu-satunya pertahanan.
+
+openssl rand -hex 32
+npx convex env set LOGIN_SHARED_SECRET <nilai-yang-sama>
+
 ## Checklist keamanan
 
 - [ ] Proxy atau load balancer yang berada di depan aplikasi sudah terdokumentasi
@@ -76,6 +101,8 @@ Fungsi `clientIp()` di `src/server/functions.ts` harus diperlakukan sebagai help
 - [ ] Lockout brute-force tidak mengandalkan IP yang bisa dipalsukan
 - [ ] Log keamanan dan audit event menggunakan IP yang aman dan konsisten
 - [ ] Environment production dan staging memiliki konfigurasi proxy yang jelas
+- [ ] `TRUSTED_IP_HEADER` diatur di production dan staging, dan proxy dipastikan menimpa header tersebut.
+- [ ] Server tidak dapat diakses langsung dari internet, hanya lewat Cloudflare.
 
 ## Kesimpulan
 

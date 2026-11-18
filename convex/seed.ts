@@ -1,7 +1,9 @@
 import { v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
-import { assertStrongPassword, fail, newHash, nowIso, randomId } from "./lib";
+import { fail } from "./errors";
+import { nowIso, randomId } from "./lib";
+import { newHash, assertStrongPassword } from "./security";
 
 /**
  * Buat akun admin pertama (jalankan sekali dari terminal):

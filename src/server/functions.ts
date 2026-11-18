@@ -5,6 +5,7 @@ import {
   getRequestHeader,
   setCookie,
 } from "@tanstack/react-start/server";
+import { isIP } from "node:net";
 import { z } from "zod";
 
 import type { SessionUser } from "~/lib/types";
@@ -15,19 +16,50 @@ import type { RpcName } from "./convex.server";
 
 import { callConvex, isRpcName } from "./convex.server";
 
+/** Ambil IPv4/IPv6 yang valid, buang port (mis. "1.2.3.4:5678"); selain itu kosong. */
+function cleanIp(raw: string | undefined): string {
+  const v = (raw ?? "").trim().replace(/^(\d+\.\d+\.\d+\.\d+):\d+$/, "$1");
+  return isIP(v) ? v : "";
+}
+
+/**
+ * IP klien hanya dari header yang diisi proxy tepercaya.
+ * - TRUSTED_IP_HEADER: nama header (cf-connecting-ip, x-real-ip, x-forwarded-for). Kosong = tidak ada proxy
+ *   tepercaya, IP diabaikan dan kunci login jatuh ke per username (aman).
+ * - TRUSTED_PROXY_HOPS: untuk x-forwarded-for, jumlah proxy tepercaya di depan aplikasi (default 1).
+ *   IP klien = entri ke-N dari kanan, karena entri di kiri bisa diisi klien.
+ * Proxy WAJIB menimpa header ini, bukan menambahkannya.
+ */
+function clientIp(): string {
+  try {
+    const header = process.env.TRUSTED_IP_HEADER?.trim().toLowerCase();
+    if (!header) return "";
+    const raw = getRequestHeader(header);
+    if (!raw) {
+      console.warn(`[security] header ${header} tidak ada; IP klien diabaikan`);
+      return "";
+    }
+    if (header !== "x-forwarded-for") return cleanIp(raw);
+    const hops = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
+    const chain = raw.split(",").map((s) => s.trim());
+    return cleanIp(chain[chain.length - hops]);
+  } catch {
+    return "";
+  }
+}
 /**
  * Alamat IP klien dari header proxy; kosong bila tidak tersedia (kunci login lalu per username saja).
  * Sesuaikan header dengan hosting: pakai header yang HANYA diisi proxy tepercaya Anda
  * (mis. cf-connecting-ip di Cloudflare), karena x-forwarded-for bisa dipalsukan bila proxy tidak menimpanya.
  */
-function clientIp(): string {
+/* function clientIp(): string {
   try {
     const first = getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim();
     return first || getRequestHeader("x-real-ip")?.trim() || "";
   } catch {
     return "";
   }
-}
+} */
 
 const SESSION_COOKIE = "eduabsen_token"; // nilai tetap agar sesi berjalan tidak putus
 const SESSION_MAX_AGE_S = 60 * 60 * 6;

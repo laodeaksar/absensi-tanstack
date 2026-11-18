@@ -4,18 +4,14 @@ import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 
 import { mutation, query } from "./_generated/server";
+import { requireAuth, revokeSessions, canAccessClass } from "./access";
+import { fail } from "./errors";
 import { assertMeetsKkm } from "./grades";
 import {
-  assertStrongPassword,
-  canAccessClass,
   classById,
-  fail,
   flag,
-  newHash,
   nowIso,
   randomId,
-  requireAuth,
-  revokeSessions,
   strip,
   studentById,
   subjectById,
@@ -30,6 +26,7 @@ import {
   GRADUATION_LEVEL,
   gradeRank,
 } from "./rules";
+import { newHash, assertStrongPassword } from "./security";
 import { getSettingsMap } from "./settings";
 
 const classInput = v.object({
@@ -193,6 +190,21 @@ const STUDENT_FIELDS = [
   "parent_phone",
 ] as const;
 
+/** Tutup semua riwayat kelas aktif siswa (saat siswa dinonaktifkan atau lulus). */
+async function closeActiveHistory(
+  ctx: MutationCtx,
+  studentId: string,
+  now: string,
+) {
+  const hist = await ctx.db
+    .query("student_class_history")
+    .withIndex("by_student", (q) => q.eq("student_id", studentId))
+    .collect();
+  for (const h of hist)
+    if (h.is_active)
+      await ctx.db.patch(h._id, { is_active: false, end_date: now });
+}
+
 export const saveStudent = mutation({
   args: { token: v.string(), data: studentInput },
   handler: async (ctx, { token, data }) => {
@@ -256,19 +268,30 @@ export const saveStudent = mutation({
         ...clean,
         updated_at: now,
       };
-      // if (d.is_active !== undefined) patch.is_active = flag(d.is_active);
+      const nextActive =
+        d.is_active === undefined ? existing.is_active : flag(d.is_active);
       if (d.is_active !== undefined) {
-        patch.is_active = flag(d.is_active);
-        if (patch.is_active) {
+        patch.is_active = nextActive;
+        if (nextActive) {
           patch.graduated_at = undefined;
           patch.graduated_year = undefined;
         }
       }
       await ctx.db.patch(existing._id, patch as Partial<Doc<"students">>);
+
+      // Siswa nonaktif tidak boleh punya riwayat kelas aktif
+      if (existing.is_active && !nextActive)
+        await closeActiveHistory(ctx, existing.student_id, now);
+
       const warning = await syncStudentAccount(ctx, existing.student_id);
+      const reactivated = !existing.is_active && nextActive;
       return {
         message:
-          "Data siswa berhasil disimpan." + (warning ? " " + warning : ""),
+          "Data siswa berhasil disimpan." +
+          (reactivated
+            ? " Siswa belum memiliki kelas, tempatkan lewat Pindah Kelas."
+            : "") +
+          (warning ? " " + warning : ""),
       };
     }
 

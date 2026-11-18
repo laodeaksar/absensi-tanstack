@@ -1,5 +1,5 @@
 import { internalQuery } from "./_generated/server";
-import { PBKDF2_ITERATIONS, pbkdf2Hex } from "./lib";
+import { PBKDF2_ITERATIONS, pbkdf2Hex } from "./security";
 
 /**
  * Cek apakah runtime Convex mendukung PBKDF2 dan berapa lama satu hash:

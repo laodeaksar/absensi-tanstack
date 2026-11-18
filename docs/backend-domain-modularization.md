@@ -143,6 +143,14 @@ Setiap modul harus memiliki:
 - aturan role access
 - dokumentasi singkat domain ownership
 
+## Lapisan dasar (`convex/`)
+
+- `errors.ts`: `fail`. Tidak mengimpor apa pun dari proyek.
+- `security.ts`: kripto, hash password, kebijakan password.
+- `access.ts`: autentikasi sesi (`requireAuth`, `revokeSessions`) dan otorisasi (`canAccessClass`, `canTeach`).
+- `lib.ts`: util umum, waktu, pencarian entitas, bentuk keluaran.
+- Aturan: `errors`, `security`, dan `access` tidak boleh mengimpor `lib` (mencegah siklus).
+
 ## Boundary yang harus dijaga
 
 - Auth tidak boleh dipanggil tanpa validasi session

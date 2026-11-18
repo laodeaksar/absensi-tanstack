@@ -4,19 +4,19 @@ import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 
 import { mutation, query } from "./_generated/server";
-import { activeMembers, assertAttendanceEditable } from "./attendance";
+import { requireAuth, teachingRowOf } from "./access";
+import { assertAttendanceEditable } from "./attendance";
+import { fail } from "./errors";
 import {
+  activeMemberIds,
   classById,
-  fail,
   isRealDate,
   nowIso,
   randomId,
-  requireAuth,
   round1,
   strip,
   studentById,
   subjectById,
-  teachingRowOf,
   userById,
 } from "./lib";
 import { LIMITS, needsNotes } from "./limits";
@@ -345,7 +345,7 @@ export const getSubjectAttendanceForm = query({
     await assertTeaches(ctx, user, classId, subjectId);
 
     const rows = [];
-    for (const id of await activeMembers(ctx, classId)) {
+    for (const id of await activeMemberIds(ctx, classId)) {
       const s = await studentById(ctx, id);
       if (!s || !s.is_active) continue;
       const a = await ctx.db
@@ -388,7 +388,7 @@ export const submitSubjectAttendance = mutation({
     const subject = await subjectById(ctx, subjectId);
     if (!subject || !subject.is_active) fail("Mata pelajaran tidak valid.");
 
-    const members = new Set(await activeMembers(ctx, classId));
+    const members = new Set(await activeMemberIds(ctx, classId));
     const now = nowIso();
     const seen = new Set<string>();
     let skipped = 0;
@@ -500,7 +500,7 @@ export const getSubjectReportData = query({
       else if (r.status === "Alpa") t.alpa++;
     }
     // Siswa aktif kelas tanpa data tetap tampil (nol), supaya terlihat siapa yang belum tercatat
-    for (const id of await activeMembers(ctx, classId)) bucket(id);
+    for (const id of await activeMemberIds(ctx, classId)) bucket(id);
 
     const data = [];
     for (const [sid, t] of tally) {

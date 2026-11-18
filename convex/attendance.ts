@@ -5,13 +5,14 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
+import { requireAuth } from "./access";
+import { fail } from "./errors";
 import {
+  activeMemberIds,
   classById,
-  fail,
   isRealDate,
   nowIso,
   randomId,
-  requireAuth,
   studentById,
   userById,
   subjectById,
@@ -57,13 +58,13 @@ export async function assertAttendanceEditable(
   }
 }
 
-export async function activeMembers(ctx: QueryCtx, classId: string) {
+/* export async function activeMembers(ctx: QueryCtx, classId: string) {
   const hist = await ctx.db
     .query("student_class_history")
     .withIndex("by_class", (q) => q.eq("class_id", classId))
     .collect();
   return [...new Set(hist.filter((h) => h.is_active).map((h) => h.student_id))];
-}
+} */
 
 /* ---------- ringkasan harian (attendance_daily) ---------- */
 
@@ -145,7 +146,7 @@ export const getAttendanceForm = query({
     if (user.role === "guru" && !user.assigned_classes.includes(classId))
       fail("Anda tidak memiliki akses ke kelas ini.");
 
-    const ids = await activeMembers(ctx, classId);
+    const ids = await activeMemberIds(ctx, classId);
 
     const rows = [];
     for (const id of ids) {
@@ -185,7 +186,7 @@ export const submitAttendanceBatch = mutation({
       fail("Anda tidak memiliki akses ke kelas ini.");
     if (!(await classById(ctx, classId))) fail("Kelas tidak ditemukan.");
 
-    const members = new Set(await activeMembers(ctx, classId));
+    const members = new Set(await activeMemberIds(ctx, classId));
 
     const now = nowIso();
     const seen = new Set<string>();
@@ -271,7 +272,7 @@ export const getDashboardStats = query({
     if (scope) {
       const ids = new Set<string>();
       for (const cid of scope)
-        for (const sid of await activeMembers(ctx, cid)) ids.add(sid);
+        for (const sid of await activeMemberIds(ctx, cid)) ids.add(sid);
       totalStudents = ids.size;
     } else {
       totalStudents = (await ctx.db.query("students").collect()).filter(
@@ -358,7 +359,7 @@ export const getHomeroomOverview = query({
     const result = [];
     for (const cls of classes) {
       const members = new Map<string, { nis: string; full_name: string }>();
-      for (const id of await activeMembers(ctx, cls.class_id)) {
+      for (const id of await activeMemberIds(ctx, cls.class_id)) {
         const s = await studentById(ctx, id);
         if (s?.is_active)
           members.set(id, { nis: s.nis, full_name: s.full_name });

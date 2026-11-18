@@ -4,26 +4,23 @@ import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { mutation, query } from "./_generated/server";
+import { requireAuth, revokeSessions } from "./access";
+import { fail } from "./errors";
 import { signJwt } from "./jwt";
-import {
-  PBKDF2_ITERATIONS,
-  assertStrongPassword,
-  fail,
-  newHash,
-  nowIso,
-  pbkdf2Hex,
-  randomToken,
-  requireAuth,
-  revokeSessions,
-  safeEqual,
-  sessionUser,
-  sha256Hex,
-  studentById,
-  verifyPbkdf2,
-  needsRehash,
-} from "./lib";
+import { nowIso, sessionUser, studentById } from "./lib";
 import { LIMITS } from "./limits";
 import { passwordIssue } from "./rules";
+import {
+  newHash,
+  pbkdf2Hex,
+  verifyPbkdf2,
+  PBKDF2_ITERATIONS,
+  needsRehash,
+  sha256Hex,
+  safeEqual,
+  randomToken,
+  assertStrongPassword,
+} from "./security";
 
 /** Batas gagal per username + alamat IP (atau per username saja bila IP klien tidak tersedia). */
 const MAX_FAILS = 5;

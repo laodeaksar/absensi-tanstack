@@ -3,16 +3,15 @@ import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 
 import { type QueryCtx, mutation, query } from "./_generated/server";
+import { requireAuth, teachingRowOf, canTeach } from "./access";
+import { fail } from "./errors";
 import {
-  canTeach,
+  activeMemberIds,
   classById,
-  fail,
   nowIso,
-  requireAuth,
   round2,
   studentById,
   subjectById,
-  teachingRowOf,
   userById,
   todayStr,
 } from "./lib";
@@ -50,13 +49,13 @@ async function loadConfig(ctx: QueryCtx, classId: string, subjectId: string) {
     : { kkm: DEFAULT_KKM, components: DEFAULT_GRADE_COMPONENTS, saved: false };
 }
 
-async function activeStudentIds(ctx: QueryCtx, classId: string) {
+/* async function activeStudentIds(ctx: QueryCtx, classId: string) {
   const hist = await ctx.db
     .query("student_class_history")
     .withIndex("by_class", (q) => q.eq("class_id", classId))
     .collect();
   return new Set(hist.filter((h) => h.is_active).map((h) => h.student_id));
-}
+} */
 
 /** Rata-rata persentase tugas yang sudah dinilai, per siswa, untuk kelas, mapel, dan semester. */
 async function taskAverages(
@@ -194,7 +193,7 @@ export const getGradeBook = query({
     const cfg = await loadConfig(ctx, a.classId, a.subjectId);
 
     const students = [];
-    for (const id of await activeStudentIds(ctx, a.classId)) {
+    for (const id of await activeMemberIds(ctx, a.classId)) {
       const s = await studentById(ctx, id);
       if (s && s.is_active) students.push(s);
     }
@@ -336,7 +335,8 @@ export const saveScores = mutation({
     const manual = new Set(
       cfg.components.filter((c) => c.source === "manual").map((c) => c.key),
     );
-    const inClass = await activeStudentIds(ctx, a.classId);
+
+    const inClass = new Set(await activeMemberIds(ctx, a.classId));
     const now = nowIso();
 
     for (const e of a.entries) {
@@ -576,7 +576,7 @@ export const getClassGradeRecap = query({
     const subjectIds = [...new Set(teaching.map((t) => t.subject_id))];
 
     const students = [];
-    for (const id of await activeStudentIds(ctx, a.classId)) {
+    for (const id of await activeMemberIds(ctx, a.classId)) {
       const s = await studentById(ctx, id);
       if (s && s.is_active) students.push(s);
     }

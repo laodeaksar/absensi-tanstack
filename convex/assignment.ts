@@ -5,21 +5,18 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
+import { requireAuth, teachingRowOf, canTeach, canAccessClass } from "./access";
+import { fail } from "./errors";
 import {
-  canAccessClass,
-  canTeach,
   classById,
   dueMs,
-  fail,
   nowIso,
   num,
   randomId,
-  requireAuth,
   round1,
   round2,
   studentById,
   subjectById,
-  teachingRowOf,
   userById,
 } from "./lib";
 import { LIMITS } from "./limits";

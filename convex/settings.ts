@@ -3,7 +3,9 @@ import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 import { mutation, query, internalMutation } from "./_generated/server";
-import { fail, nowIso, requireAuth, tzOffsetMinutes } from "./lib";
+import { requireAuth } from "./access";
+import { fail } from "./errors";
+import { nowIso, tzOffsetMinutes } from "./lib";
 import { LIMITS } from "./limits";
 import { RULES, isAcademicYear, isMonthDay, periodFor } from "./rules";
 
